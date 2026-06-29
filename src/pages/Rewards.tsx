@@ -9,21 +9,11 @@ import {
   getTodayFocusSessions,
   getAllTimeFocusSessions,
   getCompletedTasksCount,
+  getTodayExpensesCount,
+  getEarnedBadgeIds,
+  ALL_BADGES,
 } from '../lib/statsUtils';
-const ALL_BADGES = [
-  { id: 'first_focus', name: 'First Focus', icon: '🎯', desc: 'Complete your first focus session', xpReq: 0, focusReq: 1, color: '#a855f7' },
-  { id: 'focus_10', name: 'Focus Master', icon: '🧠', desc: 'Complete 10 focus sessions', xpReq: 0, focusReq: 10, color: '#7c3aed' },
-  { id: 'streak_3', name: 'Consistent', icon: '🔥', desc: 'Maintain a 3-day streak', streakReq: 3, color: '#f59e0b' },
-  { id: 'streak_7', name: 'Week Warrior', icon: '⚡', desc: 'Maintain a 7-day streak', streakReq: 7, color: '#f59e0b' },
-  { id: 'streak_30', name: 'Unstoppable', icon: '💪', desc: '30-day streak achieved', streakReq: 30, color: '#ef4444' },
-  { id: 'xp_100', name: 'Rising Star', icon: '⭐', desc: 'Earn 100 XP', xpReq: 100, color: '#fbbf24' },
-  { id: 'xp_500', name: 'Champion', icon: '🏆', desc: 'Earn 500 XP', xpReq: 500, color: '#f59e0b' },
-  { id: 'xp_1000', name: 'Legend', icon: '👑', desc: 'Earn 1000 XP', xpReq: 1000, color: '#ec4899' },
-  { id: 'task_10', name: 'Task Crusher', icon: '✅', desc: 'Complete 10 tasks', tasksReq: 10, color: '#10b981' },
-  { id: 'task_50', name: 'Productivity Pro', icon: '🚀', desc: 'Complete 50 tasks', tasksReq: 50, color: '#06b6d4' },
-  { id: 'budget_month', name: 'Budget Keeper', icon: '💰', desc: 'Stay within budget for a month', color: '#10b981' },
-  { id: 'first_save', name: 'Saver', icon: '🐷', desc: 'Create your first savings goal', color: '#ec4899' },
-];
+
 
 const LEVELS = [
   { level: 1, title: 'Starter', minXP: 0, color: '#94a3b8' },
@@ -86,36 +76,22 @@ export default function Rewards() {
 
   const completedFocusSessions = getAllTimeFocusSessions(focusSessions);
   const completedTasks = getCompletedTasksCount(tasks);
-  const todayExpenses = expenses.length;
+  const todayExpensesCount = getTodayExpensesCount(expenses);
 
   const todayFocusMinutes = getTodayFocusMinutes(focusSessions);
   const todayFocusSessionCount = getTodayFocusSessions(focusSessions);
 
   const challengeStatus = {
     c1: todayFocusSessionCount >= 2,
-    c2: todayExpenses >= 3,
+    c2: todayExpensesCount >= 3,
     c3: completedTasks >= 5,
     c4: todayFocusMinutes >= 60,
   };
 
-  const earnedBadges = useMemo(() => {
-    const earned = new Set(profile.badges.map((b: any) => b.id));
-    const check: string[] = [];
-
-    if (completedFocusSessions >= 1) check.push('first_focus');
-    if (completedFocusSessions >= 10) check.push('focus_10');
-    if (profile.streak >= 3) check.push('streak_3');
-    if (profile.streak >= 7) check.push('streak_7');
-    if (profile.streak >= 30) check.push('streak_30');
-    if (profile.xp >= 100) check.push('xp_100');
-    if (profile.xp >= 500) check.push('xp_500');
-    if (profile.xp >= 1000) check.push('xp_1000');
-    if (completedTasks >= 10) check.push('task_10');
-    if (completedTasks >= 50) check.push('task_50');
-    if (savingsGoals.length >= 1) check.push('first_save');
-
-    return new Set([...Array.from(earned), ...check]);
-  }, [profile, completedFocusSessions, completedTasks, savingsGoals]);
+  const earnedBadges = useMemo(
+    () => getEarnedBadgeIds({ profile, focusSessions, tasks, savingsGoals }),
+    [profile, focusSessions, tasks, savingsGoals]
+  );
 
 
   const achievements = [

@@ -3,7 +3,7 @@ import { Play, Pause, RotateCcw, Plus, Trash2, CheckCircle2, Circle, Coffee, Bra
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { format, parseISO } from 'date-fns';
-import { getTodayFocusMinutes } from '../lib/statsUtils';
+import { getTodayFocusMinutes, getTodayFocusSessions } from '../lib/statsUtils';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -47,6 +47,7 @@ export default function Productivity() {
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   const todayMinutes = getTodayFocusMinutes(focusSessions);
+  const todaySessionCount = getTodayFocusSessions(focusSessions);
 
   const [showAddTask, setShowAddTask] = useState(false);
   const [showTimerSettings, setShowTimerSettings] = useState(false);
@@ -321,7 +322,7 @@ export default function Productivity() {
                   className="text-3xl font-black"
                   style={{ color: '#a855f7', fontFamily: 'Space Grotesk' }}
                 >
-                  {sessionCount}
+                  {todaySessionCount}
                 </div>
                 <div className="text-sm mt-1 tracking-wide" style={{ color: 'var(--text-muted)' }}>
                   Sessions Completed

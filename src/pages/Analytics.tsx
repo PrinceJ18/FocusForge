@@ -21,13 +21,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   utilities: '#6b7280', other: '#8b5cf6',
 };
 
-type Period = '7d' | '30d' | '3m';
+type Period = 'today' | '30d' | '3m';
 
 export default function Analytics() {
   const { expenses, focusSessions, tasks, profile } = useStore();
   const [period, setPeriod] = useState<Period>('30d');
 
-  const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+  const days = period === 'today' ? 1 : period === '30d' ? 30 : 90;
 
   const data = useMemo(() => {
     const since = subDays(new Date(), days);
@@ -155,7 +155,7 @@ export default function Analytics() {
       {/* Period selector */}
       <div className="flex items-center justify-between">
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)' }}>
-          {(['7d', '30d', '3m'] as Period[]).map((p) => (
+          {(['today', '30d', '3m'] as Period[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
@@ -167,7 +167,7 @@ export default function Analytics() {
                 borderRadius: 10,
               }}
             >
-              {p === '7d' ? '7 Days' : p === '30d' ? '30 Days' : '3 Months'}
+              {p === 'today' ? 'Daily' : p === '30d' ? '30 Days' : '3 Months'}
             </button>
           ))}
         </div>
@@ -237,7 +237,7 @@ export default function Analytics() {
             <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Focus Analytics</h3>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={data.combined.slice(-Math.min(days, 30))}>
+            <AreaChart data={period === 'today' ? data.combined : data.combined.slice(-Math.min(days, 30))}>
               <defs>
                 <linearGradient id="focusGradAnalytics" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#a855f7" stopOpacity={0.35} />
@@ -275,7 +275,7 @@ export default function Analytics() {
             <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Finance Analytics</h3>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={data.combined.slice(-Math.min(days, 30))}>
+            <AreaChart data={period === 'today' ? data.combined : data.combined.slice(-Math.min(days, 30))}>
               <defs>
                 <linearGradient id="spendGradAnalytics" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#ec4899" stopOpacity={0.35} />

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
+import { computeStreak } from '../lib/statsUtils';
 
 /**
  * Global timer engine — mount ONCE in App.tsx.
@@ -155,14 +156,8 @@ async function handleTimerComplete() {
       }
     }
 
-    // Update streak
-    const lastDate = new Date(profile.last_active_date);
-    const todayDate = new Date();
-    const diffDays = Math.floor(
-      (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    const newStreak =
-      diffDays <= 1 ? profile.streak + (diffDays === 1 ? 1 : 0) : 1;
+    // Update streak using calendar-day-based calculation
+    const newStreak = computeStreak(profile.last_active_date, profile.streak);
 
     state.updateProfile({
       last_active_date: format(new Date(), 'yyyy-MM-dd'),

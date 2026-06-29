@@ -8,11 +8,14 @@ import { useStore } from '../store/useStore';
 import { format, startOfMonth, isThisMonth, parseISO, isToday } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '../lib/formatCurrency';
+import { getLevelInfo } from '../lib/levels';
 import {
   getTodayFocusMinutes,
   getTodayFocusSessions,
   getCompletedTasksCount,
   getAllTimeFocusMinutes,
+  getEarnedBadgeIds,
+  ALL_BADGES,
 } from '../lib/statsUtils';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -27,7 +30,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function Dashboard() {
-  const { expenses, tasks, focusSessions, profile, user, setPage } = useStore();
+  const { expenses, tasks, focusSessions, savingsGoals, profile, user, setPage } = useStore();
   // ===== PRODUCTIVITY CALCULATIONS =====
 
   const completedTasks = getCompletedTasksCount(tasks);
@@ -36,6 +39,12 @@ export default function Dashboard() {
   const totalFocusMinutes = getAllTimeFocusMinutes(focusSessions);
 
   const focusMinutes = totalFocusMinutes;
+
+  // Badge count — single source of truth shared with Rewards page
+  const earnedBadges = useMemo(
+    () => getEarnedBadgeIds({ profile, focusSessions, tasks, savingsGoals }),
+    [profile, focusSessions, tasks, savingsGoals]
+  );
 
   const streak = profile?.streak || 0;
 
@@ -216,7 +225,8 @@ export default function Dashboard() {
     .filter((t) => !t.completed)
     .slice(0, 5);
 
-  const xpLevel = Math.floor(profile.xp / 100) + 1;
+  const levelInfo = getLevelInfo(profile.xp);
+  const xpLevel = levelInfo.level;
 
 
   return (
@@ -909,7 +919,7 @@ export default function Dashboard() {
             </div>
             <div>
               <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Level {xpLevel} • {getLevelTitle(xpLevel)}
+                Level {xpLevel} • {levelInfo.title}
               </h3>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {profile.xp % 100} / 100 XP to next level
@@ -937,7 +947,7 @@ export default function Dashboard() {
 
           <MiniStat label="Total XP" value={profile.xp} color="#a855f7" />
           <MiniStat label="Streak" value={`${profile.streak}d`} color="#f59e0b" />
-          <MiniStat label="Badges" value={profile.badges.length} color="#10b981" />
+          <MiniStat label="Badges" value={earnedBadges.size} color="#10b981" />
         </div>
       </div>
     </div >
@@ -1002,11 +1012,3 @@ function getCategoryEmoji(cat: string): string {
   return map[cat] || '📦';
 }
 
-function getLevelTitle(level: number): string {
-  if (level < 3) return 'Starter';
-  if (level < 6) return 'Focused';
-  if (level < 10) return 'Achiever';
-  if (level < 15) return 'Expert';
-  if (level < 20) return 'Master';
-  return 'Legend';
-}
