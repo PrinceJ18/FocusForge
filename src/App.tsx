@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { useStore, loadUserData } from './store/useStore';
 import { useTimerEngine } from './hooks/useTimerEngine';
+import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import MobileNav from './components/MobileNav';
@@ -32,6 +33,7 @@ export default function App() {
   // Global timer engine — runs the countdown interval at the App level
   // so it persists across all page navigations.
   useTimerEngine();
+  useDailyGoalWatcher();
 
   useEffect(() => {
     // Check initial session

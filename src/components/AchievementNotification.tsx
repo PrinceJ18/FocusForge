@@ -8,6 +8,7 @@ const NOTIF_CONFIG: Record<NotificationType, { icon: string; gradient: string; l
   badge: { icon: '🏆', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', label: 'Badge Unlocked' },
   challenge: { icon: '🎯', gradient: 'linear-gradient(135deg, #ec4899, #a855f7)', label: 'Challenge Complete' },
   achievement: { icon: '🌟', gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)', label: 'Achievement' },
+  goal: { icon: '✓', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', label: 'Goal Complete' },
 };
 
 const AUTO_DISMISS_MS = 4000;

@@ -95,7 +95,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => handleNav(item.id)}
+                onClick={() => handleNav(item.id as Page)}
                 className={`nav-item w-full text-left min-h-[48px] touch-manipulation ${currentPage === item.id ? 'active' : ''}`}
               >
                 <span className="nav-icon">{item.icon}</span>

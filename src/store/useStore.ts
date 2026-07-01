@@ -67,7 +67,7 @@ export interface Profile {
 
 export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'rewards' | 'splits';
 
-export type NotificationType = 'xp' | 'level' | 'badge' | 'challenge' | 'achievement';
+export type NotificationType = 'xp' | 'level' | 'badge' | 'challenge' | 'achievement' | 'goal';
 
 export interface AppNotification {
   id: string;
