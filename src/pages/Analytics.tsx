@@ -5,15 +5,9 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis,
 } from 'recharts';
-import { format, subDays, parseISO, isAfter, startOfWeek, addDays, subWeeks, isToday, isThisMonth, isThisWeek } from 'date-fns';
+import { format } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
-import {
-  getTodayFocusMinutes,
-  getMonthlyFocusMinutes,
-  getTodayFocusSessions,
-  getMonthlyFocusSessions,
-} from '../lib/statsUtils';
-
+import { calculateAnalyticsData } from '../lib/statistics';
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b', transport: '#06b6d4', shopping: '#ec4899',
@@ -30,125 +24,8 @@ export default function Analytics() {
   const days = period === 'today' ? 1 : period === '30d' ? 30 : 90;
 
   const data = useMemo(() => {
-    const since = subDays(new Date(), days);
-    const filteredExpenses = expenses.filter((e) => isAfter(parseISO(e.expense_date), since));
-    const filteredSessions = focusSessions.filter((s) => isAfter(parseISO(s.session_date), since));
-
-    // Daily combined data
-    const dailyMap: Record<string, { date: string; spending: number; focus: number }> = {};
-    for (let i = days - 1; i >= 0; i--) {
-      const d = format(subDays(new Date(), i), 'yyyy-MM-dd');
-      const label = format(subDays(new Date(), i), days <= 30 ? 'MMM d' : 'MMM d');
-      dailyMap[d] = { date: label, spending: 0, focus: 0 };
-    }
-
-    filteredExpenses.forEach((e) => {
-      if (dailyMap[e.expense_date]) {
-        dailyMap[e.expense_date].spending += e.amount;
-      }
-    });
-
-    filteredSessions.forEach((s) => {
-      if (dailyMap[s.session_date]) {
-        dailyMap[s.session_date].focus += s.minutes;
-      }
-    });
-
-    const combined = Object.values(dailyMap);
-
-    // Category breakdown
-    const catMap: Record<string, number> = {};
-    filteredExpenses.forEach((e) => {
-      catMap[e.category] = (catMap[e.category] || 0) + e.amount;
-    });
-    const categoryData = Object.entries(catMap)
-      .map(([name, value]) => ({ name, value, fill: CATEGORY_COLORS[name] || '#8b5cf6' }))
-      .sort((a, b) => b.value - a.value);
-
-    // Scatter: focus vs spending
-    const scatterData = Object.values(dailyMap).map((d) => ({
-      x: d.focus,
-      y: d.spending,
-      z: 10,
-    })).filter((d) => d.x > 0 || d.y > 0);
-
-    // Weekly focus data
-    const weeklyFocus = [];
-    for (let i = 3; i >= 0; i--) {
-      const weekStart = startOfWeek(subWeeks(new Date(), i));
-      const weekDays = Array.from({ length: 7 }, (_, j) => addDays(weekStart, j));
-      const total = weekDays.reduce((sum, day) => {
-        const d = format(day, 'yyyy-MM-dd');
-        return sum + (dailyMap[d]?.focus || 0);
-      }, 0);
-      weeklyFocus.push({
-        week: `W${format(weekStart, 'w')}`,
-        minutes: total,
-        hours: +(total / 60).toFixed(1),
-      });
-    }
-
-    // Insight generation
-    const totalSpent = filteredExpenses.reduce((s, e) => s + e.amount, 0);
-    const totalFocus = filteredSessions.reduce((s, f) => s + f.minutes, 0);
-    const avgDailySpend = totalSpent / days;
-    const avgDailyFocus = totalFocus / days;
-    const highFocusDays = combined.filter((d) => d.focus > 60);
-    const avgSpendOnHighFocusDays = highFocusDays.length > 0
-      ? highFocusDays.reduce((s, d) => s + d.spending, 0) / highFocusDays.length
-      : 0;
-
-    const insights = generateInsights({ totalSpent, totalFocus, avgDailySpend, avgDailyFocus, avgSpendOnHighFocusDays, days, profile });
-
-    // Heatmap data (last 12 weeks)
-    const heatmap = [];
-    for (let week = 11; week >= 0; week--) {
-      const weekData = [];
-      for (let day = 0; day < 7; day++) {
-        const d = format(subDays(new Date(), week * 7 + (6 - day)), 'yyyy-MM-dd');
-        const exp = filteredExpenses.filter((e) => e.expense_date === d).reduce((s, e) => s + e.amount, 0);
-        const foc = filteredSessions.find((s) => s.session_date === d)?.minutes || 0;
-        weekData.push({ date: d, spending: exp, focus: foc });
-      }
-      heatmap.push(weekData);
-    }
-
-    // Focus stats
-    const todayFocusMin = getTodayFocusMinutes(focusSessions);
-    const monthlyFocusMin = getMonthlyFocusMinutes(focusSessions);
-    const todaySessions = getTodayFocusSessions(focusSessions);
-    const monthlySessions = getMonthlyFocusSessions(focusSessions);
-    const weeklyFocusMin = filteredSessions
-      .filter((s) => {
-        try { return isThisWeek(parseISO(s.session_date)); } catch { return false; }
-      })
-      .reduce((sum, s) => sum + s.minutes, 0);
-
-    // Finance stats
-    const todaySpent = expenses
-      .filter((e) => {
-        try { return isToday(parseISO(e.expense_date)); } catch { return false; }
-      })
-      .reduce((sum, e) => sum + e.amount, 0);
-    const weeklySpent = expenses
-      .filter((e) => {
-        try { return isThisWeek(parseISO(e.expense_date)); } catch { return false; }
-      })
-      .reduce((sum, e) => sum + e.amount, 0);
-    const monthlySpent = expenses
-      .filter((e) => {
-        try { return isThisMonth(parseISO(e.expense_date)); } catch { return false; }
-      })
-      .reduce((sum, e) => sum + e.amount, 0);
-    const topCategory = categoryData.length > 0 ? categoryData[0].name : 'N/A';
-
-    return {
-      combined, categoryData, scatterData, weeklyFocus, insights,
-      totalSpent, totalFocus, heatmap,
-      todayFocusMin, monthlyFocusMin, todaySessions, monthlySessions, weeklyFocusMin,
-      todaySpent, weeklySpent, monthlySpent, topCategory,
-    };
-  }, [expenses, focusSessions, tasks, period, days, profile]);
+    return calculateAnalyticsData({ expenses, focusSessions, tasks, profile, period });
+  }, [expenses, focusSessions, tasks, profile, period]);
 
   return (
     <div className="page-enter space-y-6">
@@ -317,7 +194,7 @@ export default function Analytics() {
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12, color: 'white' }}
-                    formatter={(val: number) => [`${formatCurrency(val)}`, '']}
+                    formatter={(val: any) => [`${formatCurrency(val)}`, '']}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -346,7 +223,7 @@ export default function Analytics() {
               <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12, color: 'white' }}
-                formatter={(val: number) => [`${formatCurrency(val)}h`, 'Focus']}
+                formatter={(val: any) => [`${formatCurrency(val)}h`, 'Focus']}
               />
               <Bar dataKey="hours" name="Focus Hours" fill="url(#focusBarGrad)" radius={[6, 6, 0, 0]} />
               <defs>
@@ -448,49 +325,6 @@ function EmptyChart() {
       </div>
     </div>
   );
-}
-
-function generateInsights({ totalSpent, totalFocus, avgDailySpend, avgDailyFocus, avgSpendOnHighFocusDays, days, profile }: {
-  totalSpent: number; totalFocus: number; avgDailySpend: number; avgDailyFocus: number;
-  avgSpendOnHighFocusDays: number; days: number; profile: any;
-}): Array<{ icon: string; text: string; color: string }> {
-  const insights: Array<{ icon: string; text: string; color: string }> = [];
-
-  if (totalFocus === 0 && totalSpent === 0) {
-    return [{ icon: '💡', text: 'Start tracking your focus sessions and expenses to get personalized insights.', color: '#a855f7' }];
-  }
-
-  if (avgDailyFocus > 60) {
-    insights.push({ icon: '🔥', text: `You're averaging ${Math.round(avgDailyFocus)} min of focus per day. Excellent productivity!`, color: '#a855f7' });
-  } else if (avgDailyFocus > 0) {
-    insights.push({ icon: '💪', text: `You average ${Math.round(avgDailyFocus)} min focus/day. Try for 60+ minutes daily.`, color: '#f59e0b' });
-  }
-
-  if (avgDailySpend > 0) {
-    const monthly = avgDailySpend * 30;
-    insights.push({ icon: '💰', text: `At your current rate, you'll spend ~${formatCurrency(monthly)} this month.`, color: monthly > profile.monthly_budget ? '#ef4444' : '#10b981' });
-  }
-
-  if (avgSpendOnHighFocusDays < avgDailySpend && avgSpendOnHighFocusDays > 0) {
-    insights.push({ icon: '📊', text: `On high-focus days you spend ${formatCurrency(avgSpendOnHighFocusDays)} vs ${formatCurrency(avgDailySpend)} average — focus saves money!`, color: '#10b981' });
-  }
-
-  if (profile.streak >= 7) {
-    insights.push({ icon: '⚡', text: `${profile.streak}-day streak! Your consistency is building strong habits.`, color: '#f59e0b' });
-  }
-
-  if (totalFocus > 0 && totalSpent > 0) {
-    const ratio = totalFocus / totalSpent;
-    if (ratio > 1) {
-      insights.push({ icon: '🎯', text: `Great balance! You're earning ${ratio.toFixed(1)} focus minutes per dollar spent.`, color: '#06b6d4' });
-    }
-  }
-
-  if (insights.length === 0) {
-    insights.push({ icon: '📈', text: 'Keep logging your activities to unlock personalized insights.', color: '#a855f7' });
-  }
-
-  return insights.slice(0, 6);
 }
 
 function AnalyticsPill({ label, value, color, isText }: { label: string; value: string; color: string; isText?: boolean }) {

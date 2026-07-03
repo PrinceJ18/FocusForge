@@ -1,5 +1,4 @@
-import React from 'react';
-import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy } from 'lucide-react';
+import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Award, Settings } from 'lucide-react';
 import { useStore, type Page } from '../store/useStore';
 import { getLevelInfo } from "../lib/levels";
 const items: { id: Page; icon: React.ReactNode; label: string }[] = [
@@ -7,7 +6,8 @@ const items: { id: Page; icon: React.ReactNode; label: string }[] = [
   { id: 'finance', icon: <Wallet size={20} />, label: 'Finance' },
   { id: 'productivity', icon: <Timer size={20} />, label: 'Focus' },
   { id: 'analytics', icon: <BarChart3 size={20} />, label: 'Analytics' },
-  { id: 'rewards', icon: <Trophy size={20} />, label: 'Rewards' },
+  { id: 'achievements', icon: <Award size={20} />, label: 'Journey' },
+  { id: 'settings', icon: <Settings size={20} />, label: 'Settings' },
 ];
 
 export default function MobileNav() {

@@ -2,17 +2,21 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Trophy, Star, Zap, Flame, Target, Award, Lock, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { formatCurrency } from '../lib/formatCurrency';
-import { getLevelInfo } from "../lib/levels";
 import { supabase } from '../lib/supabase';
 import {
-  getTodayFocusMinutes,
-  getTodayFocusSessions,
-  getAllTimeFocusSessions,
-  getCompletedTasksCount,
-  getTodayExpensesCount,
-  getEarnedBadgeIds,
   ALL_BADGES,
+  getEarnedBadgeIds,
 } from '../lib/statsUtils';
+import {
+  calculateCurrentLevel,
+  calculateXPProgress,
+  calculateCompletedTasks,
+  calculateAchievements,
+  calculateTodaySessions,
+  calculateTodayFocus,
+  calculateTodayTasks,
+  isDateToday,
+} from '../lib/statistics';
 
 
 const LEVELS = [
@@ -42,9 +46,9 @@ export default function Rewards() {
     addXP,
     user,
   } = useStore();
-  const currentLevel = getLevelInfo(profile.xp);
+  const currentLevel = calculateCurrentLevel(profile.xp);
 
-  const levelProgress = currentLevel.progress;
+  const levelProgress = calculateXPProgress(profile.xp);
   const xpToNext = currentLevel.xpToNext;
   const today = new Date().toISOString().split('T')[0];
 
@@ -74,19 +78,7 @@ export default function Rewards() {
   }, [profile]);
 
 
-  const completedFocusSessions = getAllTimeFocusSessions(focusSessions);
-  const completedTasks = getCompletedTasksCount(tasks);
-  const todayExpensesCount = getTodayExpensesCount(expenses);
-
-  const todayFocusMinutes = getTodayFocusMinutes(focusSessions);
-  const todayFocusSessionCount = getTodayFocusSessions(focusSessions);
-
-  const challengeStatus = {
-    c1: todayFocusSessionCount >= 2,
-    c2: todayExpensesCount >= 3,
-    c3: completedTasks >= 5,
-    c4: todayFocusMinutes >= 60,
-  };
+  const completedTasks = calculateCompletedTasks(tasks);
 
   const earnedBadges = useMemo(
     () => getEarnedBadgeIds({ profile, focusSessions, tasks, savingsGoals }),
@@ -94,26 +86,10 @@ export default function Rewards() {
   );
 
 
-  const achievements = [
-    {
-      id: 1,
-      title: 'First Focus',
-      description: 'Complete your first focus session',
-      unlocked: true,
-    },
-    {
-      id: 2,
-      title: 'Deep Worker',
-      description: 'Complete 10 focus sessions',
-      unlocked: false,
-    },
-    {
-      id: 3,
-      title: 'Money Master',
-      description: 'Track expenses for 7 days',
-      unlocked: true,
-    },
-  ];
+  const achievements = useMemo(
+    () => calculateAchievements(focusSessions, tasks, savingsGoals, expenses, profile),
+    [focusSessions, tasks, savingsGoals, expenses, profile]
+  );
   const claimChallenge = async (
     challengeId: string,
     reward: number
@@ -566,46 +542,23 @@ function checkChallengeCompletion(
     expenses: any[];
   }
 ): boolean {
-  const today = new Date().toISOString().split('T')[0];
-
   if (id === 'c1') {
-    const todaySession = focusSessions.find(
-      (s) => s.session_date === today
-    );
-
-    return (
-      (todaySession?.sessions_count || 0) >= 2
-    );
+    return calculateTodaySessions(focusSessions) >= 2;
   }
 
   if (id === 'c2') {
     const todayExpenses = expenses.filter(
-      (e) =>
-        e.expense_date?.startsWith(today) ||
-        e.created_at?.startsWith(today)
+      (e) => isDateToday(e.expense_date) || (e.created_at && isDateToday(e.created_at))
     ).length;
-
     return todayExpenses >= 3;
   }
 
   if (id === 'c3') {
-    const todayCompleted = tasks.filter(
-      (t) =>
-        t.completed &&
-        t.completed_at?.startsWith(today)
-    ).length;
-
-    return todayCompleted >= 5;
+    return calculateTodayTasks(tasks) >= 5;
   }
 
   if (id === 'c4') {
-    const todaySession = focusSessions.find(
-      (s) => s.session_date === today
-    );
-
-    return (
-      (todaySession?.minutes || 0) >= 60
-    );
+    return calculateTodayFocus(focusSessions) >= 60;
   }
 
   return false;

@@ -18,6 +18,8 @@ const PAGE_SUBTITLES: Record<string, string> = {
   analytics: 'Insights & data visualization',
   rewards: 'Achievements & gamification',
   splits: 'Track and settle shared expenses with anyone',
+  achievements: 'Unlock badges, track milestones, and view your complete journey',
+  settings: 'Personalize colors, theme overrides, layout variables, and target goals',
 };
 
 export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
@@ -145,6 +147,20 @@ export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
                   >
                     <User size={14} />
                     Profile
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      useStore.getState().setPage('settings');
+                      setDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-10 text-sm text-left transition-all"
+                    style={{ color: 'var(--text-secondary)', borderRadius: 10 }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Settings size={14} />
+                    Settings
                   </button>
 
 

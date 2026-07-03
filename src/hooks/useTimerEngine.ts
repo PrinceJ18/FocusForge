@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { computeStreak } from '../lib/statsUtils';
+import { logEvent } from '../lib/events';
 
 /**
  * Global timer engine — mount ONCE in App.tsx.
@@ -83,6 +84,10 @@ async function handleTimerComplete() {
 
     const oldXP = state.profile.xp;
     await state.addXP(xpEarned);
+    await logEvent('focus_session_completed', 'focus', undefined, {
+      minutes: mins,
+      description: `Completed focus session of ${mins} minutes`,
+    });
     const newXP = useStore.getState().profile.xp;
 
     // Trigger notifications

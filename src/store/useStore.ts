@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import type { AppEvent } from '../lib/events';
 export type Priority = 'low' | 'medium' | 'high';
 export type TimerMode = 'focus' | 'break' | 'longbreak';
 
@@ -13,6 +14,205 @@ export interface Expense {
   note: string;
   expense_date: string;
   created_at: string;
+}
+
+export interface RecurringExpense {
+  id: string;
+  user_id: string;
+  name: string;
+  amount: number;
+  category: string;
+  description: string;
+  start_date: string;
+  end_date: string | null;
+  frequency: string;
+  custom_interval: number;
+  payment_date: string;
+  reminder: string;
+  reminder_custom_days: number;
+  notification: boolean;
+  icon: string;
+  color: string;
+  auto_confirm: boolean;
+  auto_add: boolean;
+  last_payment_date: string | null;
+  status: string;
+  created_at: string;
+}
+
+export interface UserPreferences {
+  theme: 'dark' | 'light' | 'amoled' | 'system';
+  accent_color: 'purple' | 'blue' | 'green' | 'orange' | 'red' | 'pink';
+  card_style: 'rounded' | 'modern' | 'compact';
+  animation: 'full' | 'reduced' | 'off';
+  font_size: 'small' | 'medium' | 'large';
+  ui_density: 'comfortable' | 'compact';
+  
+  // Focus
+  default_pomodoro: number;
+  default_short_break: number;
+  default_long_break: number;
+  auto_start_next_session: boolean;
+  auto_start_break: boolean;
+  auto_start_focus: boolean;
+  play_completion_sound: boolean;
+  enable_timer_notifications: boolean;
+  show_full_screen_mode: boolean;
+  focus_ring_style: 'gradient' | 'solid' | 'neon';
+  default_timer_mode: 'pomodoro' | 'stopwatch';
+  
+  // Goals
+  default_daily_focus_goal: number;
+  default_task_goal: number;
+  default_xp_goal: number;
+  default_budget_goal: number;
+  enable_goal_focus: boolean;
+  enable_goal_tasks: boolean;
+  enable_goal_xp: boolean;
+  enable_goal_budget: boolean;
+  goal_difficulty: 'easy' | 'medium' | 'hard' | 'adaptive';
+  goal_order: string;
+  
+  // Notifications
+  notify_xp: boolean;
+  notify_level_up: boolean;
+  notify_achievements: boolean;
+  notify_badges: boolean;
+  notify_goals: boolean;
+  notify_focus_timer: boolean;
+  notify_weekly_report: boolean;
+  notify_monthly_report: boolean;
+  notify_recurring_expenses: boolean;
+  notify_budget_alerts: boolean;
+  reminder_time: string;
+  notification_sound: string;
+  
+  // Finance
+  currency: string;
+  default_monthly_budget: number;
+  budget_alert_low_warning: boolean;
+  budget_alert_overspending: boolean;
+  recurring_expense_reminder: boolean;
+  week_start_day: 'sunday' | 'monday';
+  
+  // Analytics
+  default_dashboard_view: 'weekly' | 'monthly' | 'yearly';
+  default_analytics_chart: 'bar' | 'line' | 'area';
+  preferred_date_format: string;
+  preferred_time_format: '12h' | '24h';
+  
+  // Accessibility
+  high_contrast: boolean;
+  keyboard_navigation: boolean;
+  screen_reader_support: boolean;
+
+  // Dashboard customization
+  dashboard_widgets: string;
+  dashboard_hidden_widgets: string;
+  dashboard_compact: boolean;
+  dashboard_pinned_widgets: string;
+}
+
+export const defaultPreferences: UserPreferences = {
+  theme: 'dark',
+  accent_color: 'purple',
+  card_style: 'modern',
+  animation: 'full',
+  font_size: 'medium',
+  ui_density: 'comfortable',
+  default_pomodoro: 25,
+  default_short_break: 5,
+  default_long_break: 15,
+  auto_start_next_session: false,
+  auto_start_break: false,
+  auto_start_focus: false,
+  play_completion_sound: true,
+  enable_timer_notifications: true,
+  show_full_screen_mode: false,
+  focus_ring_style: 'gradient',
+  default_timer_mode: 'pomodoro',
+  default_daily_focus_goal: 120,
+  default_task_goal: 5,
+  default_xp_goal: 100,
+  default_budget_goal: 5000,
+  enable_goal_focus: true,
+  enable_goal_tasks: true,
+  enable_goal_xp: true,
+  enable_goal_budget: true,
+  goal_difficulty: 'medium',
+  goal_order: 'focus,tasks,xp,budget',
+  notify_xp: true,
+  notify_level_up: true,
+  notify_achievements: true,
+  notify_badges: true,
+  notify_goals: true,
+  notify_focus_timer: true,
+  notify_weekly_report: true,
+  notify_monthly_report: true,
+  notify_recurring_expenses: true,
+  notify_budget_alerts: true,
+  reminder_time: '09:00',
+  notification_sound: 'default',
+  currency: '₹',
+  default_monthly_budget: 5000,
+  budget_alert_low_warning: true,
+  budget_alert_overspending: true,
+  recurring_expense_reminder: true,
+  week_start_day: 'monday',
+  default_dashboard_view: 'weekly',
+  default_analytics_chart: 'bar',
+  preferred_date_format: 'yyyy-MM-dd',
+  preferred_time_format: '12h',
+  high_contrast: false,
+  keyboard_navigation: false,
+  screen_reader_support: false,
+  
+  dashboard_widgets: 'hero,goals,timer,snapshot,upcoming,insights,actions,recent,achievements,weekly,monthly,score,recommendations',
+  dashboard_hidden_widgets: '',
+  dashboard_compact: false,
+  dashboard_pinned_widgets: '',
+};
+
+export function applyPreferencesToDOM(pref: UserPreferences) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+
+  // Remove previous classes
+  const classesToRemove = Array.from(root.classList).filter(
+    c =>
+      c.startsWith('theme-') ||
+      c.startsWith('accent-') ||
+      c.startsWith('card-') ||
+      c.startsWith('font-') ||
+      c.startsWith('density-') ||
+      c === 'high-contrast-mode' ||
+      c === 'reduced-motion' ||
+      c === 'motion-off'
+  );
+  classesToRemove.forEach(c => root.classList.remove(c));
+
+  // Add new classes
+  if (pref.theme === 'system') {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.classList.add(isDark ? 'theme-dark' : 'theme-light');
+  } else {
+    root.classList.add(`theme-${pref.theme}`);
+  }
+
+  root.classList.add(`accent-${pref.accent_color}`);
+  root.classList.add(`card-${pref.card_style}`);
+  root.classList.add(`font-${pref.font_size}`);
+  root.classList.add(`density-${pref.ui_density}`);
+
+  if (pref.high_contrast) {
+    root.classList.add('high-contrast-mode');
+  }
+
+  if (pref.animation === 'reduced') {
+    root.classList.add('reduced-motion');
+  } else if (pref.animation === 'off') {
+    root.classList.add('motion-off');
+  }
 }
 
 export interface Task {
@@ -65,7 +265,7 @@ export interface Profile {
   };
 }
 
-export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'rewards' | 'splits';
+export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'rewards' | 'splits' | 'reports' | 'achievements' | 'settings';
 
 export type NotificationType = 'xp' | 'level' | 'badge' | 'challenge' | 'achievement' | 'goal';
 
@@ -143,6 +343,22 @@ interface AppState {
   notifications: AppNotification[];
   showNotification: (notification: Omit<AppNotification, 'id'>) => void;
   dismissNotification: (id: string) => void;
+
+  // Events
+  events: AppEvent[];
+  setEvents: (events: AppEvent[]) => void;
+  addEventLocal: (event: AppEvent) => void;
+
+  // Recurring Expenses
+  recurringExpenses: RecurringExpense[];
+  setRecurringExpenses: (expenses: RecurringExpense[]) => void;
+  addRecurringExpenseLocal: (expense: RecurringExpense) => void;
+  updateRecurringExpenseLocal: (id: string, updates: Partial<RecurringExpense>) => void;
+  removeRecurringExpenseLocal: (id: string) => void;
+
+  // Preferences
+  preferences: UserPreferences;
+  updatePreferencesLocal: (updates: Partial<UserPreferences>) => void;
 }
 
 const defaultProfile: Profile = {
@@ -224,7 +440,9 @@ export const useStore = create<AppState>()(
       addXP: async (amount) => {
         const { profile, user } = get();
 
+        const oldLevel = Math.floor(profile.xp / 100) + 1;
         const newXP = profile.xp + amount;
+        const newLevel = Math.floor(newXP / 100) + 1;
 
         set({
           profile: {
@@ -232,6 +450,24 @@ export const useStore = create<AppState>()(
             xp: newXP,
           },
         });
+
+        // Log XP event
+        import('../lib/events').then((m) => {
+          m.logEvent('xp_earned', 'xp', undefined, { xpEarned: amount });
+        });
+
+        if (newLevel > oldLevel) {
+          // Log level up event
+          import('../lib/events').then((m) => {
+            m.logEvent('level_up', 'levels', undefined, { level: newLevel });
+          });
+
+          get().showNotification({
+            type: 'level',
+            title: `Level Up!`,
+            message: `Congratulations! You reached Level ${newLevel}!`,
+          });
+        }
 
         if (user) {
           await supabase
@@ -261,6 +497,33 @@ export const useStore = create<AppState>()(
       },
       dismissNotification: (id) =>
         set((s) => ({ notifications: s.notifications.filter((n) => n.id !== id) })),
+
+      events: [],
+      setEvents: (events) => set({ events }),
+      addEventLocal: (event) => set((s) => ({ events: [event, ...s.events] })),
+
+      recurringExpenses: [],
+      setRecurringExpenses: (recurringExpenses) => set({ recurringExpenses }),
+      addRecurringExpenseLocal: (expense) => set((s) => ({ recurringExpenses: [expense, ...s.recurringExpenses] })),
+      updateRecurringExpenseLocal: (id, updates) => set((s) => ({
+        recurringExpenses: s.recurringExpenses.map((re) => re.id === id ? { ...re, ...updates } : re)
+      })),
+      removeRecurringExpenseLocal: (id) => set((s) => ({
+        recurringExpenses: s.recurringExpenses.filter((re) => re.id !== id)
+      })),
+
+      preferences: defaultPreferences,
+      updatePreferencesLocal: (updates) => set((s) => {
+        const next = { ...s.preferences, ...updates };
+        applyPreferencesToDOM(next);
+        
+        const timerUpdates: Partial<AppState> = {};
+        if (updates.default_pomodoro !== undefined) timerUpdates.pomodoroMinutes = updates.default_pomodoro;
+        if (updates.default_short_break !== undefined) timerUpdates.breakMinutes = updates.default_short_break;
+        if (updates.default_long_break !== undefined) timerUpdates.longBreakMinutes = updates.default_long_break;
+
+        return { preferences: next, ...timerUpdates };
+      }),
     }),
     {
       name: 'spendwise-storage',
@@ -274,6 +537,9 @@ export const useStore = create<AppState>()(
         timerMode: state.timerMode,
         sessionCount: state.sessionCount,
         splits: state.splits,
+        events: state.events,
+        recurringExpenses: state.recurringExpenses,
+        preferences: state.preferences,
       }),
     }
   )
@@ -283,13 +549,16 @@ export const useStore = create<AppState>()(
 export const loadUserData = async (userId: string) => {
   const store = useStore.getState();
 
-  const [expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes] = await Promise.all([
+  const [expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('focus_sessions').select('*').eq('user_id', userId).order('session_date', { ascending: false }),
     supabase.from('savings_goals').select('*').eq('user_id', userId),
     supabase.from('custom_categories').select('*').eq('user_id', userId),
     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    supabase.from('events').select('*').eq('user_id', userId).order('timestamp', { ascending: false }),
+    supabase.from('recurring_expenses').select('*').eq('user_id', userId).order('payment_date', { ascending: true }),
+    supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);
@@ -297,6 +566,21 @@ export const loadUserData = async (userId: string) => {
   if (sessionsRes.data) store.setFocusSessions(sessionsRes.data);
   if (goalsRes.data) store.setSavingsGoals(goalsRes.data);
   if (catsRes.data) store.setCustomCategories(catsRes.data);
+  if (eventsRes && eventsRes.data) {
+    store.setEvents(eventsRes.data);
+  } else if (eventsRes && eventsRes.error) {
+    console.warn('Events table load failed, using local storage cache:', eventsRes.error.message);
+  }
+  if (recurringRes && recurringRes.data) {
+    store.setRecurringExpenses(recurringRes.data);
+  } else if (recurringRes && recurringRes.error) {
+    console.warn('Recurring expenses load failed, using local storage cache:', recurringRes.error.message);
+  }
+  if (prefsRes && prefsRes.data) {
+    store.updatePreferencesLocal(prefsRes.data);
+  } else if (prefsRes && prefsRes.error) {
+    console.warn('User preferences load failed, using local storage cache:', prefsRes.error.message);
+  }
   if (profileRes.data) {
     store.updateProfile({
       xp: profileRes.data.xp,

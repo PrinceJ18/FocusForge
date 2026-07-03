@@ -1,1016 +1,762 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  Wallet, Brain,
-  AlertTriangle,
-  Sparkles, Timer, TrendingUp, Target, CheckSquare, Zap, ArrowUpRight, ArrowDownRight, Clock, Star
+  Wallet, Brain, AlertTriangle, Sparkles, Timer, TrendingUp, Target,
+  CheckSquare, Zap, ArrowUpRight, ArrowDownRight, Clock, Star,
+  Award, Play, Pause, RotateCcw, Plus, Calendar, Bell, ChevronUp, ChevronDown, Eye, EyeOff, Pin, X
 } from 'lucide-react';
-import { useStore } from '../store/useStore';
-import { format, startOfMonth, isThisMonth, parseISO, isToday } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useStore, type Page } from '../store/useStore';
+import { format, parseISO, isToday, differenceInDays } from 'date-fns';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { formatCurrency } from '../lib/formatCurrency';
 import { getLevelInfo } from '../lib/levels';
-import {
-  getTodayFocusMinutes,
-  getTodayFocusSessions,
-  getCompletedTasksCount,
-  getAllTimeFocusMinutes,
-  getEarnedBadgeIds,
-  ALL_BADGES,
-} from '../lib/statsUtils';
-import TodaysGoalsCard from '../components/TodaysGoalsCard';
+import { calculateDashboardStatistics, calculateMonthlyReportData } from '../lib/statistics';
+import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
+import { payRecurringExpense } from '../lib/recurringUtils';
+import { supabase } from '../lib/supabase';
 
-const CATEGORY_COLORS: Record<string, string> = {
-  food: '#f59e0b',
-  transport: '#06b6d4',
-  shopping: '#ec4899',
-  entertainment: '#a855f7',
-  health: '#10b981',
-  education: '#3b82f6',
-  utilities: '#6b7280',
-  other: '#8b5cf6',
+const WIDGET_LABELS: Record<string, string> = {
+  hero: 'Welcome Banner',
+  goals: "Today's Goals Status",
+  timer: 'Quick Focus Timer',
+  snapshot: "Today's Snapshot",
+  upcoming: 'Upcoming Schedule & Deadlines',
+  insights: 'Smart AI Insights',
+  actions: 'Quick Action Shortcuts',
+  recent: 'Recent Event Timeline',
+  achievements: 'Achievements & Journey Preview',
+  weekly: 'Weekly Progress Overview',
+  monthly: 'Monthly Performance metrics',
+  score: 'Productivity Score breakdown',
+  recommendations: 'Recommended Actions',
 };
 
 export default function Dashboard() {
-  const { expenses, tasks, focusSessions, savingsGoals, profile, user, setPage } = useStore();
-  // ===== PRODUCTIVITY CALCULATIONS =====
+  const {
+    expenses, tasks, focusSessions, savingsGoals, profile, user, setPage,
+    timerSeconds, timerRunning, timerMode, setTimerSeconds, setTimerRunning, setTimerMode,
+    preferences, updatePreferencesLocal, events, recurringExpenses, addExpenseLocal, addTaskLocal
+  } = useStore();
 
-  const completedTasks = getCompletedTasksCount(tasks);
-  const totalTasks = tasks?.length || 0;
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [showQuickAddExpense, setShowQuickAddExpense] = useState(false);
+  const [showQuickAddTask, setShowQuickAddTask] = useState(false);
 
-  const totalFocusMinutes = getAllTimeFocusMinutes(focusSessions);
+  // Quick inputs
+  const [quickExpenseName, setQuickExpenseName] = useState('');
+  const [quickExpenseAmount, setQuickExpenseAmount] = useState('');
+  const [quickTaskTitle, setQuickTaskTitle] = useState('');
 
-  const focusMinutes = totalFocusMinutes;
-
-  // Badge count — single source of truth shared with Rewards page
-  const earnedBadges = useMemo(
-    () => getEarnedBadgeIds({ profile, focusSessions, tasks, savingsGoals }),
-    [profile, focusSessions, tasks, savingsGoals]
-  );
-
-  const streak = profile?.streak || 0;
-
-
-  const displayName =
-    profile.display_name ||
-    user?.email?.split('@')[0] ||
-    'User';
-
+  // ----------------------------------------------------
+  // STATISTICS & METRICS
+  // ----------------------------------------------------
   const stats = useMemo(() => {
-    const monthExpenses = expenses.filter((e) => isThisMonth(parseISO(e.expense_date)));
-    const totalSpent = monthExpenses.reduce((s, e) => s + e.amount, 0);
-    const available = profile.monthly_budget - totalSpent;
-    const budgetPct = Math.min((totalSpent / profile.monthly_budget) * 100, 100);
+    return calculateDashboardStatistics({ expenses, tasks, focusSessions, savingsGoals, profile });
+  }, [expenses, tasks, focusSessions, savingsGoals, profile]);
 
-    const todayMinutes = getTodayFocusMinutes(focusSessions);
-    const todaySessionCount = getTodayFocusSessions(focusSessions);
+  const dailyGoals = useDailyGoalsStore();
 
-    const pendingTasks = tasks.filter((t) => !t.completed).length;
-    const completedToday = tasks.filter(
-      (t) => t.completed && t.completed_at && isToday(parseISO(t.completed_at))
-    ).length;
+  // Time based greeting
+  const greeting = useMemo(() => {
+    const hours = new Date().getHours();
+    if (hours < 12) return 'Good Morning';
+    if (hours < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }, []);
 
-    // Category breakdown for donut
-    const catMap: Record<string, number> = {};
-    monthExpenses.forEach((e) => {
-      catMap[e.category] = (catMap[e.category] || 0) + e.amount;
-    });
-    const categoryData = Object.entries(catMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    return { totalSpent, available, budgetPct, todayMinutes, todaySessionCount, pendingTasks, completedToday, categoryData, monthExpenses };
-  }, [expenses, tasks, focusSessions, profile]);
-
-  // ===== PRODUCTIVITY SCORE =====
-
-  const productivityScore = Math.min(
-    100,
-    Math.round(
-      (completedTasks * 12) +
-      (focusMinutes * 0.35) +
-      (streak * 5) +
-      (stats.totalSpent < profile.monthly_budget ? 15 : 0)
-    )
-  );
-
-  // ===== PRODUCTIVITY LABEL =====
-
-  let productivityLabel = 'Needs Improvement';
-
-  if (productivityScore >= 75) {
-    productivityLabel = 'Excellent';
-  } else if (productivityScore >= 50) {
-    productivityLabel = 'Good Progress';
-  } else if (productivityScore >= 30) {
-    productivityLabel = 'Average';
-  }
-
-  const productivityStatus =
-    productivityScore >= 80
-      ? 'Excellent'
-      : productivityScore >= 60
-        ? 'Good'
-        : productivityScore >= 40
-          ? 'Average'
-          : productivityLabel;
-
-  const budgetPercentage = Math.round(
-    (stats.totalSpent / profile.monthly_budget) * 100
-  );
-
-  // ===== BUDGET CALCULATIONS =====
-
-  const totalSpent = stats.totalSpent;
-
-  const monthlyBudget = profile.monthly_budget || 5000;
-
-  const remainingBudget = monthlyBudget - totalSpent;
-
-  const budgetUsedPercent = Math.min(
-    100,
-    Math.floor((totalSpent / monthlyBudget) * 100)
-  );
-
-  // ===== BUDGET STATUS =====
-
-  let budgetStatus = 'Healthy';
-
-  if (budgetUsedPercent >= 90) {
-    budgetStatus = 'Critical';
-  } else if (budgetUsedPercent >= 70) {
-    budgetStatus = 'Warning';
-  }
-
-  const budgetHealth =
-    budgetUsedPercent < 50
-      ? 'Healthy'
-      : budgetUsedPercent < 80
-        ? 'Moderate'
-        : budgetStatus;
-
-  const budgetColor =
-    budgetUsedPercent < 50
-      ? '#10b981'
-      : budgetUsedPercent < 80
-        ? '#f59e0b'
-        : '#ef4444';
-
-
-  const insights = [
-    {
-      title:
-        stats.totalSpent > profile.monthly_budget * 0.8
-          ? 'Budget Alert'
-          : 'Budget Healthy',
-
-      description:
-        stats.totalSpent > profile.monthly_budget * 0.8
-          ? 'You are close to exceeding your monthly budget.'
-          : 'Your spending is under control this month.',
-
-      icon:
-        stats.totalSpent > profile.monthly_budget * 0.8
-          ? AlertTriangle
-          : TrendingUp,
-
-      color:
-        stats.totalSpent > profile.monthly_budget * 0.8
-          ? '#f59e0b'
-          : '#10b981',
-    },
-
-    {
-      title: 'Focus Progress',
-
-      description:
-        stats.todayMinutes > 120
-          ? 'Amazing focus consistency today!'
-          : 'Try completing more focus sessions.',
-
-      icon: Target,
-
-      color: '#a855f7',
-    },
-
-    {
-      title: 'Task Productivity',
-
-      description:
-        stats.pendingTasks === 0
-          ? 'All tasks completed successfully.'
-          : `${stats.pendingTasks} tasks still pending.`,
-
-      icon: Brain,
-
-      color: '#06b6d4',
-    },
-
-    {
-      title: 'Motivation',
-
-      description:
-        profile.streak > 3
-          ? `You're on a ${profile.streak} day streak 🔥`
-          : 'Complete sessions daily to build streaks.',
-
-      icon: Sparkles,
-
-      color: '#ec4899',
-    },
-  ];
-
-  const recentExpenses = expenses.slice(0, 5);
-
-  const pendingTasksList = tasks
-    .filter((t) => !t.completed)
-    .slice(0, 5);
-
+  const displayName = profile.display_name || user?.email?.split('@')[0] || 'User';
   const levelInfo = getLevelInfo(profile.xp);
-  const xpLevel = levelInfo.level;
 
+  // Estimated Time Left for daily goals
+  const estimatedTimeLeft = useMemo(() => {
+    const targetFocus = preferences.default_daily_focus_goal || 120;
+    const spentFocus = stats.todayMinutes || 0;
+    return Math.max(0, targetFocus - spentFocus);
+  }, [preferences, stats.todayMinutes]);
+
+  // Insights algorithm
+  const smartInsights = useMemo(() => {
+    const list: Array<{ title: string; desc: string; color: string; icon: any }> = [];
+    
+    // Level Up Insight
+    const xpNeeded = levelInfo.xpToNext;
+    if (xpNeeded <= 50) {
+      list.push({
+        title: 'Level Up Close!',
+        desc: `You are only ${xpNeeded} XP away from Level ${levelInfo.level + 1}.`,
+        color: '#a855f7',
+        icon: Sparkles
+      });
+    }
+
+    // Budget Health
+    if (stats.totalSpent > profile.monthly_budget * 0.8) {
+      list.push({
+        title: 'Budget Alert',
+        desc: 'You have used over 80% of your monthly budget.',
+        color: '#ef4444',
+        icon: AlertTriangle
+      });
+    } else {
+      list.push({
+        title: 'Budget Healthy',
+        desc: 'Your spending is well within limits this month.',
+        color: '#10b981',
+        icon: TrendingUp
+      });
+    }
+
+    // Focus Patterns
+    if (stats.todayMinutes > 0) {
+      list.push({
+        title: 'Focus consistency',
+        desc: `You logged ${stats.todayMinutes} focus minutes today. Excellent work!`,
+        color: '#06b6d4',
+        icon: Target
+      });
+    } else {
+      list.push({
+        title: 'Start Focus',
+        desc: 'Set a 25-minute Pomodoro timer to jump-start your productivity.',
+        color: '#6b7280',
+        icon: Timer
+      });
+    }
+
+    return list;
+  }, [profile.xp, levelInfo, stats, profile.monthly_budget]);
+
+  // Recommendations Engine
+  const recommendations = useMemo(() => {
+    const list: string[] = [];
+    const pending = tasks.filter(t => !t.completed).length;
+
+    if (pending > 0) {
+      list.push(`Finish ${Math.min(2, pending)} pending tasks to clear your workspace.`);
+    }
+    if (stats.todayMinutes < (preferences.default_daily_focus_goal || 120)) {
+      list.push('Complete one more Pomodoro session to hit your focus goals.');
+    }
+    const todayExpenses = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
+    if (todayExpenses > 500) {
+      list.push('Spend less than ₹200 tomorrow to balance your daily budget.');
+    }
+    if (profile.xp % 100 > 80) {
+      list.push('Earn 20 more XP by completing tasks to level up today!');
+    }
+
+    if (list.length === 0) {
+      list.push('Maintain your daily active streak by logging focus sessions.');
+      list.push('Review your weekly analytics reports to analyze trends.');
+    }
+
+    return list;
+  }, [tasks, stats.todayMinutes, expenses, profile.xp, preferences]);
+
+  // Productivity Score Explanation
+  const productivityScoreExplanation = useMemo(() => {
+    let score = Math.round(stats.productivityScore || 70);
+    let desc = 'Calculated from focus minutes completed, task ratio, and budget adherence.';
+    let action = 'To improve, complete pending tasks and maintain a daily streak.';
+    if (score >= 80) {
+      action = 'Perfect alignment! Keep doing what you are doing.';
+    } else if (score < 50) {
+      action = 'Try starting a short break between focus sessions and clear overdue tasks.';
+    }
+    return { score, desc, action };
+  }, [stats.productivityScore]);
+
+  // Achievements Preview
+  const achievementsPreview = useMemo(() => {
+    const unlocked = events.filter(e => e.type === 'achievement_unlocked');
+    const latestAch = unlocked[0]?.metadata.achievementTitle || 'No achievements unlocked yet';
+    const totalBadges = profile.badges?.length || 0;
+    return { latestAch, totalBadges };
+  }, [events, profile.badges]);
+
+  // Upcoming deadlines/schedules
+  const upcomingDeadlines = useMemo(() => {
+    return tasks
+      .filter(t => !t.completed && t.deadline)
+      .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
+      .slice(0, 3);
+  }, [tasks]);
+
+  const upcomingBills = useMemo(() => {
+    return recurringExpenses
+      .filter(r => r.status === 'active')
+      .slice(0, 3);
+  }, [recurringExpenses]);
+
+  // Recent timeline events
+  const recentEvents = useMemo(() => {
+    return events.slice(0, 5);
+  }, [events]);
+
+  // Quick Timer controllers
+  const handleStartTimer = (mins: number) => {
+    setTimerMode('focus');
+    setTimerSeconds(mins * 60);
+    setTimerRunning(true);
+    setPage('productivity');
+  };
+
+  const handleToggleTimer = () => {
+    setTimerRunning(!timerRunning);
+  };
+
+  // ----------------------------------------------------
+  // LAYOUT CUSTOMIZATION LOGIC
+  // ----------------------------------------------------
+  const widgetOrder = useMemo(() => {
+    const list = (preferences.dashboard_widgets || 'hero,goals,timer,snapshot,upcoming,insights,actions,recent,achievements,weekly,monthly,score,recommendations')
+      .split(',')
+      .filter(Boolean);
+    
+    // Filter out hidden widgets
+    const hidden = (preferences.dashboard_hidden_widgets || '').split(',').filter(Boolean);
+    const visible = list.filter(w => !hidden.includes(w));
+
+    // Handle pinned widgets
+    const pinned = (preferences.dashboard_pinned_widgets || '').split(',').filter(Boolean);
+    const unpinned = visible.filter(w => !pinned.includes(w));
+
+    return [...pinned, ...unpinned];
+  }, [preferences.dashboard_widgets, preferences.dashboard_hidden_widgets, preferences.dashboard_pinned_widgets]);
+
+  const handleToggleWidget = (id: string) => {
+    const hidden = (preferences.dashboard_hidden_widgets || '').split(',').filter(Boolean);
+    let nextHidden: string[];
+    if (hidden.includes(id)) {
+      nextHidden = hidden.filter(w => w !== id);
+    } else {
+      nextHidden = [...hidden, id];
+    }
+    updatePreferencesLocal({ dashboard_hidden_widgets: nextHidden.join(',') });
+  };
+
+  const handleTogglePin = (id: string) => {
+    const pinned = (preferences.dashboard_pinned_widgets || '').split(',').filter(Boolean);
+    let nextPinned: string[];
+    if (pinned.includes(id)) {
+      nextPinned = pinned.filter(w => w !== id);
+    } else {
+      nextPinned = [...pinned, id];
+    }
+    updatePreferencesLocal({ dashboard_pinned_widgets: nextPinned.join(',') });
+  };
+
+  const handleMoveWidget = (id: string, direction: 'up' | 'down') => {
+    const list = (preferences.dashboard_widgets || 'hero,goals,timer,snapshot,upcoming,insights,actions,recent,achievements,weekly,monthly,score,recommendations')
+      .split(',')
+      .filter(Boolean);
+    const idx = list.indexOf(id);
+    if (idx === -1) return;
+
+    if (direction === 'up' && idx > 0) {
+      const temp = list[idx - 1];
+      list[idx - 1] = list[idx];
+      list[idx] = temp;
+    } else if (direction === 'down' && idx < list.length - 1) {
+      const temp = list[idx + 1];
+      list[idx + 1] = list[idx];
+      list[idx] = temp;
+    }
+
+    updatePreferencesLocal({ dashboard_widgets: list.join(',') });
+  };
+
+  // ----------------------------------------------------
+  // QUICK ACTIONS CALLS
+  // ----------------------------------------------------
+  const handleQuickAddExpense = async () => {
+    const amt = parseFloat(quickExpenseAmount);
+    if (quickExpenseName && !isNaN(amt)) {
+      const newExp = {
+        id: crypto.randomUUID(),
+        user_id: user?.id || 'local',
+        title: quickExpenseName,
+        amount: amt,
+        category: 'other',
+        note: 'Quick logged expense from Command Center',
+        expense_date: format(new Date(), 'yyyy-MM-dd'),
+        created_at: new Date().toISOString(),
+      };
+      addExpenseLocal(newExp);
+      if (user) {
+        await supabase.from('expenses').insert({
+          user_id: user.id,
+          title: newExp.title,
+          amount: newExp.amount,
+          category: newExp.category,
+          note: newExp.note,
+          expense_date: newExp.expense_date,
+        });
+      }
+      setQuickExpenseName('');
+      setQuickExpenseAmount('');
+      setShowQuickAddExpense(false);
+    }
+  };
+
+  const handleQuickAddTask = async () => {
+    if (quickTaskTitle) {
+      const newT = {
+        id: crypto.randomUUID(),
+        user_id: user?.id || 'local',
+        title: quickTaskTitle,
+        priority: 'medium' as const,
+        deadline: null,
+        completed: false,
+        subject: 'Other',
+        created_at: new Date().toISOString(),
+        completed_at: null,
+      };
+      addTaskLocal(newT);
+      if (user) {
+        await supabase.from('tasks').insert({
+          id: newT.id,
+          user_id: user.id,
+          title: newT.title,
+          priority: newT.priority,
+          completed: newT.completed,
+          subject: newT.subject,
+        });
+      }
+      setQuickTaskTitle('');
+      setShowQuickAddTask(false);
+    }
+  };
 
   return (
-    <div className="page-enter space-y-6 px-2 lg:px-0">
-
-
-      {/* Welcome banner */}
-      <div
-        className="glass-card p-4 sm:p-6 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(236,72,153,0.08))' }}
-      >
-        <div
-          className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #a855f7, transparent)', transform: 'translate(30%, -30%)' }}
-        />
-        <div className="relative z-10">
-          <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-            {format(new Date(), 'EEEE, MMMM d')}
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)' }}>
-            {user ? `Welcome back, ${profile.display_name || user.email?.split('@')[0]}!` : 'Welcome to FocusForge'}
-          </h2>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {stats.todayMinutes > 0
-              ? `You've focused for ${stats.todayMinutes} minutes today. Keep it up!`
-              : 'Start a focus session to boost your productivity today.'}
-          </p>
-          {!user && (
-            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              Sign in to sync your data across all devices.
-            </p>
-          )}
-        </div>
-      </div>
-
-      <TodaysGoalsCard />
-
-      {/* Quick stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-
-        {/* XP Card */}
-        <div
-          className="glass-card p-5 relative overflow-hidden transition-all duration-300 hover:scale-[1.02]"
-          style={{
-            background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.08))',
-          }}
-        >
-          <div
-            className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20"
-            style={{
-              background: 'radial-gradient(circle, #a855f7, transparent)',
-              transform: 'translate(30%, -30%)',
-            }}
-          />
-
-          <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-            Total XP
-          </p>
-
-          <h2
-            className="text-3xl font-black"
-            style={{
-              color: 'white',
-              fontFamily: 'Space Grotesk',
-            }}
-          >
-            {profile.xp}
-          </h2>
-
-          <p className="text-xs mt-2" style={{ color: '#a855f7' }}>
-            Level Progress 🚀
-          </p>
-        </div>
-
-        {/* Focus Time */}
-        <div
-          className="glass-card p-5 transition-all duration-300 hover:scale-[1.02]"
-          style={{
-            background: 'rgba(16,185,129,0.08)',
-          }}
-        >
-          <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-            Focus Time
-          </p>
-
-          <h2
-            className="text-3xl font-black"
-            style={{
-              color: '#10b981',
-              fontFamily: 'Space Grotesk',
-            }}
-          >
-            {stats.todayMinutes}m
-          </h2>
-
-          <p className="text-xs mt-2" style={{ color: '#10b981' }}>
-            Deep Work 🔥
-          </p>
-        </div>
-
-        {/* Expenses */}
-        <div
-          className="glass-card p-5 transition-all duration-300 hover:scale-[1.02]"
-          style={{
-            background: 'rgba(245,158,11,0.08)',
-          }}
-        >
-          <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-            Expenses
-          </p>
-
-          <h2
-            className="text-3xl font-black"
-            style={{
-              color: '#f59e0b',
-              fontFamily: 'Space Grotesk',
-            }}
-          >
-            ₹{stats.totalSpent}
-          </h2>
-
-          <p className="text-xs mt-2" style={{ color: '#f59e0b' }}>
-            Smart Spending 💰
-          </p>
-        </div>
-
-        {/* Streak */}
-        <div
-          className="glass-card p-5 transition-all duration-300 hover:scale-[1.02]"
-          style={{
-            background: 'rgba(59,130,246,0.08)',
-          }}
-        >
-          <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-            Streak
-          </p>
-
-          <h2
-            className="text-3xl font-black"
-            style={{
-              color: '#3b82f6',
-              fontFamily: 'Space Grotesk',
-            }}
-          >
-            {profile.streak}d
-          </h2>
-
-          <p className="text-xs mt-2" style={{ color: '#3b82f6' }}>
-            Keep Going ⚡
-          </p>
-        </div>
-      </div>
-
-      {/* Main 2-col layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Finance summary */}
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Monthly Spending</h3>
-            <button
-              onClick={() => setPage('finance')}
-              className="text-xs flex items-center gap-1"
-              style={{ color: 'var(--purple-primary)' }}
-            >
-              View all <ArrowUpRight size={12} />
-            </button>
-          </div>
-
-          {stats.categoryData.length > 0 ? (
-            <div className="flex items-center gap-4">
-              <div style={{ width: 120, height: 120 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={stats.categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={35}
-                      outerRadius={55}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {stats.categoryData.map((entry, idx) => (
-                        <Cell
-                          key={idx}
-                          fill={CATEGORY_COLORS[entry.name] || '#8b5cf6'}
-                          stroke="transparent"
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: 'rgba(10,10,20,0.95)',
-                        border: '1px solid rgba(168,85,247,0.3)',
-                        borderRadius: 10,
-                        fontSize: 12,
-                        color: 'white',
-                      }}
-                      formatter={(val: number) => [`${formatCurrency(val)}`, '']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex-1 space-y-2">
-                {stats.categoryData.map((cat) => (
-                  <div key={cat.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: CATEGORY_COLORS[cat.name] || '#8b5cf6' }}
-                      />
-                      <span className="text-xs capitalize" style={{ color: 'var(--text-secondary)' }}>
-                        {cat.name}
-                      </span>
-                    </div>
-                    <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {formatCurrency(cat.value)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
-              <Wallet size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No expenses this month</p>
-              <button
-                onClick={() => setPage('finance')}
-                className="mt-3 text-xs btn-neon px-3 py-1.5"
-                style={{ borderRadius: 8 }}
-              >
-                Add Expense
-              </button>
-            </div>
-          )}
-
-          {/* Recent expenses */}
-          {recentExpenses.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Recent</p>
-              {recentExpenses.slice(0, 3).map((exp) => (
-                <div key={exp.id} className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs"
-                      style={{
-                        background: `${CATEGORY_COLORS[exp.category] || '#8b5cf6'}20`,
-                        color: CATEGORY_COLORS[exp.category] || '#8b5cf6',
-                      }}
-                    >
-                      {getCategoryEmoji(exp.category)}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{exp.title}</p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{exp.expense_date}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold" style={{ color: '#ef4444' }}>-{formatCurrency(exp.amount)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Productivity summary */}
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Focus & Tasks</h3>
-            <button
-              onClick={() => setPage('productivity')}
-              className="text-xs flex items-center gap-1"
-              style={{ color: 'var(--purple-primary)' }}
-            >
-              Focus now <ArrowUpRight size={12} />
-            </button>
-          </div>
-
-          {/* Focus today */}
-          <div
-            className="p-4 rounded-14 mb-4 flex items-center gap-4"
-            style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.15)', borderRadius: 12 }}
-          >
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(168,85,247,0.2)' }}
-            >
-              <Timer size={24} style={{ color: '#a855f7' }} />
-            </div>
-            <div>
-              <p className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                {stats.todayMinutes} <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>min</span>
-              </p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Focus time today</p>
-            </div>
-            <div className="ml-auto text-right">
-              <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                {stats.todaySessionCount}
-              </p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>sessions</p>
-            </div>
-          </div>
-
-          {/* Tasks list */}
-          <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-muted)' }}>
-            Pending Tasks ({pendingTasksList.length})
-          </p>
-
-          {pendingTasksList.length > 0 ? (
-            <div className="space-y-2">
-              {pendingTasksList.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 py-1.5">
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{
-                      background:
-                        task.priority === 'high'
-                          ? '#ef4444'
-                          : task.priority === 'medium'
-                            ? '#f59e0b'
-                            : '#10b981',
-                    }}
-                  />
-                  <p className="text-sm flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>
-                    {task.title}
-                  </p>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full"
-                    style={{
-                      background:
-                        task.priority === 'high'
-                          ? 'rgba(239,68,68,0.15)'
-                          : task.priority === 'medium'
-                            ? 'rgba(245,158,11,0.15)'
-                            : 'rgba(16,185,129,0.15)',
-                      color:
-                        task.priority === 'high'
-                          ? '#ef4444'
-                          : task.priority === 'medium'
-                            ? '#f59e0b'
-                            : '#10b981',
-                    }}
-                  >
-                    {task.priority}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-4" style={{ color: 'var(--text-muted)' }}>
-              <CheckSquare size={28} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">All clear! No pending tasks</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-
-      {/* Productivity Score */}
-      <div className="glass-card p-5 sm:p-6 mt-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
-          <div>
-            <p
-              className="text-sm mb-2"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              AI Productivity Score
-            </p>
-
-            <div className="flex items-end gap-3">
-              <h2
-                className="text-5xl font-black gradient-text"
-                style={{ lineHeight: 1 }}
-              >
-                {productivityScore}
-              </h2>
-
-              <span
-                className="text-lg font-semibold mb-1"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                /100
-              </span>
-            </div>
-
-            <p
-              className="mt-2 text-sm"
-              style={{
-                color:
-                  productivityScore >= 80
-                    ? '#10b981'
-                    : productivityScore >= 60
-                      ? '#f59e0b'
-                      : '#ef4444',
-              }}
-            >
-              {productivityStatus}
-            </p>
-          </div>
-
-          <div className="flex-1">
-            <div
-              className="w-full h-4 rounded-full overflow-hidden"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-              }}
-            >
-              <div
-                style={{
-                  width: `${productivityScore}%`,
-                  height: '100%',
-                  borderRadius: 999,
-                  transition: 'all 0.6s ease',
-                  background:
-                    productivityScore >= 80
-                      ? 'linear-gradient(90deg,#10b981,#34d399)'
-                      : productivityScore >= 60
-                        ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
-                        : 'linear-gradient(90deg,#ef4444,#f87171)',
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-
-              <div
-                className="rounded-2xl p-3 text-center"
-                style={{
-                  background: 'rgba(168,85,247,0.08)',
-                }}
-              >
-                <p
-                  className="text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Tasks
-                </p>
-
-                <h3 className="font-bold text-lg">
-                  {completedTasks}
-                </h3>
-              </div>
-
-              <div
-                className="rounded-2xl p-3 text-center"
-                style={{
-                  background: 'rgba(6,182,212,0.08)',
-                }}
-              >
-                <p
-                  className="text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Focus
-                </p>
-
-                <h3 className="font-bold text-lg">
-                  {focusMinutes}m
-                </h3>
-              </div>
-
-              <div
-                className="rounded-2xl p-3 text-center"
-                style={{
-                  background: 'rgba(236,72,153,0.08)',
-                }}
-              >
-                <p
-                  className="text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Streak
-                </p>
-
-                <h3 className="font-bold text-lg">
-                  {profile.streak}d
-                </h3>
-              </div>
-
-              <div
-                className="rounded-2xl p-3 text-center"
-                style={{
-                  background: 'rgba(16,185,129,0.08)',
-                }}
-              >
-                <p
-                  className="text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Budget
-                </p>
-
-                <h3 className="font-bold text-lg">
-                  {stats.totalSpent < profile.monthly_budget ? 'Good' : 'Risk'}
-                </h3>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Budget Health */}
-      <div className="glass-card p-5 sm:p-6 mt-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
-          <div>
-            <p
-              className="text-sm mb-2"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Budget Health
-            </p>
-
-            <div className="flex items-center gap-3">
-              <h2
-                className="text-3xl font-black"
-                style={{ color: budgetColor }}
-              >
-                {budgetHealth}
-              </h2>
-
-              <div
-                className="px-3 py-1 rounded-full text-xs font-semibold"
-                style={{
-                  background: `${budgetColor}20`,
-                  color: budgetColor,
-                }}
-              >
-                {budgetPercentage}%
-              </div>
-            </div>
-
-            <p
-              className="mt-2 text-sm"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              {budgetPercentage < 80
-                ? 'Your spending is within a healthy range.'
-                : 'You are close to exceeding your monthly budget.'}
-            </p>
-          </div>
-
-          <div className="flex-1">
-            <div
-              className="w-full h-4 rounded-full overflow-hidden"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-              }}
-            >
-              <div
-                style={{
-                  width: `${Math.min(budgetPercentage, 100)}%`,
-                  height: '100%',
-                  borderRadius: 999,
-                  background: budgetColor,
-                  transition: 'all 0.6s ease',
-                }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-5">
-
-              <div
-                className="rounded-2xl p-4"
-                style={{
-                  background: 'rgba(16,185,129,0.08)',
-                }}
-              >
-                <p
-                  className="text-xs mb-1"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Remaining Budget
-                </p>
-
-                <h3 className="text-xl font-bold">
-                  {formatCurrency(
-                    Math.max(
-                      profile.monthly_budget - stats.totalSpent,
-                      0
-                    )
-                  )}
-                </h3>
-              </div>
-
-              <div
-                className="rounded-2xl p-4"
-                style={{
-                  background: 'rgba(168,85,247,0.08)',
-                }}
-              >
-                <p
-                  className="text-xs mb-1"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Monthly Budget
-                </p>
-
-                <h3 className="text-xl font-bold">
-                  {formatCurrency(profile.monthly_budget)}
-                </h3>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Smart Insights */}
-      <div className="glass-card p-5 sm:p-6 mt-6">
-        <div className="flex items-center gap-3 mb-5">
-          <div
-            className="w-11 h-11 rounded-2xl flex items-center justify-center"
-            style={{
-              background: 'rgba(168,85,247,0.15)',
-              color: '#a855f7',
-            }}
-          >
-            <Brain size={22} />
-          </div>
-
-          <div>
-            <h2 className="text-lg font-bold">
-              Smart Insights
-            </h2>
-
-            <p
-              className="text-sm"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              AI-powered productivity & finance analysis
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {insights.map((item, index) => {
-            const Icon = item.icon;
-
-            return (
-              <div
-                key={index}
-                className="p-4 rounded-2xl transition-all duration-300 hover:scale-[1.02]"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${item.color}20`,
-                }}
-              >
-                <div className="flex items-start gap-4">
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: `${item.color}20`,
-                      color: item.color,
-                    }}
-                  >
-                    <Icon size={20} />
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-1">
-                      {item.title}
-                    </h3>
-
-                    <p
-                      className="text-sm leading-relaxed"
-                      style={{
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* XP & Level progress */}
-      <div className="glass-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
-            >
-              <Star size={20} className="text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                Level {xpLevel} • {levelInfo.title}
-              </h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {profile.xp % 100} / 100 XP to next level
-              </p>
-            </div>
-          </div>
+    <div className={`page-enter space-y-6 pb-12 ${preferences.dashboard_compact ? 'dashboard-compact' : ''}`}>
+      
+      {/* CUSTOMIZE TRIGGERS */}
+      <div className="flex justify-between items-center">
+        <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Productivity Command Center</span>
+        <div className="flex gap-2">
           <button
-            onClick={() => setPage('rewards')}
-            className="text-xs flex items-center gap-1"
-            style={{ color: 'var(--purple-primary)' }}
+            onClick={() => updatePreferencesLocal({ dashboard_compact: !preferences.dashboard_compact })}
+            className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg text-xs font-semibold"
           >
-            Rewards <ArrowUpRight size={12} />
+            {preferences.dashboard_compact ? 'Expanded View' : 'Compact View'}
+          </button>
+          <button
+            onClick={() => setCustomizeOpen(!customizeOpen)}
+            className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-semibold"
+          >
+            {customizeOpen ? 'Close Settings' : 'Customize Widgets'}
           </button>
         </div>
+      </div>
 
-        <div className="progress-bar" style={{ height: 8 }}>
-          <div
-            className="progress-fill xp-bar-fill"
-            style={{ width: `${profile.xp % 100}%` }}
-          />
+      {/* CUSTOMIZE CONFIG PANEL */}
+      {customizeOpen && (
+        <div className="glass-card p-4 border border-purple-500/20 bg-purple-500/2">
+          <h3 className="text-xs font-bold text-white mb-2 uppercase tracking-wide">Configure Dashboard Layout</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {Object.keys(WIDGET_LABELS).map(id => {
+              const isHidden = (preferences.dashboard_hidden_widgets || '').split(',').includes(id);
+              const isPinned = (preferences.dashboard_pinned_widgets || '').split(',').includes(id);
+              return (
+                <div key={id} className="p-2.5 bg-slate-950/40 rounded-xl border border-white/5 flex items-center justify-between text-xs gap-3">
+                  <span className="text-slate-300 font-medium truncate">{WIDGET_LABELS[id]}</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleTogglePin(id)}
+                      className={`p-1 rounded ${isPinned ? 'text-purple-400 bg-purple-500/10' : 'text-slate-600 hover:text-slate-400'}`}
+                      title={isPinned ? 'Unpin' : 'Pin to top'}
+                    >
+                      <Pin size={11} />
+                    </button>
+                    <button
+                      onClick={() => handleToggleWidget(id)}
+                      className={`p-1 rounded ${isHidden ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10'}`}
+                      title={isHidden ? 'Show' : 'Hide'}
+                    >
+                      {isHidden ? <EyeOff size={11} /> : <Eye size={11} />}
+                    </button>
+                    <button onClick={() => handleMoveWidget(id, 'up')} className="p-0.5 text-slate-500 hover:text-white">
+                      <ChevronUp size={11} />
+                    </button>
+                    <button onClick={() => handleMoveWidget(id, 'down')} className="p-0.5 text-slate-500 hover:text-white">
+                      <ChevronDown size={11} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-4">
+      {/* RENDER DYNAMIC WIDGET GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        {widgetOrder.map(widgetId => {
+          switch (widgetId) {
+            
+            // SECTION 1: Welcome Hero
+            case 'hero':
+              return (
+                <div
+                  key="hero"
+                  className="glass-card p-5 relative overflow-hidden flex flex-col justify-between col-span-1 md:col-span-2 lg:col-span-3 min-h-[160px]"
+                  style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(236,72,153,0.08))' }}
+                >
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] text-purple-400 uppercase tracking-widest font-black">Hero Command</span>
+                      <span className="text-xs text-slate-400">☀️ Clear • 28°C</span>
+                    </div>
+                    
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2" style={{ fontFamily: 'Space Grotesk' }}>
+                      {greeting}, {displayName}!
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-2 max-w-xl italic">
+                      "Success is the sum of small efforts, repeated day-in and day-out."
+                    </p>
+                  </div>
 
+                  <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-white/5 text-xs text-slate-400">
+                    <div>Level: <span className="text-white font-black">{levelInfo.level}</span></div>
+                    <div className="w-24 bg-slate-900 h-2 rounded-full overflow-hidden">
+                      <div className="bg-purple-500 h-full" style={{ width: `${((profile.xp % 100) / 100) * 100}%` }} />
+                    </div>
+                    <div>Streak: <span className="text-amber-500 font-bold">🔥 {profile.streak} Days</span></div>
+                  </div>
+                </div>
+              );
 
-          <MiniStat label="Total XP" value={profile.xp} color="#a855f7" />
-          <MiniStat label="Streak" value={`${profile.streak}d`} color="#f59e0b" />
-          <MiniStat label="Badges" value={earnedBadges.size} color="#10b981" />
-        </div>
+            // SECTION 2: Today's Goals
+            case 'goals':
+              const focusPct = Math.min(100, ((stats.todayMinutes || 0) / (preferences.default_daily_focus_goal || 120)) * 100);
+              return (
+                <div key="goals" className="glass-card p-5 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Today's Focus Goal</h3>
+                    <span className="text-xs font-black text-purple-400">{focusPct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden">
+                    <div className="bg-purple-500 h-full" style={{ width: `${focusPct}%` }} />
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-slate-400">
+                    <span>Est Time Left: {estimatedTimeLeft}m</span>
+                    <span>Goal: {preferences.default_daily_focus_goal || 120}m</span>
+                  </div>
+                </div>
+              );
+
+            // SECTION 3: Quick Focus Timer
+            case 'timer':
+              return (
+                <div key="timer" className="glass-card p-5 flex flex-col justify-between">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quick Focus Sprint</h3>
+                    <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded font-black uppercase">
+                      {timerMode}
+                    </span>
+                  </div>
+                  <div className="text-center py-2">
+                    <div className="text-3xl font-black text-white" style={{ fontFamily: 'Space Grotesk' }}>
+                      {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={handleToggleTimer}
+                      className="px-3 py-1.5 bg-purple-500 text-white font-bold rounded-lg text-xs flex-1 hover:bg-purple-600 flex items-center justify-center gap-1"
+                    >
+                      {timerRunning ? <Pause size={12} /> : <Play size={12} />}
+                      {timerRunning ? 'Pause' : 'Resume'}
+                    </button>
+                    <button
+                      onClick={() => handleStartTimer(25)}
+                      className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 font-bold rounded-lg text-xs flex-1"
+                    >
+                      Start 25m
+                    </button>
+                  </div>
+                </div>
+              );
+
+            // SECTION 4: Today's Snapshot
+            case 'snapshot':
+              return (
+                <div key="snapshot" className="glass-card p-5 col-span-1 md:col-span-2 lg:col-span-3">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Today's Snapshot</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="p-3 bg-white/2 rounded-xl border border-white/5">
+                      <span className="text-[10px] text-slate-500 block">Focus Minutes</span>
+                      <span className="text-lg font-black text-purple-400">{stats.todayMinutes || 0}</span>
+                    </div>
+                    <div className="p-3 bg-white/2 rounded-xl border border-white/5">
+                      <span className="text-[10px] text-slate-500 block">Tasks Completed</span>
+                      <span className="text-lg font-black text-pink-400">
+                        {tasks.filter(t => t.completed && t.completed_at?.startsWith(format(new Date(), 'yyyy-MM-dd'))).length}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-white/2 rounded-xl border border-white/5">
+                      <span className="text-[10px] text-slate-500 block">Expenses Logged</span>
+                      <span className="text-lg font-black text-cyan-400">
+                        {expenses.filter(e => e.expense_date === format(new Date(), 'yyyy-MM-dd')).length}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-white/2 rounded-xl border border-white/5">
+                      <span className="text-[10px] text-slate-500 block">Budget Left</span>
+                      <span className="text-lg font-black text-green-400">{formatCurrency(stats.available || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+
+            // SECTION 5: Upcoming Deadlines & Bills
+            case 'upcoming':
+              return (
+                <div key="upcoming" className="glass-card p-5 space-y-4">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Upcoming Schedule</h3>
+                  <div className="space-y-2 text-xs">
+                    {upcomingDeadlines.length === 0 && upcomingBills.length === 0 ? (
+                      <p className="text-slate-500 text-center py-2">Nothing scheduled for next 7 days.</p>
+                    ) : (
+                      <>
+                        {upcomingDeadlines.map(t => (
+                          <div key={t.id} className="flex justify-between items-center p-2 bg-slate-950/40 border border-white/5 rounded-lg">
+                            <span className="text-slate-300 truncate max-w-[120px]">{t.title}</span>
+                            <span className="text-[9px] text-pink-400 font-bold uppercase">Task Due</span>
+                          </div>
+                        ))}
+                        {upcomingBills.map(b => (
+                          <div
+                            key={b.id}
+                            className="flex justify-between items-center p-2 bg-slate-950/40 border border-white/5 rounded-lg cursor-pointer hover:border-purple-500/20"
+                            onClick={() => payRecurringExpense(b.id)}
+                          >
+                            <span className="text-slate-300 truncate max-w-[120px]">{b.name}</span>
+                            <span className="text-[9px] text-cyan-400 font-bold uppercase">-{formatCurrency(b.amount)}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+
+            // SECTION 6: Smart AI Insights
+            case 'insights':
+              return (
+                <div key="insights" className="glass-card p-5 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Smart Insights</h3>
+                  <div className="space-y-2 text-xs">
+                    {smartInsights.map((insight, idx) => {
+                      const Icon = insight.icon;
+                      return (
+                        <div key={idx} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-start gap-2.5">
+                          <Icon size={14} style={{ color: insight.color }} className="mt-0.5" />
+                          <div>
+                            <h4 className="font-bold text-white">{insight.title}</h4>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{insight.desc}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+
+            // SECTION 7: Quick Actions
+            case 'actions':
+              return (
+                <div key="actions" className="glass-card p-5">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quick Actions</h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      onClick={() => handleStartTimer(25)}
+                      className="p-2 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 rounded-xl text-center font-bold"
+                    >
+                      Start Focus
+                    </button>
+                    <button
+                      onClick={() => setShowQuickAddExpense(true)}
+                      className="p-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 rounded-xl text-center font-bold"
+                    >
+                      Add Expense
+                    </button>
+                    <button
+                      onClick={() => setShowQuickAddTask(true)}
+                      className="p-2 bg-pink-500/10 border border-pink-500/20 text-pink-400 hover:bg-pink-500/20 rounded-xl text-center font-bold"
+                    >
+                      Create Task
+                    </button>
+                    <button
+                      onClick={() => setPage('analytics')}
+                      className="p-2 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-xl text-center font-bold"
+                    >
+                      View Reports
+                    </button>
+                  </div>
+
+                  {/* QUICK EXPENSE MODAL */}
+                  {showQuickAddExpense && (
+                    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                      <div className="glass-card p-5 w-full max-w-sm space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-bold text-sm text-white">Quick Add Expense</h4>
+                          <button onClick={() => setShowQuickAddExpense(false)} className="text-slate-500"><X size={16} /></button>
+                        </div>
+                        <div className="space-y-3 text-xs">
+                          <input type="text" placeholder="Expense name" value={quickExpenseName} onChange={(e) => setQuickExpenseName(e.target.value)} className="input-glass w-full px-3 py-2" />
+                          <input type="number" placeholder="Amount" value={quickExpenseAmount} onChange={(e) => setQuickExpenseAmount(e.target.value)} className="input-glass w-full px-3 py-2" />
+                        </div>
+                        <button onClick={handleQuickAddExpense} className="btn-neon w-full py-2 text-xs font-bold">Add Expense</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* QUICK TASK MODAL */}
+                  {showQuickAddTask && (
+                    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                      <div className="glass-card p-5 w-full max-w-sm space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-bold text-sm text-white">Quick Add Task</h4>
+                          <button onClick={() => setShowQuickAddTask(false)} className="text-slate-500"><X size={16} /></button>
+                        </div>
+                        <div className="space-y-3 text-xs">
+                          <input type="text" placeholder="Task title" value={quickTaskTitle} onChange={(e) => setQuickTaskTitle(e.target.value)} className="input-glass w-full px-3 py-2" />
+                        </div>
+                        <button onClick={handleQuickAddTask} className="btn-neon w-full py-2 text-xs font-bold">Create Task</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+
+            // SECTION 8: Recent Activity
+            case 'recent':
+              return (
+                <div key="recent" className="glass-card p-5 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recent Activity</h3>
+                  <div className="space-y-2 text-xs">
+                    {recentEvents.length === 0 ? (
+                      <p className="text-slate-500 text-center py-2">No activity logged.</p>
+                    ) : (
+                      recentEvents.map(e => (
+                        <div key={e.id} className="flex justify-between items-center border-b border-white/5 pb-1">
+                          <div>
+                            <span className="text-white block font-semibold">{e.metadata.title || e.type}</span>
+                            <span className="text-[10px] text-slate-500">{format(parseISO(e.timestamp), 'h:mm a')}</span>
+                          </div>
+                          <span className="text-[10px] text-purple-400 uppercase font-black">{e.category}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+
+            // SECTION 9: Achievements Preview
+            case 'achievements':
+              return (
+                <div key="achievements" className="glass-card p-5 flex flex-col justify-between">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Journey Progress</h3>
+                  <div className="p-3 bg-white/2 rounded-xl border border-white/5 space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Total Badges</span>
+                      <span className="font-bold text-white">{achievementsPreview.totalBadges}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Latest Unlock</span>
+                      <span className="font-bold text-purple-400 truncate max-w-[120px]">{achievementsPreview.latestAch}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setPage('achievements')}
+                    className="mt-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 font-bold rounded-lg text-xs w-full text-center"
+                  >
+                    Open Journey Map
+                  </button>
+                </div>
+              );
+
+            // SECTION 10: Weekly Progress
+            case 'weekly':
+              const weekSpent = expenses.filter(e => differenceInDays(new Date(), parseISO(e.expense_date)) <= 7).reduce((sum, e) => sum + e.amount, 0);
+              return (
+                <div key="weekly" className="glass-card p-5 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Weekly Mini Preview</h3>
+                  <div className="space-y-2 text-xs">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span>Weekly Budget Used</span>
+                        <span className="font-bold">{formatCurrency(weekSpent)}</span>
+                      </div>
+                      <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-purple-500 h-full" style={{ width: `${Math.min(100, (weekSpent / 1500) * 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+
+            // SECTION 11: Monthly Progress
+            case 'monthly':
+              const monthSpent = expenses.filter(e => differenceInDays(new Date(), parseISO(e.expense_date)) <= 30).reduce((sum, e) => sum + e.amount, 0);
+              return (
+                <div key="monthly" className="glass-card p-5 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Monthly Mini Preview</h3>
+                  <div className="space-y-2 text-xs">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span>Monthly Expenses</span>
+                        <span className="font-bold">{formatCurrency(monthSpent)}</span>
+                      </div>
+                      <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-purple-500 h-full" style={{ width: `${Math.min(100, (monthSpent / profile.monthly_budget) * 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+
+            // SECTION 12: Productivity Score
+            case 'score':
+              return (
+                <div key="score" className="glass-card p-5 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Productivity Score</h3>
+                      <span className="text-lg font-black text-purple-400">{productivityScoreExplanation.score}%</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 leading-relaxed">{productivityScoreExplanation.desc}</p>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-2 italic">
+                    {productivityScoreExplanation.action}
+                  </p>
+                </div>
+              );
+
+            // SECTION 13: Recommendations
+            case 'recommendations':
+              return (
+                <div key="recommendations" className="glass-card p-5 space-y-3 col-span-1 md:col-span-2 lg:col-span-3">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recommended Actions</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    {recommendations.map((rec, idx) => (
+                      <div key={idx} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-start gap-2">
+                        <span className="text-purple-400">⚡</span>
+                        <p className="text-slate-300">{rec}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+
+            default:
+              return null;
+          }
+        })}
+
       </div>
-    </div >
-  );
-}
 
-function StatCard({
-  label, value, sub, icon, color, progress, progressColor, onClick,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  icon: React.ReactNode;
-  color: string;
-  progress: number;
-  progressColor: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="stat-card text-left w-full"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: `${color}20`, color }}
-        >
-          {icon}
-        </div>
-        <ArrowUpRight size={14} style={{ color: 'var(--text-muted)' }} />
-      </div>
-      <div className="text-xl font-bold mb-0.5" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>
-        {value}
-      </div>
-      <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>{sub}</div>
-      <div className="progress-bar">
-        <div
-          className="progress-fill"
-          style={{ width: `${Math.max(0, Math.min(100, progress))}%`, background: progressColor }}
-        />
-      </div>
-      <div className="text-xs mt-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
-    </button>
-  );
-}
-
-function MiniStat({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <div className="text-center">
-      <div className="text-lg font-bold" style={{ color, fontFamily: 'Space Grotesk' }}>{value}</div>
-      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</div>
     </div>
   );
 }
-
-function getCategoryEmoji(cat: string): string {
-  const map: Record<string, string> = {
-    food: '🍔', transport: '🚗', shopping: '🛍', entertainment: '🎮',
-    health: '💊', education: '📚', utilities: '💡', other: '📦',
-  };
-  return map[cat] || '📦';
-}
-

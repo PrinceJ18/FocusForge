@@ -3,7 +3,8 @@ import { Play, Pause, RotateCcw, Plus, Trash2, CheckCircle2, Circle, Coffee, Bra
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { format, parseISO } from 'date-fns';
-import { getTodayFocusMinutes, getTodayFocusSessions } from '../lib/statsUtils';
+import { calculateTodayFocus, calculateTodaySessions } from '../lib/statistics';
+import { logEvent } from '../lib/events';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -46,8 +47,8 @@ export default function Productivity() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  const todayMinutes = getTodayFocusMinutes(focusSessions);
-  const todaySessionCount = getTodayFocusSessions(focusSessions);
+  const todayMinutes = calculateTodayFocus(focusSessions);
+  const todaySessionCount = calculateTodaySessions(focusSessions);
 
   const [showAddTask, setShowAddTask] = useState(false);
   const [showTimerSettings, setShowTimerSettings] = useState(false);
@@ -442,6 +443,11 @@ export default function Productivity() {
                       updateTaskLocal(task.id, {
                         completed: true,
                         completed_at: now,
+                      });
+
+                      logEvent('task_completed', 'tasks', task.id, {
+                        title: task.title,
+                        description: `Completed task: ${task.title}`,
                       });
 
                       const xpEarned =

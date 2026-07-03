@@ -12,23 +12,36 @@ import Productivity from './pages/Productivity';
 import Analytics from './pages/Analytics';
 import Rewards from './pages/Rewards';
 import Splits from './pages/Splits';
+import Reports from './pages/Reports';
 import AuthScreen from './pages/AuthScreen';
+import Achievements from './pages/Achievements';
+import Settings from './pages/Settings';
 import AchievementNotification from './components/AchievementNotification';
+import { processAutoAddRecurringExpenses } from './lib/recurringUtils';
+import { applyPreferencesToDOM } from './store/useStore';
 
 
 const PAGE_TITLES: Record<string, string> = {
   dashboard: 'Dashboard',
-  finance: 'Finance',
-  productivity: 'Focus & Tasks',
-  analytics: 'Analytics',
-  rewards: 'Rewards',
-  splits: 'Expense Buddy',
+  finance: 'Finance & Budget',
+  productivity: 'Productivity Center',
+  analytics: 'Analytics & Trends',
+  rewards: 'Rewards & Badges',
+  splits: 'Group Splits',
+  reports: 'Performance Reports',
+  achievements: 'Achievement Center',
+  settings: 'Personalization & Settings',
 };
 
 export default function App() {
-  const { currentPage, setUser, user, dataLoaded, setDataLoaded } = useStore();
+  const { currentPage, setUser, user, dataLoaded, setDataLoaded, preferences } = useStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Apply user styling preferences to root DOM on value change
+  useEffect(() => {
+    applyPreferencesToDOM(preferences);
+  }, [preferences]);
 
   // Global timer engine — runs the countdown interval at the App level
   // so it persists across all page navigations.
@@ -46,6 +59,7 @@ export default function App() {
         setUser(session.user);
 
         await loadUserData(session.user.id);
+        await processAutoAddRecurringExpenses();
       }
 
       setLoading(false);
@@ -58,6 +72,7 @@ export default function App() {
           setUser(session.user);
 
           await loadUserData(session.user.id);
+          await processAutoAddRecurringExpenses();
 
           // Create profile only if it doesn't already exist
           const { data: existingProfile } = await supabase
@@ -170,6 +185,9 @@ export default function App() {
           {currentPage === 'analytics' && <Analytics />}
           {currentPage === 'rewards' && <Rewards />}
           {currentPage === 'splits' && <Splits />}
+          {currentPage === 'reports' && <Reports />}
+          {currentPage === 'achievements' && <Achievements />}
+          {currentPage === 'settings' && <Settings />}
         </div>
       </main >
 

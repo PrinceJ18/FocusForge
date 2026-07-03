@@ -234,7 +234,7 @@ function SplitItem({ split, onSettle, onDelete }: { split: Split; onSettle: () =
       className="flex items-center gap-3 p-4 rounded-12"
       style={{
         background: split.type === 'owed' ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
-        border: `1px solid ${formatCurrency(split.type === 'owed' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)')}`,
+        border: `1px solid ${split.type === 'owed' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}`,
         borderRadius: 12,
       }}
     >

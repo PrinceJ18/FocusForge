@@ -7,6 +7,7 @@ import {
   computeOverallProgress,
   getEnabledGoalProgresses,
 } from '../lib/dailyGoalsUtils';
+import { logEvent } from '../lib/events';
 
 /**
  * Global daily-goal watcher — mount ONCE in App.tsx alongside useTimerEngine.
@@ -167,6 +168,10 @@ export function useDailyGoalWatcher() {
         });
 
         useStore.getState().addXP(bonusXP);
+        logEvent('daily_goals_completed', 'tasks', undefined, {
+          xpEarned: bonusXP,
+          description: 'Completed all daily goals!',
+        });
         useDailyGoalsStore.getState().markAllCompleteNotified();
         useDailyGoalsStore.getState().lastCompletedAllDate = format(new Date(), 'yyyy-MM-dd');
       }, 600); // Slight delay to stack after individual notification

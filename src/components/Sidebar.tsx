@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X } from 'lucide-react';
+import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X, BookOpen, Award, Settings } from 'lucide-react';
 import { useStore, type Page } from '../store/useStore';
-import { getLevelInfo } from "../lib/levels";
+import { calculateCurrentLevel, calculateXPProgress } from '../lib/statistics';
 import { formatCurrency } from '../lib/formatCurrency';
 
 interface SidebarProps {
@@ -16,14 +16,17 @@ const navItems: Array<{ id: string; label: string; icon: React.ReactNode; badge?
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
   { id: 'splits', label: 'Expense Buddy', icon: <Users size={18} /> },
   { id: 'rewards', label: 'Rewards', icon: <Trophy size={18} /> },
+  { id: 'reports', label: 'Monthly Reports', icon: <BookOpen size={18} /> },
+  { id: 'achievements', label: 'Achievement Center', icon: <Award size={18} /> },
+  { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { currentPage, setPage, profile, user } = useStore();
-  const levelInfo = getLevelInfo(profile.xp);
+  const levelInfo = calculateCurrentLevel(profile.xp);
 
   const xpLevel = levelInfo.level;
-  const xpProgress = levelInfo.progress;
+  const xpProgress = calculateXPProgress(profile.xp);
 
   const handleNav = (page: Page) => {
     setPage(page);
