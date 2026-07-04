@@ -28,42 +28,42 @@
 - **Task Management** — Create, complete, and delete tasks with priority levels (low / medium / high), subjects, and deadlines
 - **XP on Completion** — Earn XP for completing focus sessions (5–30 XP based on duration) and tasks (5–20 XP based on priority)
 
-### 💰 Finance Management
+### 💰 Finance Management & Splits
 - **Expense Tracking** — Log daily expenses with titles, amounts, categories, notes, and dates
+- **Recurring Expenses** — Automate recurring transactions (daily, weekly, monthly, yearly) with system-tracked recurring schedules
 - **Budget Dashboard** — Set a monthly budget and monitor spending with real-time progress bars
 - **Category Breakdown** — View spending by category with interactive pie charts and daily spending line charts
 - **Custom Categories** — Create your own expense categories with custom colors and icons
 - **Savings Goals** — Set savings goals with target amounts, deadlines, and visual progress tracking
+- **Quick Split Calculator** — Instantly divide any bill amount by number of people
+- **Owe / Owed Tracking** — Track who owes you and who you owe with net balance calculation
+- **Settle Up** — Mark splits as settled with a single click
 
-### 📊 Analytics
+### 📊 Analytics & Reports
 - **Unified Dashboard** — Dual-axis area charts combining daily spending and focus trends
-- **Period Filters** — Toggle between Today, 30-day, and 90-day views
 - **Category Pie Charts** — Visual spending distribution across all categories
 - **Focus vs. Spending Scatter** — Correlation analysis between productivity and spending patterns
 - **Weekly Focus Bars** — Week-over-week focus time comparison
+- **Monthly Reports** — Generate and download comprehensive monthly reports outlining total productivity score, spending analysis, task completion statistics, goal progression, and action breakdowns.
 
 ### 🏆 Gamification & Rewards
 - **XP & Leveling System** — Progress through 7 levels: Starter → Beginner → Focused → Achiever → Expert → Master → Legend
 - **Streak System** — Calendar-day-based streak tracking with automatic reset logic
 - **12 Unlockable Badges** — Earn badges for focus milestones, task completion, streak achievements, XP thresholds, budget discipline, and savings goals
 - **Daily Challenges** — 4 rotating daily challenges with XP rewards and claim tracking
+- **Achievements Timeline** — A dedicated history hub containing search & filter capabilities for key milestones (level ups, badges earned, achievements unlocked) and detailed statistics (total focus hours, completed tasks, total savings, active days).
 - **Achievement Notifications** — Animated toast notifications for XP gains, level-ups, and badge unlocks
 
-### 💸 Expense Buddy (Splits)
-- **Quick Split Calculator** — Instantly divide any bill amount by number of people
-- **Owe / Owed Tracking** — Track who owes you and who you owe with net balance calculation
-- **Settle Up** — Mark splits as settled with a single click
+### ⚙️ Customizable Control Center (Settings)
+- **Appearance & Accent Colors** — Customize accent colors (purple, blue, green, orange, red, pink) and interface themes
+- **Configurable Pomodoro** — Tailor default focus, short break, and long break times to fit your workflow
+- **Notification Preferences** — Adjust notifications for streaks, badges, system events, and daily challenges
+- **Data Backups & Portability** — Export your profile, expenses, tasks, and settings to JSON or CSV formats, or import previous backups to seamlessly restore your data
 
 ### 🔐 Authentication
 - **Supabase Auth** — Email/password and Google OAuth sign-in
 - **Profile Management** — Display name and avatar with automatic profile creation on first login
 - **Row-Level Security** — Every user can only access their own data
-
-### 🎨 Design & UX
-- **Dark Mode UI** — Premium dark theme with glassmorphism cards and ambient gradient orbs
-- **Responsive Design** — Full mobile support with collapsible sidebar and bottom navigation
-- **Micro-Animations** — Framer Motion powered page transitions and interactive elements
-- **Modern Typography** — Inter + Space Grotesk font stack via Google Fonts
 
 ---
 
@@ -116,7 +116,10 @@ FocusForge/
 │   │   ├── Finance.tsx         # Expenses, budget, savings goals, categories
 │   │   ├── Productivity.tsx    # Pomodoro timer & task manager
 │   │   ├── Analytics.tsx       # Charts & trend analysis
+│   │   ├── Reports.tsx         # Monthly summaries, productivity score, exports
 │   │   ├── Rewards.tsx         # XP, levels, badges, daily challenges
+│   │   ├── Achievements.tsx    # Activity timeline, milestones & lifetime stats
+│   │   ├── Settings.tsx        # Personalization, config, and data backup
 │   │   ├── Splits.tsx          # Expense splitting (Expense Buddy)
 │   │   └── AuthScreen.tsx      # Landing / sign-in page
 │   │
@@ -124,17 +127,24 @@ FocusForge/
 │   │   └── useStore.ts         # Zustand global store + Supabase data loader
 │   │
 │   ├── hooks/
-│   │   └── useTimerEngine.ts   # Global Pomodoro interval (persistent)
+│   │   ├── useTimerEngine.ts   # Global Pomodoro interval (persistent)
+│   │   └── useDailyGoalWatcher.ts # Monitors daily progress goals
 │   │
 │   └── lib/
 │       ├── supabase.ts         # Supabase client & DB type definitions
 │       ├── levels.ts           # Level/title/color calculation from XP
 │       ├── statsUtils.ts       # Centralized stats, badge logic, streak calc
-│       └── formatCurrency.ts   # Currency formatting utility
+│       ├── formatCurrency.ts   # Currency formatting utility
+│       ├── recurringUtils.ts   # Calculation & timing logic for recurring bills
+│       ├── events.ts           # Event logs & timeline schema
+│       └── statistics/         # Dedicated folders for metrics and reporting
 │
 └── supabase/
     └── migrations/
-        └── 20260525174459_create_spendwise_tables.sql  # Full DB schema + RLS
+        ├── 20260525174459_create_spendwise_tables.sql     # Full DB schema + RLS
+        ├── 20260703185015_create_events_table.sql         # Activity timeline & events schema
+        ├── 20260703191155_create_recurring_expenses.sql   # Recurring transactions layout
+        └── 20260703192144_create_preferences_table.sql    # Custom user configuration preferences
 ```
 
 ---
@@ -163,11 +173,13 @@ npm install
 ### 3. Set Up Supabase
 
 1. Create a new project at [supabase.com](https://supabase.com/)
-2. Navigate to **SQL Editor** and run the migration file:
-   ```
-   supabase/migrations/20260525174459_create_spendwise_tables.sql
-   ```
-   This creates all required tables (`profiles`, `expenses`, `tasks`, `focus_sessions`, `savings_goals`, `custom_categories`) with Row-Level Security policies and performance indexes.
+2. Navigate to **SQL Editor** and execute the migration files sequentially:
+   - `supabase/migrations/20260525174459_create_spendwise_tables.sql`
+   - `supabase/migrations/20260703185015_create_events_table.sql`
+   - `supabase/migrations/20260703191155_create_recurring_expenses.sql`
+   - `supabase/migrations/20260703192144_create_preferences_table.sql`
+   
+   This creates all required tables (`profiles`, `expenses`, `tasks`, `focus_sessions`, `savings_goals`, `custom_categories`, `events`, `recurring_expenses`, `user_preferences`) with Row-Level Security policies, indexes, and automated setup.
 
 3. Enable **Google OAuth** (optional) under **Authentication → Providers → Google**
 
@@ -206,16 +218,19 @@ The app will be available at **http://localhost:5173**
 
 ## 🗄️ Database Schema
 
-FocusForge uses **6 Supabase tables**, all protected by Row-Level Security:
+FocusForge uses **9 Supabase tables**, all protected by Row-Level Security:
 
 | Table | Purpose |
 |-------|---------|
 | `profiles` | User profile, XP, streak, badges, monthly budget |
 | `expenses` | Individual expense entries with category & date |
+| `recurring_expenses` | Repeat transactions (rent, subscriptions) with execution cycles |
 | `tasks` | Task management with priority, deadline, completion |
 | `focus_sessions` | Daily Pomodoro session logs (minutes + count) |
 | `savings_goals` | Savings targets with progress tracking |
 | `custom_categories` | User-defined expense categories |
+| `events` | User logs, level milestones, badge unlocks, and action tracking |
+| `user_preferences` | UI accents, theme preference, Pomodoro configurations, and notification alerts |
 
 All tables enforce **user-scoped access** — authenticated users can only read, write, update, and delete their own rows.
 
