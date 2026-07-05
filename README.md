@@ -218,7 +218,7 @@ The app will be available at **http://localhost:5173**
 
 ## 🗄️ Database Schema
 
-FocusForge uses **9 Supabase tables**, all protected by Row-Level Security:
+FocusForge uses **9 Supabase tables**, all are protected by Row-Level Security:
 
 | Table | Purpose |
 |-------|---------|
