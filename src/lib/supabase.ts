@@ -40,12 +40,23 @@ export type Database = {
           id: string;
           user_id: string;
           title: string;
+          description: string;
           priority: string;
+          section_id: string | null;
+          scheduled_date: string | null;
           deadline: string | null;
+          has_no_end_date: boolean;
+          reminder_enabled: boolean;
+          reminder_time: string | null;
+          recurrence_type: string;
+          recurrence_interval: number | null;
+          recurrence_weekdays: string[] | null;
+          recurrence_end_date: string | null;
           completed: boolean;
           subject: string;
           created_at: string;
           completed_at: string | null;
+          updated_at: string;
         };
       };
       focus_sessions: {
@@ -79,6 +90,30 @@ export type Database = {
           icon: string;
           color: string;
           created_at: string;
+        };
+      };
+      task_sections: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          icon: string;
+          color: string;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+      };
+      task_completions: {
+        Row: {
+          id: string;
+          user_id: string;
+          task_id: string;
+          occurrence_date: string;
+          completed: boolean;
+          completed_at: string;
+          created_at: string;
+          updated_at: string;
         };
       };
     };

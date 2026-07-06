@@ -24,6 +24,7 @@ import {
   calculateSavings
 } from '../lib/statistics/finance';
 import { payRecurringExpense, skipRecurringExpense } from '../lib/recurringUtils';
+import RecurringDetailsModal from '../components/finance/RecurringDetailsModal';
 
 const DEFAULT_CATEGORIES = [
   { id: 'food', name: 'Food', icon: '🍔', color: '#f59e0b' },
@@ -65,6 +66,7 @@ export default function Finance() {
   // Recurring Modal states
   const [showAddRecurring, setShowAddRecurring] = useState(false);
   const [editingRecurring, setEditingRecurring] = useState<RecurringExpense | null>(null);
+  const [selectedRecurringDetails, setSelectedRecurringDetails] = useState<RecurringExpense | null>(null);
 
   // Calendar States
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
@@ -525,7 +527,11 @@ export default function Finance() {
                     </h3>
                     <div className="space-y-3">
                       {recurringStats.overdue.map(bill => (
-                        <div key={bill.id} className="p-4 rounded-xl bg-red-950/20 border border-red-900/30 flex items-center justify-between gap-4">
+                        <div 
+                          key={bill.id} 
+                          className="p-4 rounded-xl bg-red-950/20 border border-red-900/30 flex items-center justify-between gap-4 cursor-pointer hover:border-red-500/30 transition-all text-left"
+                          onClick={() => setSelectedRecurringDetails(bill)}
+                        >
                           <div>
                             <h4 className="text-sm font-bold text-white flex items-center gap-2">
                               <span className="text-lg">{bill.icon}</span>
@@ -537,24 +543,7 @@ export default function Finance() {
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-extrabold text-red-400">-{formatCurrency(bill.amount)}</span>
-                            <button
-                              onClick={() => payRecurringExpense(bill.id)}
-                              className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-lg border border-green-500/30 hover:bg-green-500/30"
-                            >
-                              Pay
-                            </button>
-                            <button
-                              onClick={() => skipRecurringExpense(bill.id)}
-                              className="px-3 py-1 bg-slate-800 text-slate-400 text-xs font-bold rounded-lg border border-white/5 hover:bg-slate-700"
-                            >
-                              Skip
-                            </button>
-                            <button
-                              onClick={() => setEditingRecurring(bill)}
-                              className="p-1 text-slate-400 hover:text-white"
-                            >
-                              <Edit2 size={13} />
-                            </button>
+                            <span className="text-[10px] text-red-400 font-bold uppercase border border-red-500/20 px-2 py-0.5 rounded">Overdue</span>
                           </div>
                         </div>
                       ))}
@@ -624,14 +613,18 @@ export default function Finance() {
                           
                           <div className="flex flex-wrap gap-0.5 justify-center mt-1">
                             {cell.bills.map(b => (
-                              <span
+                              <button
                                 key={b.id}
-                                className="text-[11px] w-4 h-4 rounded-full flex items-center justify-center bg-purple-500/20 border border-purple-500/50 cursor-pointer"
+                                type="button"
+                                className="text-[11px] w-5 h-5 rounded-full flex items-center justify-center bg-purple-500/20 border border-purple-500/50 hover:bg-purple-500/40 hover:scale-110 transition-all cursor-pointer"
                                 title={`${b.name}: -${formatCurrency(b.amount)}`}
-                                onClick={() => payRecurringExpense(b.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedRecurringDetails(b);
+                                }}
                               >
                                 {b.icon}
-                              </span>
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -655,9 +648,12 @@ export default function Finance() {
                             {cell.bills.map(b => (
                               <div
                                 key={b.id}
-                                className="px-1 py-0.5 rounded text-[8px] font-semibold flex items-center gap-1 border cursor-pointer hover:-translate-y-0.5 transition-transform"
+                                className="px-1.5 py-0.5 rounded text-[8px] font-semibold flex items-center gap-1 border cursor-pointer hover:-translate-y-0.5 transition-all"
                                 style={{ background: `${b.color || '#a855f7'}15`, color: b.color || '#a855f7', borderColor: `${b.color || '#a855f7'}30` }}
-                                onClick={() => payRecurringExpense(b.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedRecurringDetails(b);
+                                }}
                               >
                                 <span>{b.icon}</span>
                                 <span className="truncate max-w-[40px]">{b.name}</span>
@@ -680,7 +676,7 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Today</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingToday.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
                           ))}
                         </div>
                       </div>
@@ -691,7 +687,7 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-pink-400 uppercase tracking-widest mb-2">Tomorrow</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingTomorrow.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
                           ))}
                         </div>
                       </div>
@@ -702,7 +698,7 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-2">This Week</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingThisWeek.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
                           ))}
                         </div>
                       </div>
@@ -713,10 +709,65 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 font-medium">Later Next Month</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingNextMonth.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
                           ))}
                         </div>
                       </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* SECTION 4: All Configured Bills & Subscriptions */}
+                <div className="glass-card p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-sm">All Configured Bills ({recurringExpenses.length})</h3>
+                    <button
+                      onClick={() => setShowAddRecurring(true)}
+                      className="px-2.5 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 rounded-lg text-[10px] font-bold"
+                    >
+                      + Add Bill
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {recurringExpenses.length === 0 ? (
+                      <p className="text-xs text-slate-500 text-center py-4">No bills configured yet.</p>
+                    ) : (
+                      recurringExpenses.map(bill => {
+                        return (
+                          <div
+                            key={bill.id}
+                            className="p-3 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer text-left"
+                            onClick={() => setSelectedRecurringDetails(bill)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-base"
+                                style={{ background: `${bill.color}15`, color: bill.color }}
+                              >
+                                {bill.icon || '🏷'}
+                              </div>
+                              <div>
+                                <h4 className="text-xs font-bold text-white">{bill.name}</h4>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[9px] text-slate-400 capitalize">{bill.frequency}</span>
+                                  <span className="text-[9px] text-slate-500">•</span>
+                                  <span 
+                                    className="text-[9px] font-semibold uppercase"
+                                    style={{ color: bill.status === 'active' ? '#10b981' : '#f59e0b' }}
+                                  >
+                                    {bill.status}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-extrabold text-white">-{formatCurrency(bill.amount)}</span>
+                              <span className="text-[9px] text-slate-500 block mt-0.5">Due {bill.payment_date}</span>
+                            </div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -1062,6 +1113,7 @@ export default function Finance() {
                 color: data.color,
                 auto_confirm: data.auto_confirm,
                 auto_add: data.auto_add,
+                status: data.status,
               });
             }
             setShowAddRecurring(false);
@@ -1102,6 +1154,7 @@ export default function Finance() {
                 color: data.color,
                 auto_confirm: data.auto_confirm,
                 auto_add: data.auto_add,
+                status: data.status,
               }).eq('id', editingRecurring.id);
             }
             setEditingRecurring(null);
@@ -1119,6 +1172,29 @@ export default function Finance() {
               await supabase.from('recurring_expenses').delete().eq('id', editingRecurring.id);
             }
             setEditingRecurring(null);
+          }}
+        />
+      )}
+
+      {selectedRecurringDetails && (
+        <RecurringDetailsModal
+          bill={selectedRecurringDetails}
+          onClose={() => setSelectedRecurringDetails(null)}
+          onEdit={() => {
+            const billToEdit = selectedRecurringDetails;
+            setSelectedRecurringDetails(null);
+            setEditingRecurring(billToEdit);
+          }}
+          onDelete={async () => {
+            removeRecurringExpenseLocal(selectedRecurringDetails.id);
+            logEvent('recurring_deleted', 'finance', selectedRecurringDetails.id, {
+              title: selectedRecurringDetails.name,
+              description: `Deleted recurring subscription/bill: ${selectedRecurringDetails.name}`,
+            });
+            if (user) {
+              await supabase.from('recurring_expenses').delete().eq('id', selectedRecurringDetails.id);
+            }
+            setSelectedRecurringDetails(null);
           }}
         />
       )}
@@ -1245,12 +1321,12 @@ function SavingsGoalCard({ goal, onDelete, onAddFunds }: {
   );
 }
 
-function UpcomingBillCard({ bill }: { bill: RecurringExpense }) {
+function UpcomingBillCard({ bill, onSelect }: { bill: RecurringExpense; onSelect: () => void }) {
   const daysLeft = differenceInDays(parseISO(bill.payment_date), new Date());
   return (
     <div
-      className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer"
-      onClick={() => payRecurringExpense(bill.id)}
+      className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer text-left"
+      onClick={onSelect}
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center text-xl">
@@ -1397,6 +1473,67 @@ function AddEditRecurringModal({
   const [color, setColor] = useState(initialData?.color || '#a855f7');
   const [autoConfirm, setAutoConfirm] = useState(initialData ? initialData.auto_confirm : false);
   const [autoAdd, setAutoAdd] = useState(initialData ? initialData.auto_add : false);
+  const [status, setStatus] = useState(initialData?.status || 'active');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleValidateAndSave = () => {
+    setValidationError(null);
+    if (!name.trim()) {
+      setValidationError('Expense name is required.');
+      return;
+    }
+    const amt = parseFloat(amount);
+    if (isNaN(amt) || amt <= 0) {
+      setValidationError('Amount must be greater than 0.');
+      return;
+    }
+    if (!startDate) {
+      setValidationError('Start date is required.');
+      return;
+    }
+    if (!paymentDate) {
+      setValidationError('First billing/payment date is required.');
+      return;
+    }
+    if (endDate && isBefore(parseISO(endDate), parseISO(startDate))) {
+      setValidationError('End date cannot be before the start date.');
+      return;
+    }
+    if (frequency === 'custom') {
+      const customInt = parseInt(customInterval);
+      if (isNaN(customInt) || customInt <= 0) {
+        setValidationError('Custom interval must be a positive number of days.');
+        return;
+      }
+    }
+    if (reminder === 'custom') {
+      const customRem = parseInt(reminderCustomDays);
+      if (isNaN(customRem) || customRem < 0) {
+        setValidationError('Custom reminder days must be a non-negative number.');
+        return;
+      }
+    }
+
+    onSave({
+      name: name.trim(),
+      amount: amt,
+      category,
+      description: description.trim(),
+      start_date: startDate,
+      end_date: endDate || null,
+      frequency,
+      custom_interval: frequency === 'custom' ? parseInt(customInterval) : 30,
+      payment_date: paymentDate,
+      reminder,
+      reminder_custom_days: reminder === 'custom' ? parseInt(reminderCustomDays) : 0,
+      notification,
+      icon: icon.trim() || '🏷',
+      color,
+      auto_confirm: autoConfirm,
+      auto_add: autoAdd,
+      status,
+    });
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -1469,6 +1606,30 @@ function AddEditRecurringModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <label className="font-medium text-slate-400 mb-1 block">Recurrence Status</label>
+              <select 
+                value={status} 
+                onChange={(e) => setStatus(e.target.value)} 
+                className="input-glass w-full px-4 py-2.5"
+              >
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className="font-medium text-slate-400 mb-1 block">End Date (Optional)</label>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)} 
+                className="input-glass w-full px-4 py-2.5" 
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <label className="font-medium text-slate-400 mb-1 block">Reminder Preferences</label>
               <select value={reminder} onChange={(e) => setReminder(e.target.value)} className="input-glass w-full px-4 py-2.5">
                 <option value="same-day">Same Day</option>
@@ -1497,6 +1658,9 @@ function AddEditRecurringModal({
               <input type="checkbox" checked={autoAdd} onChange={(e) => setAutoAdd(e.target.checked)} className="w-4 h-4 accent-purple-500" />
             </div>
           </div>
+          <div className="text-[10px] text-slate-500 italic mt-0.5 text-right">
+            * Auto options process in-app when you open the application.
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1509,6 +1673,7 @@ function AddEditRecurringModal({
                 {RANDOM_COLORS.map(c => (
                   <button
                     key={c}
+                    type="button"
                     onClick={() => setColor(c)}
                     className="w-5 h-5 rounded-full border border-white/10"
                     style={{ background: c, transform: color === c ? 'scale(1.2)' : 'none' }}
@@ -1519,34 +1684,33 @@ function AddEditRecurringModal({
           </div>
         </div>
 
+        {validationError && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-[11px] flex items-center gap-1.5 font-semibold mt-4">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
+
         <div className="flex gap-3 mt-6">
           {initialData && onDelete && (
-            <button onClick={onDelete} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold">Delete</button>
+            <button 
+              type="button"
+              onClick={onDelete} 
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold"
+            >
+              Delete
+            </button>
           )}
-          <button onClick={onClose} className="btn-ghost flex-1 px-4 py-2 text-xs font-semibold">Cancel</button>
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="btn-ghost flex-1 px-4 py-2 text-xs font-semibold"
+          >
+            Cancel
+          </button>
           <button
-            onClick={() => {
-              if (name && amount) {
-                onSave({
-                  name,
-                  amount: parseFloat(amount),
-                  category,
-                  description,
-                  start_date: startDate,
-                  end_date: endDate || null,
-                  frequency,
-                  custom_interval: parseInt(customInterval) || 30,
-                  payment_date: paymentDate,
-                  reminder,
-                  reminder_custom_days: parseInt(reminderCustomDays) || 0,
-                  notification,
-                  icon,
-                  color,
-                  auto_confirm: autoConfirm,
-                  auto_add: autoAdd
-                });
-              }
-            }}
+            type="button"
+            onClick={handleValidateAndSave}
             className="btn-neon flex-1 px-4 py-2 text-xs font-semibold"
           >
             {initialData ? 'Save Changes' : 'Create Bill'}

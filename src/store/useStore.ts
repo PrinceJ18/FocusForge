@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { AppEvent } from '../lib/events';
+import { format } from 'date-fns';
 export type Priority = 'low' | 'medium' | 'high';
 export type TimerMode = 'focus' | 'break' | 'longbreak';
 
@@ -14,6 +15,8 @@ export interface Expense {
   note: string;
   expense_date: string;
   created_at: string;
+  recurring_expense_id?: string | null;
+  recurring_occurrence_date?: string | null;
 }
 
 export interface RecurringExpense {
@@ -217,14 +220,48 @@ export function applyPreferencesToDOM(pref: UserPreferences) {
 
 export interface Task {
   id: string;
+  user_id: string;
   title: string;
+  description: string;
   priority: Priority;
+  section_id: string | null;
+  scheduled_date: string | null;
   deadline: string | null;
+  has_no_end_date: boolean;
+  reminder_enabled: boolean;
+  reminder_time: string | null;
+  recurrence_type: 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays' | 'custom';
+  recurrence_interval: number | null;
+  recurrence_weekdays: string[] | null;
+  recurrence_end_date: string | null;
   completed: boolean;
   subject: string;
   created_at: string;
   completed_at: string | null;
+  updated_at: string;
   xp_awarded?: boolean;
+}
+
+export interface TaskSection {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
+  color: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskCompletion {
+  id: string;
+  user_id: string;
+  task_id: string;
+  occurrence_date: string;
+  completed: boolean;
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface FocusSession {
@@ -304,11 +341,25 @@ interface AppState {
   updateTaskLocal: (id: string, updates: Partial<Task>) => void;
   removeTaskLocal: (id: string) => void;
 
+  // Task Sections
+  taskSections: TaskSection[];
+  setTaskSections: (sections: TaskSection[]) => void;
+  addTaskSectionLocal: (section: TaskSection) => void;
+  updateTaskSectionLocal: (id: string, updates: Partial<TaskSection>) => void;
+  removeTaskSectionLocal: (id: string) => void;
+
+  // Task Completions
+  taskCompletions: TaskCompletion[];
+  setTaskCompletions: (completions: TaskCompletion[]) => void;
+  addTaskCompletionLocal: (completion: TaskCompletion) => void;
+  removeTaskCompletionLocal: (taskId: string, occurrenceDate: string) => void;
+
   // Focus
   focusSessions: FocusSession[];
   setFocusSessions: (sessions: FocusSession[]) => void;
   addFocusSessionLocal: (session: FocusSession) => void;
   updateFocusSessionLocal: (id: string, updates: Partial<FocusSession>) => void;
+  upsertFocusSessionLocal: (session: FocusSession) => void;
 
   // Timer state (not persisted to DB)
   timerSeconds: number;
@@ -318,12 +369,19 @@ interface AppState {
   breakMinutes: number;
   longBreakMinutes: number;
   sessionCount: number;
+  timerDeadline: number | null;
+  lastCompletedDeadline: number | null;
+  timerRunDurationSeconds: number | null;
+  timerOwnerId: string | null;
+  userTimerStates: Record<string, { timerSeconds: number; timerRunning: boolean; timerMode: TimerMode; timerDeadline: number | null; lastCompletedDeadline: number | null; timerRunDurationSeconds: number | null }>;
   setTimerSeconds: (s: number) => void;
   setTimerRunning: (r: boolean) => void;
   setTimerMode: (m: TimerMode) => void;
   setPomodoroMinutes: (m: number) => void;
   incrementSessionCount: () => void;
   resetTimer: () => void;
+  updateActiveUserTimerState: (updates: Partial<{ timerSeconds: number; timerRunning: boolean; timerMode: TimerMode; timerDeadline: number | null; lastCompletedDeadline: number | null; timerRunDurationSeconds: number | null }>) => void;
+  syncUserTimerState: (userId: string | null) => void;
 
   // Profile
   updateProfile: (updates: Partial<Profile>) => void;
@@ -381,7 +439,10 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       user: null,
       profile: defaultProfile,
-      setUser: (user) => set({ user }),
+      setUser: (user) => {
+        set({ user });
+        get().syncUserTimerState(user?.id || null);
+      },
 
       currentPage: 'dashboard',
       setPage: (page) => set({ currentPage: page }),
@@ -402,6 +463,23 @@ export const useStore = create<AppState>()(
         set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)) })),
       removeTaskLocal: (id) => set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
 
+      taskSections: [],
+      setTaskSections: (taskSections) => set({ taskSections }),
+      addTaskSectionLocal: (section) => set((s) => ({ taskSections: [...s.taskSections, section] })),
+      updateTaskSectionLocal: (id, updates) =>
+        set((s) => ({ taskSections: s.taskSections.map((ts) => ts.id === id ? { ...ts, ...updates } : ts) })),
+      removeTaskSectionLocal: (id) => set((s) => ({ taskSections: s.taskSections.filter((ts) => ts.id !== id) })),
+
+      taskCompletions: [],
+      setTaskCompletions: (taskCompletions) => set({ taskCompletions }),
+      addTaskCompletionLocal: (completion) => set((s) => ({ taskCompletions: [...s.taskCompletions, completion] })),
+      removeTaskCompletionLocal: (taskId, occurrenceDate) =>
+        set((s) => ({
+          taskCompletions: s.taskCompletions.filter(
+            (c) => !(c.task_id === taskId && c.occurrence_date === occurrenceDate)
+          ),
+        })),
+
       focusSessions: [],
       setFocusSessions: (focusSessions) => set({ focusSessions }),
       addFocusSessionLocal: (session) =>
@@ -412,6 +490,18 @@ export const useStore = create<AppState>()(
             fs.id === id ? { ...fs, ...updates } : fs
           ),
         })),
+      upsertFocusSessionLocal: (session) => set((s) => {
+        const index = s.focusSessions.findIndex(
+          (fs) => fs.id === session.id || fs.session_date === session.session_date
+        );
+        if (index >= 0) {
+          const next = [...s.focusSessions];
+          next[index] = session;
+          return { focusSessions: next };
+        } else {
+          return { focusSessions: [session, ...s.focusSessions] };
+        }
+      }),
 
       timerSeconds: 25 * 60,
       timerRunning: false,
@@ -420,10 +510,18 @@ export const useStore = create<AppState>()(
       breakMinutes: 5,
       longBreakMinutes: 15,
       sessionCount: 0,
-      setTimerSeconds: (timerSeconds) => set({ timerSeconds }),
-      setTimerRunning: (timerRunning) => set({ timerRunning }),
-      setTimerMode: (timerMode) => set({ timerMode }),
-      setPomodoroMinutes: (pomodoroMinutes) => set({ pomodoroMinutes }),
+      timerDeadline: null,
+      lastCompletedDeadline: null,
+      timerRunDurationSeconds: null,
+      timerOwnerId: null,
+      userTimerStates: {},
+      setTimerSeconds: (timerSeconds) => get().updateActiveUserTimerState({ timerSeconds }),
+      setTimerRunning: (timerRunning) => get().updateActiveUserTimerState({ timerRunning }),
+      setTimerMode: (timerMode) => get().updateActiveUserTimerState({ timerMode }),
+      setPomodoroMinutes: (pomodoroMinutes) => {
+        const clamped = isNaN(pomodoroMinutes) || pomodoroMinutes <= 0 ? 25 : Math.max(1, Math.min(120, pomodoroMinutes));
+        set({ pomodoroMinutes: clamped });
+      },
       incrementSessionCount: () => set((s) => ({ sessionCount: s.sessionCount + 1 })),
       resetTimer: () => {
         const { timerMode, pomodoroMinutes, breakMinutes, longBreakMinutes } = get();
@@ -433,7 +531,65 @@ export const useStore = create<AppState>()(
             : timerMode === 'break'
               ? breakMinutes * 60
               : longBreakMinutes * 60;
-        set({ timerSeconds: seconds, timerRunning: false });
+        get().updateActiveUserTimerState({ 
+          timerSeconds: seconds, 
+          timerRunning: false, 
+          timerDeadline: null, 
+          timerRunDurationSeconds: null 
+        });
+      },
+      updateActiveUserTimerState: (updates) => {
+        const { timerSeconds, timerRunning, timerMode, timerDeadline, lastCompletedDeadline, timerRunDurationSeconds, timerOwnerId, userTimerStates } = get();
+        const ownerKey = timerOwnerId || 'anonymous';
+        const nextActive = {
+          timerSeconds: updates.timerSeconds !== undefined ? updates.timerSeconds : timerSeconds,
+          timerRunning: updates.timerRunning !== undefined ? updates.timerRunning : timerRunning,
+          timerMode: updates.timerMode !== undefined ? updates.timerMode : timerMode,
+          timerDeadline: updates.timerDeadline !== undefined ? updates.timerDeadline : timerDeadline,
+          lastCompletedDeadline: updates.lastCompletedDeadline !== undefined ? updates.lastCompletedDeadline : lastCompletedDeadline,
+          timerRunDurationSeconds: updates.timerRunDurationSeconds !== undefined ? updates.timerRunDurationSeconds : timerRunDurationSeconds,
+        };
+        set({
+          ...nextActive,
+          userTimerStates: {
+            ...userTimerStates,
+            [ownerKey]: nextActive
+          }
+        });
+      },
+      syncUserTimerState: (userId) => {
+        const key = userId || 'anonymous';
+        const { timerSeconds, timerRunning, timerMode, timerDeadline, lastCompletedDeadline, timerRunDurationSeconds, userTimerStates, pomodoroMinutes } = get();
+        const prevOwner = get().timerOwnerId || 'anonymous';
+        const nextStates = {
+          ...userTimerStates,
+          [prevOwner]: {
+            timerSeconds,
+            timerRunning,
+            timerMode,
+            timerDeadline,
+            lastCompletedDeadline,
+            timerRunDurationSeconds
+          }
+        };
+        const targetState = nextStates[key] || {
+          timerSeconds: pomodoroMinutes * 60,
+          timerRunning: false,
+          timerMode: 'focus',
+          timerDeadline: null,
+          lastCompletedDeadline: null,
+          timerRunDurationSeconds: null
+        };
+        set({
+          timerSeconds: targetState.timerSeconds,
+          timerRunning: targetState.timerRunning,
+          timerMode: targetState.timerMode,
+          timerDeadline: targetState.timerDeadline,
+          lastCompletedDeadline: targetState.lastCompletedDeadline,
+          timerRunDurationSeconds: targetState.timerRunDurationSeconds,
+          timerOwnerId: key,
+          userTimerStates: nextStates
+        });
       },
 
       updateProfile: (updates) => set((s) => ({ profile: { ...s.profile, ...updates } })),
@@ -518,9 +674,25 @@ export const useStore = create<AppState>()(
         applyPreferencesToDOM(next);
         
         const timerUpdates: Partial<AppState> = {};
-        if (updates.default_pomodoro !== undefined) timerUpdates.pomodoroMinutes = updates.default_pomodoro;
-        if (updates.default_short_break !== undefined) timerUpdates.breakMinutes = updates.default_short_break;
-        if (updates.default_long_break !== undefined) timerUpdates.longBreakMinutes = updates.default_long_break;
+        
+        if (updates.default_pomodoro !== undefined) {
+          const val = typeof updates.default_pomodoro === 'number' ? updates.default_pomodoro : parseInt(String(updates.default_pomodoro));
+          const clamped = isNaN(val) || val <= 0 ? 25 : Math.max(1, Math.min(120, val));
+          next.default_pomodoro = clamped;
+          timerUpdates.pomodoroMinutes = clamped;
+        }
+        if (updates.default_short_break !== undefined) {
+          const val = typeof updates.default_short_break === 'number' ? updates.default_short_break : parseInt(String(updates.default_short_break));
+          const clamped = isNaN(val) || val <= 0 ? 5 : Math.max(1, Math.min(120, val));
+          next.default_short_break = clamped;
+          timerUpdates.breakMinutes = clamped;
+        }
+        if (updates.default_long_break !== undefined) {
+          const val = typeof updates.default_long_break === 'number' ? updates.default_long_break : parseInt(String(updates.default_long_break));
+          const clamped = isNaN(val) || val <= 0 ? 15 : Math.max(1, Math.min(120, val));
+          next.default_long_break = clamped;
+          timerUpdates.longBreakMinutes = clamped;
+        }
 
         return { preferences: next, ...timerUpdates };
       }),
@@ -536,6 +708,11 @@ export const useStore = create<AppState>()(
         timerRunning: state.timerRunning,
         timerMode: state.timerMode,
         sessionCount: state.sessionCount,
+        timerDeadline: state.timerDeadline,
+        lastCompletedDeadline: state.lastCompletedDeadline,
+        timerRunDurationSeconds: state.timerRunDurationSeconds,
+        timerOwnerId: state.timerOwnerId,
+        userTimerStates: state.userTimerStates,
         splits: state.splits,
         events: state.events,
         recurringExpenses: state.recurringExpenses,
@@ -549,7 +726,10 @@ export const useStore = create<AppState>()(
 export const loadUserData = async (userId: string) => {
   const store = useStore.getState();
 
-  const [expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes] = await Promise.all([
+  const [
+    expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes,
+    sectionsRes, completionsRes
+  ] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('focus_sessions').select('*').eq('user_id', userId).order('session_date', { ascending: false }),
@@ -559,6 +739,8 @@ export const loadUserData = async (userId: string) => {
     supabase.from('events').select('*').eq('user_id', userId).order('timestamp', { ascending: false }),
     supabase.from('recurring_expenses').select('*').eq('user_id', userId).order('payment_date', { ascending: true }),
     supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
+    supabase.from('task_sections').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
+    supabase.from('task_completions').select('*').eq('user_id', userId),
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);
@@ -566,6 +748,16 @@ export const loadUserData = async (userId: string) => {
   if (sessionsRes.data) store.setFocusSessions(sessionsRes.data);
   if (goalsRes.data) store.setSavingsGoals(goalsRes.data);
   if (catsRes.data) store.setCustomCategories(catsRes.data);
+  if (sectionsRes && sectionsRes.data) {
+    store.setTaskSections(sectionsRes.data);
+  } else if (sectionsRes && sectionsRes.error) {
+    console.warn('Task sections load failed, using local storage cache:', sectionsRes.error.message);
+  }
+  if (completionsRes && completionsRes.data) {
+    store.setTaskCompletions(completionsRes.data);
+  } else if (completionsRes && completionsRes.error) {
+    console.warn('Task completions load failed, using local storage cache:', completionsRes.error.message);
+  }
   if (eventsRes && eventsRes.data) {
     store.setEvents(eventsRes.data);
   } else if (eventsRes && eventsRes.error) {
@@ -608,4 +800,291 @@ export const saveProfile = async (userId: string, data: Partial<Profile>) => {
     ...data,
     updated_at: new Date().toISOString(),
   });
+};
+
+export const fetchTasks = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  if (data) useStore.getState().setTasks(data);
+};
+
+export const createTask = async (task: Omit<Task, 'user_id' | 'created_at' | 'updated_at'>, userId: string) => {
+  const now = new Date().toISOString();
+  const newTask: Task = {
+    ...task,
+    user_id: userId,
+    created_at: now,
+    updated_at: now,
+  };
+  useStore.getState().addTaskLocal(newTask);
+  
+  const { data, error } = await supabase
+    .from('tasks')
+    .insert({
+      id: newTask.id,
+      user_id: userId,
+      title: newTask.title,
+      description: newTask.description,
+      priority: newTask.priority,
+      section_id: newTask.section_id,
+      scheduled_date: newTask.scheduled_date,
+      deadline: newTask.deadline,
+      has_no_end_date: newTask.has_no_end_date,
+      reminder_enabled: newTask.reminder_enabled,
+      reminder_time: newTask.reminder_time,
+      recurrence_type: newTask.recurrence_type,
+      recurrence_interval: newTask.recurrence_interval,
+      recurrence_weekdays: newTask.recurrence_weekdays,
+      recurrence_end_date: newTask.recurrence_end_date,
+      completed: newTask.completed,
+      subject: newTask.subject,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    useStore.getState().removeTaskLocal(newTask.id);
+    throw error;
+  }
+  if (data) {
+    useStore.getState().removeTaskLocal(newTask.id);
+    useStore.getState().addTaskLocal(data);
+  }
+};
+
+export const updateTask = async (id: string, updates: Partial<Task>) => {
+  const store = useStore.getState();
+  const original = store.tasks.find(t => t.id === id);
+  const now = new Date().toISOString();
+
+  store.updateTaskLocal(id, { ...updates, updated_at: now });
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      ...updates,
+      updated_at: now,
+    })
+    .eq('id', id);
+
+  if (error) {
+    if (original) store.updateTaskLocal(id, original);
+    throw error;
+  }
+};
+
+export const deleteTask = async (id: string) => {
+  const store = useStore.getState();
+  const original = store.tasks.find(t => t.id === id);
+
+  store.removeTaskLocal(id);
+
+  const { error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    if (original) store.addTaskLocal(original);
+    throw error;
+  }
+};
+
+export const completeTask = async (task: Task, date: Date, userId: string) => {
+  const now = new Date().toISOString();
+  const dateStr = format(date, 'yyyy-MM-dd');
+
+  if (task.recurrence_type && task.recurrence_type !== 'none') {
+    const newComp = {
+      id: crypto.randomUUID(),
+      user_id: userId,
+      task_id: task.id,
+      occurrence_date: dateStr,
+      completed: true,
+      completed_at: now,
+      created_at: now,
+      updated_at: now,
+    };
+    useStore.getState().addTaskCompletionLocal(newComp);
+
+    const { error } = await supabase
+      .from('task_completions')
+      .insert(newComp);
+
+    if (error) {
+      useStore.getState().removeTaskCompletionLocal(task.id, dateStr);
+      throw error;
+    }
+  } else {
+    useStore.getState().updateTaskLocal(task.id, {
+      completed: true,
+      completed_at: now,
+      updated_at: now,
+    });
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({
+        completed: true,
+        completed_at: now,
+        updated_at: now,
+      })
+      .eq('id', task.id);
+
+    if (error) {
+      useStore.getState().updateTaskLocal(task.id, {
+        completed: false,
+        completed_at: task.completed_at,
+        updated_at: task.updated_at,
+      });
+      throw error;
+    }
+  }
+};
+
+export const uncompleteTask = async (task: Task, date: Date) => {
+  const dateStr = format(date, 'yyyy-MM-dd');
+
+  if (task.recurrence_type && task.recurrence_type !== 'none') {
+    const store = useStore.getState();
+    const originalCompletion = store.taskCompletions.find(
+      c => c.task_id === task.id && c.occurrence_date === dateStr
+    );
+
+    store.removeTaskCompletionLocal(task.id, dateStr);
+
+    const { error } = await supabase
+      .from('task_completions')
+      .delete()
+      .eq('task_id', task.id)
+      .eq('occurrence_date', dateStr);
+
+    if (error) {
+      if (originalCompletion) store.addTaskCompletionLocal(originalCompletion);
+      throw error;
+    }
+  } else {
+    const originalCompleted = task.completed;
+    const originalCompletedAt = task.completed_at;
+    const originalUpdatedAt = task.updated_at;
+    const now = new Date().toISOString();
+
+    useStore.getState().updateTaskLocal(task.id, {
+      completed: false,
+      completed_at: null,
+      updated_at: now,
+    });
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({
+        completed: false,
+        completed_at: null,
+        updated_at: now,
+      })
+      .eq('id', task.id);
+
+    if (error) {
+      useStore.getState().updateTaskLocal(task.id, {
+        completed: originalCompleted,
+        completed_at: originalCompletedAt,
+        updated_at: originalUpdatedAt,
+      });
+      throw error;
+    }
+  }
+};
+
+export const fetchTaskSections = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('task_sections')
+    .select('*')
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  if (data) useStore.getState().setTaskSections(data);
+};
+
+export const createTaskSection = async (
+  section: Omit<TaskSection, 'user_id' | 'created_at' | 'updated_at'>,
+  userId: string
+) => {
+  const now = new Date().toISOString();
+  const newSection: TaskSection = {
+    ...section,
+    user_id: userId,
+    created_at: now,
+    updated_at: now,
+  };
+  useStore.getState().addTaskSectionLocal(newSection);
+
+  const { data, error } = await supabase
+    .from('task_sections')
+    .insert({
+      id: newSection.id,
+      user_id: userId,
+      name: newSection.name,
+      icon: newSection.icon,
+      color: newSection.color,
+      sort_order: newSection.sort_order,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    useStore.getState().removeTaskSectionLocal(newSection.id);
+    throw error;
+  }
+  if (data) {
+    useStore.getState().removeTaskSectionLocal(newSection.id);
+    useStore.getState().addTaskSectionLocal(data);
+  }
+};
+
+export const updateTaskSection = async (id: string, updates: Partial<TaskSection>) => {
+  const store = useStore.getState();
+  const original = store.taskSections.find(s => s.id === id);
+  const now = new Date().toISOString();
+
+  store.updateTaskSectionLocal(id, { ...updates, updated_at: now });
+
+  const { error } = await supabase
+    .from('task_sections')
+    .update({
+      ...updates,
+      updated_at: now,
+    })
+    .eq('id', id);
+
+  if (error) {
+    if (original) store.updateTaskSectionLocal(id, original);
+    throw error;
+  }
+};
+
+export const deleteTaskSection = async (id: string) => {
+  const store = useStore.getState();
+  const original = store.taskSections.find(s => s.id === id);
+  
+  // Back up tasks matching this section in case of rollback
+  const affectedTasks = store.tasks.filter(t => t.section_id === id);
+
+  store.removeTaskSectionLocal(id);
+  // Locally update tasks to clear the section_id
+  affectedTasks.forEach(t => store.updateTaskLocal(t.id, { section_id: null }));
+
+  const { error } = await supabase
+    .from('task_sections')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    if (original) store.addTaskSectionLocal(original);
+    affectedTasks.forEach(t => store.updateTaskLocal(t.id, { section_id: id }));
+    throw error;
+  }
 };

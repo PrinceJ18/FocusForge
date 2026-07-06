@@ -314,8 +314,14 @@ export default function Settings() {
                   <input
                     type="number"
                     value={preferences.default_pomodoro}
-                    onChange={(e) => handleUpdatePref('default_pomodoro', parseInt(e.target.value) || 25)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      const clamped = isNaN(val) ? 25 : Math.max(1, Math.min(120, val));
+                      handleUpdatePref('default_pomodoro', clamped);
+                    }}
                     className="input-glass w-full px-3 py-2 text-white"
+                    min="1"
+                    max="120"
                   />
                 </div>
                 <div>
@@ -323,8 +329,14 @@ export default function Settings() {
                   <input
                     type="number"
                     value={preferences.default_short_break}
-                    onChange={(e) => handleUpdatePref('default_short_break', parseInt(e.target.value) || 5)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      const clamped = isNaN(val) ? 5 : Math.max(1, Math.min(120, val));
+                      handleUpdatePref('default_short_break', clamped);
+                    }}
                     className="input-glass w-full px-3 py-2 text-white"
+                    min="1"
+                    max="120"
                   />
                 </div>
                 <div>
@@ -332,8 +344,14 @@ export default function Settings() {
                   <input
                     type="number"
                     value={preferences.default_long_break}
-                    onChange={(e) => handleUpdatePref('default_long_break', parseInt(e.target.value) || 15)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      const clamped = isNaN(val) ? 15 : Math.max(1, Math.min(120, val));
+                      handleUpdatePref('default_long_break', clamped);
+                    }}
                     className="input-glass w-full px-3 py-2 text-white"
+                    min="1"
+                    max="120"
                   />
                 </div>
               </div>

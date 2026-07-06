@@ -1,50 +1,84 @@
-import { addDays, addWeeks, addMonths, addYears, parseISO, format, isBefore } from 'date-fns';
+import { 
+  addDays, addWeeks, addMonths, addYears, parseISO, format, 
+  isBefore, getDaysInMonth, setDate, isAfter 
+} from 'date-fns';
 import { supabase } from './supabase';
 import { useStore, type RecurringExpense, type Expense } from '../store/useStore';
 import { logEvent } from './events';
 
 /**
- * Calculates the next billing date for a given current date and frequency.
+ * Calculates the next billing date for a given current date and frequency,
+ * preserving the original start date billing day of month to avoid month-drift.
  */
-export function getNextPaymentDate(currentDateStr: string, frequency: string, customInterval = 30): string {
+export function calculateNextPaymentDate(
+  bill: { start_date: string; frequency: string; custom_interval?: number | null },
+  fromDateStr: string
+): string {
   try {
-    const date = parseISO(currentDateStr);
-    let nextDate = date;
+    const fromDate = parseISO(fromDateStr);
+    const startDate = parseISO(bill.start_date);
+    const targetDay = isNaN(startDate.getDate()) ? fromDate.getDate() : startDate.getDate();
+    let nextDate = fromDate;
 
-    switch (frequency) {
+    switch (bill.frequency) {
       case 'daily':
-        nextDate = addDays(date, 1);
+        nextDate = addDays(fromDate, 1);
         break;
       case 'weekly':
-        nextDate = addWeeks(date, 1);
+        nextDate = addWeeks(fromDate, 1);
         break;
       case 'bi-weekly':
-        nextDate = addWeeks(date, 2);
+        nextDate = addWeeks(fromDate, 2);
         break;
-      case 'monthly':
-        nextDate = addMonths(date, 1);
+      case 'monthly': {
+        const candidate = addMonths(fromDate, 1);
+        const maxDays = getDaysInMonth(candidate);
+        nextDate = setDate(candidate, Math.min(targetDay, maxDays));
         break;
-      case 'quarterly':
-        nextDate = addMonths(date, 3);
+      }
+      case 'quarterly': {
+        const candidate = addMonths(fromDate, 3);
+        const maxDays = getDaysInMonth(candidate);
+        nextDate = setDate(candidate, Math.min(targetDay, maxDays));
         break;
-      case 'half-yearly':
-        nextDate = addMonths(date, 6);
+      }
+      case 'half-yearly': {
+        const candidate = addMonths(fromDate, 6);
+        const maxDays = getDaysInMonth(candidate);
+        nextDate = setDate(candidate, Math.min(targetDay, maxDays));
         break;
-      case 'yearly':
-        nextDate = addYears(date, 1);
+      }
+      case 'yearly': {
+        const candidate = addYears(fromDate, 1);
+        const maxDays = getDaysInMonth(candidate);
+        nextDate = setDate(candidate, Math.min(targetDay, maxDays));
         break;
+      }
       case 'custom':
-        nextDate = addDays(date, customInterval || 30);
+        nextDate = addDays(fromDate, bill.custom_interval || 30);
         break;
-      default:
-        nextDate = addMonths(date, 1);
+      default: {
+        const candidate = addMonths(fromDate, 1);
+        const maxDays = getDaysInMonth(candidate);
+        nextDate = setDate(candidate, Math.min(targetDay, maxDays));
+      }
     }
 
     return format(nextDate, 'yyyy-MM-dd');
   } catch (err) {
     console.error('Error calculating next payment date:', err);
-    return currentDateStr;
+    return fromDateStr;
   }
+}
+
+/**
+ * Legacy wrapper for backward compatibility.
+ */
+export function getNextPaymentDate(currentDateStr: string, frequency: string, customInterval = 30): string {
+  return calculateNextPaymentDate(
+    { start_date: currentDateStr, frequency, custom_interval: customInterval },
+    currentDateStr
+  );
 }
 
 /**
@@ -57,7 +91,17 @@ export async function payRecurringExpense(recurringId: string, customDate?: stri
   if (!bill) return;
 
   const payDate = customDate || bill.payment_date;
-  const nextPayDate = getNextPaymentDate(payDate, bill.frequency, bill.custom_interval);
+
+  // Prevent duplicate confirmation for the same occurrence date
+  const alreadyProcessed = store.expenses.some(
+    e => e.recurring_expense_id === bill.id && e.recurring_occurrence_date === payDate
+  );
+  if (alreadyProcessed) {
+    console.warn(`Payment occurrence on ${payDate} for bill ${bill.name} already processed.`);
+    return;
+  }
+
+  const nextPayDate = calculateNextPaymentDate(bill, payDate);
 
   // 1. Add to normal expenses
   const newExpense: Expense = {
@@ -68,6 +112,8 @@ export async function payRecurringExpense(recurringId: string, customDate?: stri
     note: `Recurring bill payment for ${bill.name}`,
     expense_date: payDate,
     created_at: new Date().toISOString(),
+    recurring_expense_id: bill.id,
+    recurring_occurrence_date: payDate,
   };
 
   store.addExpenseLocal(newExpense);
@@ -82,16 +128,32 @@ export async function payRecurringExpense(recurringId: string, customDate?: stri
         category: newExpense.category,
         note: newExpense.note,
         expense_date: newExpense.expense_date,
+        recurring_expense_id: newExpense.recurring_expense_id,
+        recurring_occurrence_date: newExpense.recurring_occurrence_date,
       });
     } catch (err) {
       console.warn('Failed to sync payment expense to database, local fallback active:', err);
     }
   }
 
-  // 2. Update recurring expense schedule
+  // 2. Update recurring expense schedule, stopping if next date exceeds end_date
+  let nextStatus = bill.status;
+  if (bill.end_date) {
+    try {
+      const nextPayDateObj = parseISO(nextPayDate);
+      const endDateObj = parseISO(bill.end_date);
+      if (isAfter(nextPayDateObj, endDateObj)) {
+        nextStatus = 'cancelled';
+      }
+    } catch (e) {
+      console.error('Error parsing end_date check:', e);
+    }
+  }
+
   const updates = {
     payment_date: nextPayDate,
     last_payment_date: payDate,
+    status: nextStatus,
     updated_at: new Date().toISOString(),
   };
 
@@ -102,6 +164,7 @@ export async function payRecurringExpense(recurringId: string, customDate?: stri
       await supabase.from('recurring_expenses').update({
         payment_date: updates.payment_date,
         last_payment_date: updates.last_payment_date,
+        status: updates.status,
         updated_at: updates.updated_at,
       }).eq('id', bill.id);
     } catch (err) {
@@ -134,10 +197,24 @@ export async function skipRecurringExpense(recurringId: string) {
   if (!bill) return;
 
   const payDate = bill.payment_date;
-  const nextPayDate = getNextPaymentDate(payDate, bill.frequency, bill.custom_interval);
+  const nextPayDate = calculateNextPaymentDate(bill, payDate);
+
+  let nextStatus = bill.status;
+  if (bill.end_date) {
+    try {
+      const nextPayDateObj = parseISO(nextPayDate);
+      const endDateObj = parseISO(bill.end_date);
+      if (isAfter(nextPayDateObj, endDateObj)) {
+        nextStatus = 'cancelled';
+      }
+    } catch (e) {
+      console.error('Error parsing end_date check:', e);
+    }
+  }
 
   const updates = {
     payment_date: nextPayDate,
+    status: nextStatus,
     updated_at: new Date().toISOString(),
   };
 
@@ -147,6 +224,7 @@ export async function skipRecurringExpense(recurringId: string) {
     try {
       await supabase.from('recurring_expenses').update({
         payment_date: updates.payment_date,
+        status: updates.status,
         updated_at: updates.updated_at,
       }).eq('id', bill.id);
     } catch (err) {
@@ -176,7 +254,6 @@ export async function processAutoAddRecurringExpenses() {
 
   for (const bill of store.recurringExpenses) {
     if (bill.status === 'active' && bill.auto_add) {
-      // Check if billing date is in the past or today
       try {
         const payDate = parseISO(bill.payment_date);
         const today = parseISO(todayStr);

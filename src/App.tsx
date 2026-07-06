@@ -103,6 +103,8 @@ export default function App() {
             savingsGoals: [],
             customCategories: [],
             splits: [],
+            taskSections: [],
+            taskCompletions: [],
             dataLoaded: false,
           });
         }

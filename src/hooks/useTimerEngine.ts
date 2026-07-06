@@ -3,7 +3,8 @@ import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { computeStreak } from '../lib/statsUtils';
-import { logEvent } from '../lib/events';
+import { logEvent, checkUnlocksAndMilestones } from '../lib/events';
+import { formatLocalDate } from '../lib/dateUtils';
 
 /**
  * Global timer engine — mount ONCE in App.tsx.
@@ -14,32 +15,77 @@ import { logEvent } from '../lib/events';
  */
 export function useTimerEngine() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Subscribe only to `timerRunning` to control start/stop of the interval.
   const timerRunning = useStore((s) => s.timerRunning);
 
+  // 1. Hydration/Mount check: validate deadline and restore progress cleanly
+  useEffect(() => {
+    const state = useStore.getState();
+    const currentUserId = state.user?.id || 'anonymous';
+
+    // Initialize owner key if missing
+    if (!state.timerOwnerId) {
+      useStore.setState({ timerOwnerId: currentUserId });
+    }
+
+    if (state.timerRunning && state.timerDeadline) {
+      const remaining = Math.max(0, Math.ceil((state.timerDeadline - Date.now()) / 1000));
+      if (remaining === 0) {
+        // Expired while offline/closed
+        const deadline = state.timerDeadline;
+        if (deadline !== state.lastCompletedDeadline) {
+          useStore.setState({ lastCompletedDeadline: deadline, timerDeadline: null, timerRunning: false });
+          state.setTimerSeconds(0);
+          handleTimerComplete(deadline);
+        }
+      } else {
+        state.setTimerSeconds(remaining);
+      }
+    } else if (!state.timerRunning) {
+      // Stopped: Safe-recovery logic for corrupted/legacy states
+      const validMode = state.timerMode || 'focus';
+      const validPomo = typeof state.pomodoroMinutes === 'number' && state.pomodoroMinutes > 0 ? state.pomodoroMinutes : 25;
+      const validBreak = typeof state.breakMinutes === 'number' && state.breakMinutes > 0 ? state.breakMinutes : 5;
+      const validLong = typeof state.longBreakMinutes === 'number' && state.longBreakMinutes > 0 ? state.longBreakMinutes : 15;
+      
+      const totalSeconds = validMode === 'focus' ? validPomo * 60 : validMode === 'break' ? validBreak * 60 : validLong * 60;
+      
+      if (typeof state.timerSeconds !== 'number' || isNaN(state.timerSeconds) || state.timerSeconds < 0 || state.timerSeconds > totalSeconds) {
+        state.setTimerSeconds(totalSeconds);
+      }
+    }
+  }, []);
+
+  // 2. Active timer countdown ticking using absolute Date.now() deadlines
   useEffect(() => {
     if (timerRunning) {
-      // Clear any stale interval before starting a new one
       if (intervalRef.current) clearInterval(intervalRef.current);
 
       intervalRef.current = setInterval(() => {
         const state = useStore.getState();
-        const current = state.timerSeconds;
+        const deadline = state.timerDeadline;
 
-        if (current <= 1) {
-          // Timer reached 0 — complete the session
+        if (!deadline) {
+          state.setTimerRunning(false);
+          return;
+        }
+
+        const now = Date.now();
+        if (now >= deadline) {
+          // Idempotent guard: clear immediately
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
-          state.setTimerRunning(false);
-          state.setTimerSeconds(0);
-          handleTimerComplete();
+          
+          if (deadline !== state.lastCompletedDeadline) {
+            useStore.setState({ lastCompletedDeadline: deadline, timerDeadline: null, timerRunning: false });
+            state.setTimerSeconds(0);
+            handleTimerComplete(deadline);
+          }
         } else {
-          state.setTimerSeconds(current - 1);
+          const remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
+          state.setTimerSeconds(remaining);
         }
-      }, 1000);
+      }, 200); // Polling frequently ensures extremely precise UI ticking
     } else {
-      // Timer paused or stopped — clear the interval
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -57,138 +103,222 @@ export function useTimerEngine() {
 
 /**
  * Handles focus session completion, XP award, streak update,
- * and auto-switch to break/focus mode.
- *
- * Reads all state via useStore.getState() to avoid stale closures.
+ * and resets mode duration without auto-switching modes.
  */
-async function handleTimerComplete() {
+async function handleTimerComplete(deadline: number) {
   const state = useStore.getState();
   const {
     timerMode,
     pomodoroMinutes,
     breakMinutes,
     longBreakMinutes,
-    sessionCount,
+    timerRunDurationSeconds,
     focusSessions,
     profile,
     user,
   } = state;
 
   if (timerMode === 'focus') {
-    const mins = pomodoroMinutes;
-    state.incrementSessionCount();
+    // 1. Get completed minutes based on the preserved run duration
+    const durationSecs = timerRunDurationSeconds !== null && timerRunDurationSeconds !== undefined 
+      ? timerRunDurationSeconds 
+      : (pomodoroMinutes * 60);
+    const mins = Math.max(1, Math.round(durationSecs / 60));
 
-    // Calculate XP based on session duration
-    const xpEarned =
-      mins >= 60 ? 30 : mins >= 45 ? 20 : mins >= 25 ? 10 : 5;
+    // Calculate XP based on completed minutes
+    const xpEarned = mins >= 60 ? 30 : mins >= 45 ? 20 : mins >= 25 ? 10 : 5;
 
-    const oldXP = state.profile.xp;
-    await state.addXP(xpEarned);
-    await logEvent('focus_session_completed', 'focus', undefined, {
-      minutes: mins,
-      description: `Completed focus session of ${mins} minutes`,
-    });
-    const newXP = useStore.getState().profile.xp;
+    // Get timezone-safe local date YYYY-MM-DD
+    const today = formatLocalDate(new Date());
 
-    // Trigger notifications
-    state.showNotification({
-      type: 'xp',
-      title: `+${xpEarned} XP Earned`,
-      message: 'Focus session completed',
-      xp: xpEarned,
-    });
-
-    // Check for level up
-    const oldLevel = Math.floor(oldXP / 100) + 1;
-    const newLevel = Math.floor(newXP / 100) + 1;
-    if (newLevel > oldLevel) {
-      setTimeout(() => {
-        state.showNotification({
-          type: 'level',
-          title: `Level ${newLevel} Unlocked!`,
-          message: `You've reached a new milestone`,
+    if (user) {
+      // Authenticated user pipeline: run atomic database upsert/event/XP logging
+      const referenceId = `focus_${deadline}`;
+      try {
+        const { data, error } = await supabase.rpc('log_focus_session', {
+          p_session_date: today,
+          p_minutes: mins,
+          p_reference_id: referenceId
         });
-      }, 600);
-    }
 
-    // Record focus session
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const existing = focusSessions.find((s) => s.session_date === today);
+        if (error) {
+          throw error;
+        }
 
-    if (existing) {
-      // Update existing session in-place (no duplicates)
-      const updatedMinutes = existing.minutes + mins;
-      const updatedCount = existing.sessions_count + 1;
+        const returned = Array.isArray(data) ? data[0] : data;
+        if (!returned) {
+          throw new Error('No data returned from log_focus_session');
+        }
 
-      state.updateFocusSessionLocal(existing.id, {
-        minutes: updatedMinutes,
-        sessions_count: updatedCount,
+        // Successfully persisted in database! Now synchronize local Zustand state.
+        state.incrementSessionCount();
+
+        // 1. Sync local focus sessions list using returned daily aggregate values
+        state.upsertFocusSessionLocal({
+          id: returned.id,
+          session_date: returned.session_date,
+          minutes: returned.minutes,
+          sessions_count: returned.sessions_count
+        });
+
+        // 2. Sync profile XP locally using returned total_xp
+        const oldXP = profile.xp;
+        const newXP = returned.total_xp;
+        state.updateProfile({ xp: newXP });
+
+        // 3. Trigger local notifications using returned xp_earned
+        const xpEarned = returned.xp_earned;
+        state.showNotification({
+          type: 'xp',
+          title: `+${xpEarned} XP Earned`,
+          message: 'Focus session completed',
+          xp: xpEarned,
+        });
+
+        const oldLevel = Math.floor(oldXP / 100) + 1;
+        const newLevel = Math.floor(newXP / 100) + 1;
+        if (newLevel > oldLevel) {
+          setTimeout(() => {
+            state.showNotification({
+              type: 'level',
+              title: `Level ${newLevel} Unlocked!`,
+              message: `You've reached a new milestone`,
+            });
+          }, 600);
+        }
+
+        // Trigger local event and check unlocks/milestones
+        const localEvent = {
+          id: crypto.randomUUID(),
+          user_id: user.id,
+          timestamp: new Date().toISOString(),
+          type: 'focus_session_completed',
+          category: 'focus' as const,
+          reference_id: referenceId,
+          metadata: {
+            minutes: mins,
+            xpEarned: xpEarned,
+            description: `Completed focus session of ${mins} minutes`
+          }
+        };
+        state.addEventLocal(localEvent);
+        await checkUnlocksAndMilestones();
+
+        // Update streak
+        const newStreak = computeStreak(profile.last_active_date, profile.streak);
+        state.updateProfile({
+          last_active_date: today,
+          streak: newStreak,
+        });
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          last_active_date: today,
+          streak: newStreak,
+          updated_at: new Date().toISOString(),
+        });
+
+      } catch (err: any) {
+        console.error('Focus session logging failed:', err);
+        state.showNotification({
+          type: 'xp', // fallback type
+          title: 'Sync Failed',
+          message: 'Failed to save focus session. Please check connection.',
+        });
+        
+        // Important: clear duration so it resets cleanly
+        useStore.setState({ timerRunDurationSeconds: null });
+        
+        // Restore remaining seconds to configured duration
+        const resetSeconds = pomodoroMinutes * 60;
+        state.setTimerSeconds(resetSeconds);
+        state.setTimerRunning(false);
+        useStore.setState({ timerDeadline: null });
+        return;
+      }
+    } else {
+      // Guest User / Anonymous pipeline: local Zustand only
+      state.incrementSessionCount();
+      
+      const oldXP = profile.xp;
+      const newXP = oldXP + xpEarned;
+      state.updateProfile({ xp: newXP });
+
+      // Trigger notifications
+      state.showNotification({
+        type: 'xp',
+        title: `+${xpEarned} XP Earned`,
+        message: 'Focus session completed',
+        xp: xpEarned,
       });
 
-      if (user) {
-        await supabase.from('focus_sessions').upsert({
-          id: existing.id,
-          user_id: user.id,
-          session_date: today,
+      const oldLevel = Math.floor(oldXP / 100) + 1;
+      const newLevel = Math.floor(newXP / 100) + 1;
+      if (newLevel > oldLevel) {
+        setTimeout(() => {
+          state.showNotification({
+            type: 'level',
+            title: `Level ${newLevel} Unlocked!`,
+            message: `You've reached a new milestone`,
+          });
+        }, 600);
+      }
+
+      // Record focus session locally
+      const existing = focusSessions.find((s) => s.session_date === today);
+      if (existing) {
+        const updatedMinutes = existing.minutes + mins;
+        const updatedCount = existing.sessions_count + 1;
+        state.updateFocusSessionLocal(existing.id, {
           minutes: updatedMinutes,
           sessions_count: updatedCount,
         });
+      } else {
+        const newSession = {
+          id: crypto.randomUUID(),
+          session_date: today,
+          minutes: mins,
+          sessions_count: 1,
+        };
+        state.addFocusSessionLocal(newSession);
       }
-    } else {
-      // Create new session for today
-      const newSession = {
-        id: crypto.randomUUID(),
-        session_date: today,
-        minutes: mins,
-        sessions_count: 1,
-      };
-      state.addFocusSessionLocal(newSession);
 
-      if (user) {
-        const { data } = await supabase
-          .from('focus_sessions')
-          .insert({ user_id: user.id, ...newSession })
-          .select()
-          .single();
-        if (data) {
-          // Replace the optimistic local entry with the server one
-          state.updateFocusSessionLocal(newSession.id, {
-            id: data.id,
-            minutes: data.minutes,
-            sessions_count: data.sessions_count,
-          });
-        }
-      }
-    }
-
-    // Update streak using calendar-day-based calculation
-    const newStreak = computeStreak(profile.last_active_date, profile.streak);
-
-    state.updateProfile({
-      last_active_date: format(new Date(), 'yyyy-MM-dd'),
-      streak: newStreak,
-    });
-
-    if (user) {
-      await supabase.from('profiles').upsert({
-        id: user.id,
-        last_active_date: format(new Date(), 'yyyy-MM-dd'),
+      // Update streak
+      const newStreak = computeStreak(profile.last_active_date, profile.streak);
+      state.updateProfile({
+        last_active_date: today,
         streak: newStreak,
-        updated_at: new Date().toISOString(),
       });
-    }
 
-    // Auto-switch to break mode
-    // sessionCount was already incremented, so read the latest value
-    const updatedSessionCount = useStore.getState().sessionCount;
-    const nextMode = updatedSessionCount % 4 === 0 ? 'longbreak' : 'break';
-    state.setTimerMode(nextMode as any);
-    state.setTimerSeconds(
-      nextMode === 'longbreak' ? longBreakMinutes * 60 : breakMinutes * 60
-    );
-  } else {
-    // Break completed — switch back to focus
-    state.setTimerMode('focus');
-    state.setTimerSeconds(pomodoroMinutes * 60);
+      // Log event locally
+      const localEvent = {
+        id: crypto.randomUUID(),
+        user_id: 'anonymous',
+        timestamp: new Date().toISOString(),
+        type: 'focus_session_completed',
+        category: 'focus' as const,
+        reference_id: `focus_${deadline}`,
+        metadata: {
+          minutes: mins,
+          xpEarned: xpEarned,
+          description: `Completed focus session of ${mins} minutes`
+        }
+      };
+      state.addEventLocal(localEvent);
+    }
   }
+
+  // Reset current mode timer to its configured duration and stop timer
+  const resetSeconds =
+    timerMode === 'focus'
+      ? pomodoroMinutes * 60
+      : timerMode === 'break'
+        ? breakMinutes * 60
+        : longBreakMinutes * 60;
+
+  state.setTimerSeconds(resetSeconds);
+  state.setTimerRunning(false);
+  useStore.setState({ 
+    timerDeadline: null,
+    timerRunDurationSeconds: null 
+  });
 }

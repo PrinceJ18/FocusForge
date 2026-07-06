@@ -1,5 +1,5 @@
 import { parseISO, format, getDaysInMonth, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
-import type { FocusSession, Task, Expense, SavingsGoal, Profile } from '../../store/useStore';
+import { useStore, type FocusSession, type Task, type Expense, type SavingsGoal, type Profile } from '../../store/useStore';
 import type { DailyGoalHistory } from '../../store/useDailyGoalsStore';
 import { getEarnedBadgeIds, ALL_BADGES } from '../statsUtils';
 import { formatCurrency } from '../formatCurrency';
@@ -123,7 +123,9 @@ export function calculateMonthlyReportData(params: {
   // Raw Month Filtered Lists
   const monthExpenses = expenses.filter(e => e?.expense_date && isDateInMonth(e.expense_date));
   const monthSessions = focusSessions.filter(s => s?.session_date && isDateInMonth(s.session_date));
-  const monthTasks = tasks.filter(t => t?.completed_at && isDateInMonth(t.completed_at));
+  const comps = useStore.getState().taskCompletions || [];
+  const monthCompletions = comps.filter(c => c?.occurrence_date && isDateInMonth(c.occurrence_date));
+  const monthTasks = tasks.filter(t => (!t.recurrence_type || t.recurrence_type === 'none') && t?.completed_at && isDateInMonth(t.completed_at));
   const monthGoalsHistory = goalsHistory.filter(h => h?.date && isDateInMonth(h.date));
 
   // Focus calculations
@@ -154,7 +156,7 @@ export function calculateMonthlyReportData(params: {
   });
 
   // Tasks calculations
-  const completed = monthTasks.length;
+  const completed = monthTasks.length + monthCompletions.length;
   const pending = tasks.filter(t => !t.completed).length; // all-time pending
   const completionRate = completed + pending > 0 ? Math.round((completed / (completed + pending)) * 100) : 100;
   const avgDailyTasks = parseFloat((completed / daysInMonth).toFixed(1));
@@ -164,6 +166,12 @@ export function calculateMonthlyReportData(params: {
   monthTasks.forEach(t => {
     if (t.completed_at) {
       const d = t.completed_at.slice(0, 10);
+      taskDayMap[d] = (taskDayMap[d] || 0) + 1;
+    }
+  });
+  monthCompletions.forEach(c => {
+    if (c.occurrence_date) {
+      const d = c.occurrence_date;
       taskDayMap[d] = (taskDayMap[d] || 0) + 1;
     }
   });
@@ -253,6 +261,11 @@ export function calculateMonthlyReportData(params: {
 
   const taskXP = monthTasks.reduce((sum, t) => {
     const xp = t.priority === 'high' ? 20 : t.priority === 'medium' ? 10 : 5;
+    return sum + xp;
+  }, 0) + monthCompletions.reduce((sum, c) => {
+    const t = tasks.find(x => x.id === c.task_id);
+    const priority = t ? t.priority : 'medium';
+    const xp = priority === 'high' ? 20 : priority === 'medium' ? 10 : 5;
     return sum + xp;
   }, 0);
 
