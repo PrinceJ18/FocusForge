@@ -3,7 +3,8 @@ import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { AppEvent } from '../lib/events';
-import { format } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays } from 'date-fns';
+import { formatLocalDate } from '../lib/dateUtils';
 export type Priority = 'low' | 'medium' | 'high';
 export type TimerMode = 'focus' | 'break' | 'longbreak';
 
@@ -725,10 +726,11 @@ export const useStore = create<AppState>()(
 // Supabase data operations
 export const loadUserData = async (userId: string) => {
   const store = useStore.getState();
+  const todayLocal = formatLocalDate(new Date());
 
   const [
     expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes,
-    sectionsRes, completionsRes
+    sectionsRes, completionsRes, streakRes
   ] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
@@ -741,6 +743,7 @@ export const loadUserData = async (userId: string) => {
     supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('task_sections').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
     supabase.from('task_completions').select('*').eq('user_id', userId),
+    supabase.rpc('get_current_streak', { p_today: todayLocal }),
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);
@@ -773,11 +776,25 @@ export const loadUserData = async (userId: string) => {
   } else if (prefsRes && prefsRes.error) {
     console.warn('User preferences load failed, using local storage cache:', prefsRes.error.message);
   }
+
+  let currentStreak = profileRes.data?.streak ?? 0;
+  let lastActiveDate = profileRes.data?.last_active_date ?? '';
+
+  if (streakRes && streakRes.data) {
+    const streakData = Array.isArray(streakRes.data) ? streakRes.data[0] : streakRes.data;
+    if (streakData) {
+      currentStreak = streakData.current_streak;
+      lastActiveDate = streakData.last_active_date;
+    }
+  } else if (streakRes && streakRes.error) {
+    console.warn('Authoritative streak sync failed, using profile values:', streakRes.error.message);
+  }
+
   if (profileRes.data) {
     store.updateProfile({
       xp: profileRes.data.xp,
-      streak: profileRes.data.streak,
-      last_active_date: profileRes.data.last_active_date,
+      streak: currentStreak,
+      last_active_date: lastActiveDate,
       monthly_budget: profileRes.data.monthly_budget,
       total_savings: profileRes.data.total_savings,
       badges: profileRes.data.badges || [],
@@ -1086,5 +1103,23 @@ export const deleteTaskSection = async (id: string) => {
     if (original) store.addTaskSectionLocal(original);
     affectedTasks.forEach(t => store.updateTaskLocal(t.id, { section_id: id }));
     throw error;
+  }
+};
+
+export const checkAndUpdateGuestStreak = () => {
+  const store = useStore.getState();
+  const lastActive = store.profile.last_active_date;
+  if (!store.user && lastActive) {
+    try {
+      const todayStr = formatLocalDate(new Date());
+      const lastDate = parseISO(lastActive);
+      const todayDate = parseISO(todayStr);
+      const diffDays = differenceInCalendarDays(todayDate, lastDate);
+      if (diffDays > 1) {
+        store.updateProfile({ streak: 0 });
+      }
+    } catch (err) {
+      console.error('Failed to compute guest streak:', err);
+    }
   }
 };

@@ -7,7 +7,7 @@ import { useStore } from '../store/useStore';
 import { format, parseISO, isWithinInterval, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { getLevelInfo } from '../lib/levels';
 import { ACHIEVEMENTS, MILESTONES } from '../lib/events';
-import { ALL_BADGES } from '../lib/statsUtils';
+import { ALL_BADGES, getEarnedBadgeIds } from '../lib/statsUtils';
 
 export default function Achievements() {
   const { expenses, tasks, focusSessions, savingsGoals, profile, user, events } = useStore();
@@ -144,13 +144,12 @@ export default function Achievements() {
 
   // Section 5: Badge Collection mapping
   const badgeCollection = useMemo(() => {
+    const earnedBadgeIds = getEarnedBadgeIds({ profile, focusSessions, tasks, savingsGoals });
     const earnedBadgeEvents = events.filter(e => e.type === 'badge_earned' || e.type === 'badge_unlocked');
     return ALL_BADGES.map(badge => {
       const unlockEvent = earnedBadgeEvents.find(e => e.metadata.badgeId === badge.id);
-      // Fallback: check profile badges array
-      const profileBadge = profile.badges.find(b => b.id === badge.id);
-      const isUnlocked = !!unlockEvent || !!profileBadge;
-      const unlockedAt = unlockEvent ? unlockEvent.timestamp : (profileBadge ? profileBadge.unlockedAt : null);
+      const isUnlocked = earnedBadgeIds.has(badge.id) || !!unlockEvent;
+      const unlockedAt = unlockEvent ? unlockEvent.timestamp : null;
       
       // Categorize
       let category = 'Special Events';
@@ -168,7 +167,7 @@ export default function Achievements() {
         howEarned: badge.desc,
       };
     });
-  }, [events, profile.badges]);
+  }, [events, profile, focusSessions, tasks, savingsGoals]);
 
   // Section 6: Achievements mapping
   const achievements = useMemo(() => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
-import { useStore, loadUserData } from './store/useStore';
+import { useStore, loadUserData, checkAndUpdateGuestStreak } from './store/useStore';
 import { useTimerEngine } from './hooks/useTimerEngine';
 import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
 import Sidebar from './components/Sidebar';
@@ -60,6 +60,8 @@ export default function App() {
 
         await loadUserData(session.user.id);
         await processAutoAddRecurringExpenses();
+      } else {
+        checkAndUpdateGuestStreak();
       }
 
       setLoading(false);
@@ -107,6 +109,7 @@ export default function App() {
             taskCompletions: [],
             dataLoaded: false,
           });
+          checkAndUpdateGuestStreak();
         }
       })();
     });

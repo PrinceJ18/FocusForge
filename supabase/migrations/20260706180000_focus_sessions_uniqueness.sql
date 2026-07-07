@@ -28,16 +28,25 @@ WHERE id IN (
   WHERE rn > 1
 );
 
--- 3. Idempotently add Unique Constraint to focus_sessions
+-- 3. Idempotently add UNIQUE constraint to public.focus_sessions
+
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 
-    FROM pg_constraint 
-    WHERE conname = 'focus_sessions_user_id_session_date_key'
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t
+      ON t.oid = c.conrelid
+    JOIN pg_namespace n
+      ON n.oid = t.relnamespace
+    WHERE c.conname = 'focus_sessions_user_id_session_date_key'
+      AND c.contype = 'u'
+      AND n.nspname = 'public'
+      AND t.relname = 'focus_sessions'
   ) THEN
-    ALTER TABLE focus_sessions 
-      ADD CONSTRAINT focus_sessions_user_id_session_date_key UNIQUE (user_id, session_date);
+    ALTER TABLE public.focus_sessions
+      ADD CONSTRAINT focus_sessions_user_id_session_date_key
+      UNIQUE (user_id, session_date);
   END IF;
 END $$;
 
@@ -111,12 +120,18 @@ BEGIN
   IF p_session_date IS NULL OR p_session_date < CURRENT_DATE - INTERVAL '1 day' OR p_session_date > CURRENT_DATE + INTERVAL '1 day' THEN
     RAISE EXCEPTION 'Invalid session date: % is outside the timezone tolerance range.', p_session_date;
   END IF;
+IF p_reference_id IS NULL THEN
+  RAISE EXCEPTION 'Reference ID cannot be null.';
+END IF;
 
-  -- p_reference_id limits (non-null, non-empty, max 100 chars)
-  IF p_reference_id IS NULL OR length(trim(p_reference_id)) = 0 OR length(p_reference_id) > 100 THEN
-    RAISE EXCEPTION 'Invalid reference ID: must be non-null, non-empty, and maximum 100 characters.';
-  END IF;
-  v_reference_id := trim(p_reference_id);
+v_reference_id := trim(p_reference_id);
+
+IF length(v_reference_id) = 0
+   OR length(v_reference_id) > 100 THEN
+
+  RAISE EXCEPTION
+    'Invalid reference ID: must be non-empty and maximum 100 characters.';
+END IF;
 
   -- Server-side Focus XP calculation
   IF p_minutes >= 60 THEN

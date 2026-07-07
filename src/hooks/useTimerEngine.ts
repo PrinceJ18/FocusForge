@@ -19,6 +19,7 @@ export function useTimerEngine() {
 
   // 1. Hydration/Mount check: validate deadline and restore progress cleanly
   useEffect(() => {
+    (window as any).useStore = useStore;
     const state = useStore.getState();
     const currentUserId = state.user?.id || 'anonymous';
 
@@ -138,10 +139,23 @@ async function handleTimerComplete(deadline: number) {
         const { data, error } = await supabase.rpc('log_focus_session', {
           p_session_date: today,
           p_minutes: mins,
-          p_reference_id: referenceId
+          p_reference_id: referenceId,
+          p_today: today
         });
 
         if (error) {
+          console.error('log_focus_session RPC failed', JSON.stringify({
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            sentPayload: {
+              p_session_date: today,
+              p_minutes: mins,
+              p_reference_id: referenceId,
+              p_today: today
+            }
+          }));
           throw error;
         }
 
@@ -161,10 +175,14 @@ async function handleTimerComplete(deadline: number) {
           sessions_count: returned.sessions_count
         });
 
-        // 2. Sync profile XP locally using returned total_xp
+        // 2. Sync profile XP, streak, and last_active_date atomically using authoritative database values
         const oldXP = profile.xp;
         const newXP = returned.total_xp;
-        state.updateProfile({ xp: newXP });
+        state.updateProfile({ 
+          xp: newXP,
+          streak: returned.current_streak,
+          last_active_date: returned.last_active_date,
+        });
 
         // 3. Trigger local notifications using returned xp_earned
         const xpEarned = returned.xp_earned;
@@ -202,20 +220,9 @@ async function handleTimerComplete(deadline: number) {
           }
         };
         state.addEventLocal(localEvent);
+        
+        // Check unlocks and milestones AFTER the state updates have finalized
         await checkUnlocksAndMilestones();
-
-        // Update streak
-        const newStreak = computeStreak(profile.last_active_date, profile.streak);
-        state.updateProfile({
-          last_active_date: today,
-          streak: newStreak,
-        });
-        await supabase.from('profiles').upsert({
-          id: user.id,
-          last_active_date: today,
-          streak: newStreak,
-          updated_at: new Date().toISOString(),
-        });
 
       } catch (err: any) {
         console.error('Focus session logging failed:', err);
