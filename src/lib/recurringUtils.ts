@@ -260,7 +260,6 @@ export async function processAutoAddRecurringExpenses() {
 
         // Process if payment_date <= todayStr
         if (isBefore(payDate, today) || bill.payment_date === todayStr) {
-          console.log(`Auto-confirming recurring payment for: ${bill.name}`);
           await payRecurringExpense(bill.id);
         }
       } catch (e) {

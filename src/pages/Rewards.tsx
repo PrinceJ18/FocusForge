@@ -61,16 +61,9 @@ export default function Rewards() {
     const savedClaims =
       profile?.daily_challenge_claims;
 
-    console.log('PROFILE CLAIMS', savedClaims);
-
     if (
       savedClaims?.date === today
     ) {
-      console.log(
-        'SETTING CLAIMED',
-        savedClaims.claimed
-      );
-
       setClaimedChallenges(
         savedClaims.claimed || []
       );

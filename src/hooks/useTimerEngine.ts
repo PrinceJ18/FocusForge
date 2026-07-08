@@ -19,7 +19,6 @@ export function useTimerEngine() {
 
   // 1. Hydration/Mount check: validate deadline and restore progress cleanly
   useEffect(() => {
-    (window as any).useStore = useStore;
     const state = useStore.getState();
     const currentUserId = state.user?.id || 'anonymous';
 
@@ -144,18 +143,7 @@ async function handleTimerComplete(deadline: number) {
         });
 
         if (error) {
-          console.error('log_focus_session RPC failed', JSON.stringify({
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code,
-            sentPayload: {
-              p_session_date: today,
-              p_minutes: mins,
-              p_reference_id: referenceId,
-              p_today: today
-            }
-          }));
+          console.error('log_focus_session RPC failed:', error.message, error.code);
           throw error;
         }
 
