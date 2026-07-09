@@ -255,7 +255,7 @@ All tables enforce **user-scoped access** — authenticated users can only read,
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing....
 
 Contributions are welcome! Here's how to get started:
 
