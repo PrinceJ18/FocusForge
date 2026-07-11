@@ -205,47 +205,16 @@ export default function Productivity() {
   };
 
   const handleToggleTask = async (task: Task, currentlyCompleted: boolean, dateStr: string) => {
-    const xpEarned = getTaskXP(task.priority);
     const date = parseISO(dateStr);
 
-    if (currentlyCompleted) {
-      // Uncomplete task
-      await addXPLocal(-xpEarned);
-      await uncompleteTask(task, date);
-      
-      // Sync xp_awarded field back
-      if (!task.recurrence_type || task.recurrence_type === 'none') {
-        updateTaskLocal(task.id, { xp_awarded: false });
-        if (user) {
-          await supabase.from('tasks').update({ xp_awarded: false }).eq('id', task.id);
-        }
+    try {
+      if (currentlyCompleted) {
+        await uncompleteTask(task, date, user?.id || 'local');
+      } else {
+        await completeTask(task, date, user?.id || 'local');
       }
-    } else {
-      // Complete task
-      await completeTask(task, date, user?.id || 'local');
-      
-      const isRecurring = task.recurrence_type && task.recurrence_type !== 'none';
-      if (isRecurring || !task.xp_awarded) {
-        await addXPLocal(xpEarned);
-        useStore.getState().showNotification({
-          type: 'xp',
-          title: `+${xpEarned} XP Earned`,
-          message: `Task completed: ${task.title}`,
-          xp: xpEarned,
-        });
-
-        if (!isRecurring) {
-          updateTaskLocal(task.id, { xp_awarded: true });
-          if (user) {
-            await supabase.from('tasks').update({ xp_awarded: true }).eq('id', task.id);
-          }
-        }
-      }
-
-      logEvent('task_completed', 'tasks', task.id, {
-        title: task.title,
-        description: `Completed task: ${task.title}`,
-      });
+    } catch (err: any) {
+      console.error('Failed to toggle task:', err);
     }
   };
 

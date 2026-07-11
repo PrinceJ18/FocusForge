@@ -387,6 +387,7 @@ interface AppState {
   // Profile
   updateProfile: (updates: Partial<Profile>) => void;
   addXP: (amount: number) => Promise<void>;
+  setProfileXPAuthoritative: (totalXP: number) => void;
 
   // Data loading
   dataLoaded: boolean;
@@ -594,6 +595,30 @@ export const useStore = create<AppState>()(
       },
 
       updateProfile: (updates) => set((s) => ({ profile: { ...s.profile, ...updates } })),
+      setProfileXPAuthoritative: (totalXP) => {
+        const { profile } = get();
+        const oldLevel = Math.floor(profile.xp / 100) + 1;
+        const newLevel = Math.floor(totalXP / 100) + 1;
+        
+        set({
+          profile: {
+            ...profile,
+            xp: totalXP
+          }
+        });
+
+        if (newLevel > oldLevel) {
+          import('../lib/events').then((m) => {
+            m.logEvent('level_up', 'levels', undefined, { level: newLevel });
+          });
+
+          get().showNotification({
+            type: 'level',
+            title: `Level Up!`,
+            message: `Congratulations! You reached Level ${newLevel}!`,
+          });
+        }
+      },
       addXP: async (amount) => {
         const { profile, user } = get();
 
@@ -912,108 +937,139 @@ export const deleteTask = async (id: string) => {
 };
 
 export const completeTask = async (task: Task, date: Date, userId: string) => {
-  const now = new Date().toISOString();
   const dateStr = format(date, 'yyyy-MM-dd');
+  const now = new Date().toISOString();
+  const store = useStore.getState();
 
+  // Guest / Unauthenticated Fallback
+  // (Maintains legacy persisted local-state compatibility, hence why xp_awarded remains in TypeScript)
+  if (userId === 'local' || !store.user) {
+    const xpEarned = task.priority === 'high' ? 20 : task.priority === 'medium' ? 10 : 5;
+    const isRecurring = task.recurrence_type && task.recurrence_type !== 'none';
+    
+    if (isRecurring) {
+      store.addTaskCompletionLocal({
+        id: crypto.randomUUID(),
+        user_id: 'local',
+        task_id: task.id,
+        occurrence_date: dateStr,
+        completed: true,
+        completed_at: now,
+        created_at: now,
+        updated_at: now,
+      });
+      store.addXP(xpEarned);
+    } else {
+      store.updateTaskLocal(task.id, {
+        completed: true,
+        completed_at: now,
+        updated_at: now,
+        xp_awarded: true, // Legacy compatibility for local guests
+      });
+      if (!task.xp_awarded) {
+        store.addXP(xpEarned);
+      }
+    }
+    
+    import('../lib/events').then(m => m.checkUnlocksAndMilestones());
+    return;
+  }
+
+  // Authenticated flow (RPC)
+  const { data, error } = await supabase.rpc('complete_task', {
+    p_task_id: task.id,
+    p_occurrence_date: dateStr
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const result = data as any;
+
+  // 1. Sync local task state
   if (task.recurrence_type && task.recurrence_type !== 'none') {
-    const newComp = {
-      id: crypto.randomUUID(),
+    store.addTaskCompletionLocal({
+      id: crypto.randomUUID(), // Local optimistic ID since RPC doesn't return the completion ID
       user_id: userId,
       task_id: task.id,
       occurrence_date: dateStr,
       completed: true,
-      completed_at: now,
-      created_at: now,
-      updated_at: now,
-    };
-    useStore.getState().addTaskCompletionLocal(newComp);
-
-    const { error } = await supabase
-      .from('task_completions')
-      .insert(newComp);
-
-    if (error) {
-      useStore.getState().removeTaskCompletionLocal(task.id, dateStr);
-      throw error;
-    }
-  } else {
-    useStore.getState().updateTaskLocal(task.id, {
-      completed: true,
-      completed_at: now,
-      updated_at: now,
+      completed_at: result.completed_at || now,
+      created_at: result.completed_at || now,
+      updated_at: result.completed_at || now,
     });
+  } else {
+    store.updateTaskLocal(task.id, {
+      completed: true,
+      completed_at: result.completed_at || now,
+      updated_at: now,
+      // No xp_awarded mutation for authenticated users
+    });
+  }
 
-    const { error } = await supabase
-      .from('tasks')
-      .update({
-        completed: true,
-        completed_at: now,
-        updated_at: now,
-      })
-      .eq('id', task.id);
+  // 2. Authoritatively sync XP
+  store.setProfileXPAuthoritative(result.total_xp);
+  
+  if (result.xp_earned > 0) {
+    store.showNotification({
+      type: 'xp',
+      title: `+${result.xp_earned} XP Earned`,
+      message: `Task completed: ${task.title}`,
+      xp: result.xp_earned,
+    });
+  }
 
-    if (error) {
-      useStore.getState().updateTaskLocal(task.id, {
-        completed: false,
-        completed_at: task.completed_at,
-        updated_at: task.updated_at,
-      });
-      throw error;
-    }
+  // 3. Trigger milestones explicitly only if it was a genuine new completion
+  if (!result.already_completed) {
+    import('../lib/events').then(m => m.checkUnlocksAndMilestones());
   }
 };
 
-export const uncompleteTask = async (task: Task, date: Date) => {
+export const uncompleteTask = async (task: Task, date: Date, userId: string) => {
   const dateStr = format(date, 'yyyy-MM-dd');
+  const store = useStore.getState();
+  const now = new Date().toISOString();
+
+  // Guest / Unauthenticated Fallback
+  if (userId === 'local' || !store.user) {
+    const isRecurring = task.recurrence_type && task.recurrence_type !== 'none';
+    if (isRecurring) {
+      store.removeTaskCompletionLocal(task.id, dateStr);
+    } else {
+      store.updateTaskLocal(task.id, {
+        completed: false,
+        completed_at: null,
+        updated_at: now,
+      });
+    }
+    // Do not trigger checkUnlocksAndMilestones on uncompletion
+    return;
+  }
+
+  const { data, error } = await supabase.rpc('uncomplete_task', {
+    p_task_id: task.id,
+    p_occurrence_date: dateStr
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const result = data as any;
 
   if (task.recurrence_type && task.recurrence_type !== 'none') {
-    const store = useStore.getState();
-    const originalCompletion = store.taskCompletions.find(
-      c => c.task_id === task.id && c.occurrence_date === dateStr
-    );
-
     store.removeTaskCompletionLocal(task.id, dateStr);
-
-    const { error } = await supabase
-      .from('task_completions')
-      .delete()
-      .eq('task_id', task.id)
-      .eq('occurrence_date', dateStr);
-
-    if (error) {
-      if (originalCompletion) store.addTaskCompletionLocal(originalCompletion);
-      throw error;
-    }
   } else {
-    const originalCompleted = task.completed;
-    const originalCompletedAt = task.completed_at;
-    const originalUpdatedAt = task.updated_at;
-    const now = new Date().toISOString();
-
-    useStore.getState().updateTaskLocal(task.id, {
+    store.updateTaskLocal(task.id, {
       completed: false,
       completed_at: null,
       updated_at: now,
     });
-
-    const { error } = await supabase
-      .from('tasks')
-      .update({
-        completed: false,
-        completed_at: null,
-        updated_at: now,
-      })
-      .eq('id', task.id);
-
-    if (error) {
-      useStore.getState().updateTaskLocal(task.id, {
-        completed: originalCompleted,
-        completed_at: originalCompletedAt,
-        updated_at: originalUpdatedAt,
-      });
-      throw error;
-    }
   }
+  
+  store.setProfileXPAuthoritative(result.total_xp);
+  // Do not trigger checkUnlocksAndMilestones on uncompletion
 };
 
 export const fetchTaskSections = async (userId: string) => {
