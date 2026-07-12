@@ -54,19 +54,15 @@ BEGIN
     RETURN (v_days_diff % (7 * v_interval)) = 0;
 
   ELSIF p_recurrence_type = 'monthly' THEN
-    v_months_diff := (EXTRACT(YEAR FROM p_occurrence_date) - EXTRACT(YEAR FROM p_scheduled_date)) * 12 + 
-                     (EXTRACT(MONTH FROM p_occurrence_date) - EXTRACT(MONTH FROM p_scheduled_date));
+    v_months_diff := (EXTRACT(YEAR FROM p_occurrence_date) - EXTRACT(YEAR FROM p_scheduled_date))::int * 12 + 
+                     (EXTRACT(MONTH FROM p_occurrence_date) - EXTRACT(MONTH FROM p_scheduled_date))::int;
     
     IF v_months_diff < 0 OR (v_months_diff % v_interval) <> 0 THEN
       RETURN FALSE;
     END IF;
 
-    v_target_year := EXTRACT(YEAR FROM p_scheduled_date) + (v_months_diff / 12);
-    v_target_month := EXTRACT(MONTH FROM p_scheduled_date) + (v_months_diff % 12);
-    IF v_target_month > 12 THEN
-      v_target_year := v_target_year + 1;
-      v_target_month := v_target_month - 12;
-    END IF;
+    v_target_year := (EXTRACT(YEAR FROM p_scheduled_date)::int * 12 + EXTRACT(MONTH FROM p_scheduled_date)::int - 1 + v_months_diff) / 12;
+    v_target_month := ((EXTRACT(YEAR FROM p_scheduled_date)::int * 12 + EXTRACT(MONTH FROM p_scheduled_date)::int - 1 + v_months_diff) % 12) + 1;
 
     -- Clamp to last day of month if necessary
     v_max_days := EXTRACT(DAY FROM (make_date(v_target_year::int, v_target_month::int, 1) + interval '1 month' - interval '1 day'));
