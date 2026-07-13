@@ -27,6 +27,56 @@ BEGIN
     RAISE EXCEPTION 'Achievement ID cannot be empty';
   END IF;
 
+  -- Reject unsupported IDs using the server-owned achievement mapping
+  CASE v_achievement_id
+    WHEN 'ach_100_pomodoros' THEN
+      v_title := '100 Pomodoros';
+      v_description := 'Complete 100 focus sessions';
+      v_xp_reward := 100;
+    WHEN 'ach_30_day_streak' THEN
+      v_title := '30 Day Streak';
+      v_description := 'Maintain a 30 day daily streak';
+      v_xp_reward := 250;
+    WHEN 'ach_save_10k' THEN
+      v_title := 'Saved ₹10,000';
+      v_description := 'Accumulate ₹10,000 or more in total savings goals';
+      v_xp_reward := 200;
+    WHEN 'ach_level_10' THEN
+      v_title := 'Level 10';
+      v_description := 'Reach Level 10';
+      v_xp_reward := 500;
+    WHEN 'ach_250_hours_focus' THEN
+      v_title := 'Studied 250 Hours';
+      v_description := 'Spend 250 hours in focus sessions';
+      v_xp_reward := 400;
+    WHEN 'ach_first_subscription' THEN
+      v_title := 'First Subscription';
+      v_description := 'Track at least one active subscription or bill';
+      v_xp_reward := 100;
+    WHEN 'ach_never_missed_payment' THEN
+      v_title := 'Never Missed Payment';
+      v_description := 'Complete payments without skipping';
+      v_xp_reward := 150;
+    WHEN 'ach_12_months_on_time' THEN
+      v_title := '12 Months On Time';
+      v_description := 'Complete 12 recurring bill payments';
+      v_xp_reward := 300;
+    WHEN 'ach_subscription_master' THEN
+      v_title := 'Subscription Master';
+      v_description := 'Track 5 or more active subscriptions or bills';
+      v_xp_reward := 200;
+    WHEN 'ach_budget_planner' THEN
+      v_title := 'Budget Planner';
+      v_description := 'Define a monthly budget of ₹10,000 or more';
+      v_xp_reward := 100;
+    WHEN 'ach_savings_expert' THEN
+      v_title := 'Savings Expert';
+      v_description := 'Complete 3 savings goals';
+      v_xp_reward := 250;
+    ELSE
+      RAISE EXCEPTION 'Unknown or unsupported achievement ID: %', v_achievement_id;
+  END CASE;
+
   -- Lock the authenticated user's profile row
   PERFORM 1
   FROM public.profiles
@@ -37,28 +87,53 @@ BEGIN
     RAISE EXCEPTION 'Profile not found';
   END IF;
 
-  -- Determine Qualification and Reward based on approved list
+  -- =====================================================================================
+  -- Phase 6.3A: Legacy Achievement Compatibility Policy
+  -- =====================================================================================
+  -- 1. legacy achievement_unlocked rows are intentionally preserved;
+  -- 2. any legacy or canonical unlock identity prevents re-awarding;
+  -- 3. no historical XP is recalculated;
+  -- 4. no legacy rows are converted into xp_earned ledger events;
+  -- 5. new unlocks use canonical reference_id + metadata.xp_earned through private.award_xp_internal.
+  -- =====================================================================================
+
+  -- Get authoritative total XP initially to return if not qualified/already unlocked
+  SELECT xp INTO v_total_xp FROM public.profiles WHERE id = v_user_id;
+
+  -- Check any legacy OR canonical existing unlock event
+  SELECT TRUE INTO v_already_unlocked
+  FROM public.events
+  WHERE user_id = v_user_id
+    AND type = 'achievement_unlocked'
+    AND (
+      reference_id = v_achievement_id
+      OR metadata->>'achievementId' = v_achievement_id
+      OR metadata->>'achievement_id' = v_achievement_id
+    );
+
+  IF v_already_unlocked THEN
+    RETURN jsonb_build_object(
+      'achievement_id', v_achievement_id,
+      'unlocked', TRUE,
+      'already_unlocked', TRUE,
+      'xp_earned', 0,
+      'total_xp', v_total_xp
+    );
+  END IF;
+
+  -- Determine Qualification based on approved list
   CASE v_achievement_id
     WHEN 'ach_100_pomodoros' THEN
-      v_title := '100 Pomodoros';
-      v_description := 'Complete 100 focus sessions';
-      v_xp_reward := 100;
       SELECT (COALESCE(SUM(COALESCE(sessions_count, 1)), 0) >= 100) INTO v_qualified
       FROM public.focus_sessions
       WHERE user_id = v_user_id;
 
     WHEN 'ach_30_day_streak' THEN
-      v_title := '30 Day Streak';
-      v_description := 'Maintain a 30 day daily streak';
-      v_xp_reward := 250;
       SELECT (GREATEST(COALESCE(streak, 0), 1) >= 30) INTO v_qualified
       FROM public.profiles
       WHERE id = v_user_id;
 
     WHEN 'ach_save_10k' THEN
-      v_title := 'Saved ₹10,000';
-      v_description := 'Accumulate ₹10,000 or more in total savings goals';
-      v_xp_reward := 200;
       SELECT 
         CASE 
           WHEN p.total_savings IS NOT NULL AND p.total_savings > 0 THEN (p.total_savings >= 10000)
@@ -74,33 +149,21 @@ BEGIN
       WHERE p.id = v_user_id;
 
     WHEN 'ach_level_10' THEN
-      v_title := 'Level 10';
-      v_description := 'Reach Level 10';
-      v_xp_reward := 500;
       SELECT (FLOOR(COALESCE(xp, 0) / 100) + 1 >= 10) INTO v_qualified
       FROM public.profiles
       WHERE id = v_user_id;
 
     WHEN 'ach_250_hours_focus' THEN
-      v_title := 'Studied 250 Hours';
-      v_description := 'Spend 250 hours in focus sessions';
-      v_xp_reward := 400;
       SELECT (FLOOR(COALESCE(SUM(minutes), 0) / 60) >= 250) INTO v_qualified
       FROM public.focus_sessions
       WHERE user_id = v_user_id;
 
     WHEN 'ach_first_subscription' THEN
-      v_title := 'First Subscription';
-      v_description := 'Track at least one active subscription or bill';
-      v_xp_reward := 100;
       SELECT (COUNT(*) >= 1) INTO v_qualified
       FROM public.recurring_expenses
       WHERE user_id = v_user_id AND status = 'active';
 
     WHEN 'ach_never_missed_payment' THEN
-      v_title := 'Never Missed Payment';
-      v_description := 'Complete payments without skipping';
-      v_xp_reward := 150;
       SELECT (
         (COALESCE(SUM(CASE WHEN type = 'payment_skipped' THEN 1 ELSE 0 END), 0) = 0) AND
         (COALESCE(SUM(CASE WHEN type = 'payment_completed' THEN 1 ELSE 0 END), 0) >= 1)
@@ -109,61 +172,25 @@ BEGIN
       WHERE user_id = v_user_id;
 
     WHEN 'ach_12_months_on_time' THEN
-      v_title := '12 Months On Time';
-      v_description := 'Complete 12 recurring bill payments';
-      v_xp_reward := 300;
       SELECT (COUNT(*) >= 12) INTO v_qualified
       FROM public.events
       WHERE user_id = v_user_id AND type = 'payment_completed';
 
     WHEN 'ach_subscription_master' THEN
-      v_title := 'Subscription Master';
-      v_description := 'Track 5 or more active subscriptions or bills';
-      v_xp_reward := 200;
       SELECT (COUNT(*) >= 5) INTO v_qualified
       FROM public.recurring_expenses
       WHERE user_id = v_user_id AND status = 'active';
 
     WHEN 'ach_budget_planner' THEN
-      v_title := 'Budget Planner';
-      v_description := 'Define a monthly budget of ₹10,000 or more';
-      v_xp_reward := 100;
       SELECT (COALESCE(monthly_budget, 0) >= 10000) INTO v_qualified
       FROM public.profiles
       WHERE id = v_user_id;
 
     WHEN 'ach_savings_expert' THEN
-      v_title := 'Savings Expert';
-      v_description := 'Complete 3 savings goals';
-      v_xp_reward := 250;
       SELECT (COUNT(*) >= 3) INTO v_qualified
       FROM public.savings_goals
       WHERE user_id = v_user_id AND current_amount >= target_amount;
-
-    ELSE
-      RAISE EXCEPTION 'Unknown or unsupported achievement ID: %', v_achievement_id;
   END CASE;
-
-  -- Get authoritative total XP initially to return if not qualified/already unlocked
-  SELECT xp INTO v_total_xp FROM public.profiles WHERE id = v_user_id;
-
-  -- Check idempotency
-  SELECT TRUE INTO v_already_unlocked
-  FROM public.events
-  WHERE user_id = v_user_id
-    AND type = 'achievement_unlocked'
-    AND reference_id = v_achievement_id
-    AND metadata ? 'xp_earned';
-
-  IF v_already_unlocked THEN
-    RETURN jsonb_build_object(
-      'achievement_id', v_achievement_id,
-      'unlocked', TRUE,
-      'already_unlocked', TRUE,
-      'xp_earned', 0,
-      'total_xp', v_total_xp
-    );
-  END IF;
 
   IF NOT v_qualified THEN
     RETURN jsonb_build_object(
@@ -184,25 +211,14 @@ BEGIN
   );
 
   -- Award XP and insert event atomically
-  BEGIN
-    v_total_xp := private.award_xp_internal(
-      v_user_id,
-      v_xp_reward,
-      'achievement_unlocked',
-      'achievements',
-      v_achievement_id,
-      v_metadata
-    );
-  EXCEPTION WHEN unique_violation THEN
-    -- Fallback for concurrent transaction race condition hitting the idempotency index
-    RETURN jsonb_build_object(
-      'achievement_id', v_achievement_id,
-      'unlocked', TRUE,
-      'already_unlocked', TRUE,
-      'xp_earned', 0,
-      'total_xp', v_total_xp
-    );
-  END;
+  v_total_xp := private.award_xp_internal(
+    v_user_id,
+    v_xp_reward,
+    'achievement_unlocked',
+    'achievements',
+    v_achievement_id,
+    v_metadata
+  );
 
   RETURN jsonb_build_object(
     'achievement_id', v_achievement_id,

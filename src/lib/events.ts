@@ -288,7 +288,7 @@ export async function checkUnlocksAndMilestones() {
   const completedTasks = store.tasks.filter(t => t.completed).length;
   const totalExpensesCount = store.expenses.length;
   const totalSavings = store.profile.total_savings || store.savingsGoals.reduce((sum, g) => sum + g.current_amount, 0);
-  
+
   // Calculate longest streak from timeline or use current streak as baseline
   const longestStreak = Math.max(store.profile.streak || 0, 1);
 
@@ -329,23 +329,86 @@ export async function checkUnlocksAndMilestones() {
     );
 
     if (!isAlreadyUnlocked && ach.currentValue(stats) >= ach.targetValue) {
-      // Unlock!
-      const unlockTime = new Date().toISOString();
-      await logEvent('achievement_unlocked', 'achievements', ach.id, {
-        achievementId: ach.id,
-        achievementTitle: ach.title,
-        xpEarned: ach.xpReward,
-        description: `Unlocked: ${ach.description}`,
-      });
-      // Award XP
-      await store.addXP(ach.xpReward);
-      // Notify
-      store.showNotification({
-        type: 'achievement',
-        title: ach.title,
-        message: ach.description,
-        xp: ach.xpReward,
-      });
+      // Guest mode fallback
+      if (!store.user || store.user.id === 'local') {
+        const unlockTime = new Date().toISOString();
+        await logEvent('achievement_unlocked', 'achievements', ach.id, {
+          achievementId: ach.id,
+          achievementTitle: ach.title,
+          xpEarned: ach.xpReward,
+          description: `Unlocked: ${ach.description}`,
+        });
+        await store.addXP(ach.xpReward);
+        store.showNotification({
+          type: 'achievement',
+          title: ach.title,
+          message: ach.description,
+          xp: ach.xpReward,
+        });
+        continue;
+      }
+
+      // Authenticated Authoritative Flow
+      // Skip ach_500_tasks as it's not implemented yet
+      if (ach.id === 'ach_500_tasks') continue;
+
+      try {
+        const { data, error } = await supabase.rpc('unlock_achievement', {
+          p_achievement_id: ach.id
+        });
+
+        if (error) {
+          console.warn(`Failed to unlock achievement ${ach.id}:`, error.message);
+          continue;
+        }
+
+        const result = data as any;
+
+        if (result.unlocked) {
+          const latestStore = useStore.getState();
+          // Synchronize Authoritative Profile XP
+          latestStore.setProfileXPAuthoritative(result.total_xp);
+
+          if (result.already_unlocked) {
+            // Do not require a canonical event fetch
+            // Do not create a local duplicate event
+            // Existing hydrated legacy events remain the compatibility source for the UI
+          } else {
+            // Fetch authoritative event to inject into Zustand
+            const { data: dbEvents, error: dbError } = await supabase
+              .from('events')
+              .select('*')
+              .eq('user_id', latestStore.user?.id)
+              .eq('type', 'achievement_unlocked')
+              .eq('reference_id', ach.id)
+              .order('timestamp', { ascending: false })
+              .limit(1);
+
+            if (!dbError && dbEvents && dbEvents.length > 0) {
+              const authEvent = dbEvents[0];
+              if (authEvent.metadata?.xp_earned != null) {
+                // Prevent duplicate insertion
+                if (!latestStore.events.some((e: any) => e.id === authEvent.id)) {
+                  latestStore.addEventLocal(authEvent);
+                }
+              } else {
+                console.warn(`Authoritative event missing xp_earned for ${ach.id}`);
+              }
+            } else {
+              console.warn(`Failed to fetch authoritative event for newly unlocked ${ach.id}`);
+            }
+
+            latestStore.showNotification({
+              type: 'achievement',
+              title: ach.title,
+              message: ach.description,
+              xp: result.xp_earned,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn(`Error invoking unlock_achievement for ${ach.id}:`, err);
+      }
     }
   }
 
