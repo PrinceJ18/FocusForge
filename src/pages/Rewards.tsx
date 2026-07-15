@@ -91,7 +91,25 @@ export default function Rewards() {
 
     const challengeInfo = DAILY_CHALLENGES.find((c) => c.id === challengeId);
 
-    await addXP(reward);
+    if (user) {
+      // Authenticated users
+      const { data, error } = await supabase.rpc('claim_daily_challenge', {
+        p_challenge_id: challengeId,
+        p_challenge_date: today,
+        p_amount: reward
+      });
+
+      if (error || data?.already_claimed) {
+        return; // Already claimed or error
+      }
+
+      useStore.setState((state) => ({
+        profile: { ...state.profile, xp: data.total_xp }
+      }));
+    } else {
+      // Guest users
+      await addXP(reward);
+    }
 
     // Trigger global notification
     useStore.getState().showNotification({
@@ -109,15 +127,27 @@ export default function Rewards() {
     setClaimedChallenges(updatedClaims);
 
     if (user) {
-      await supabase
-        .from('profiles')
-        .update({
-          daily_challenge_claims: {
-            date: today,
-            claimed: updatedClaims,
-          },
-        })
-        .eq('id', user.id);
+      // For local state immediately updating the daily_challenge_claims
+      useStore.setState((state) => ({
+         profile: {
+           ...state.profile,
+           daily_challenge_claims: {
+              date: today,
+              claimed: updatedClaims
+           }
+         }
+      }));
+    } else {
+      // Update store for guests natively. For local state, guests usually store in `profiles` somehow?
+      useStore.setState((state) => ({
+         profile: {
+           ...state.profile,
+           daily_challenge_claims: {
+              date: today,
+              claimed: updatedClaims
+           }
+         }
+      }));
     }
   };
 

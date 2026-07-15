@@ -622,6 +622,11 @@ export const useStore = create<AppState>()(
       addXP: async (amount) => {
         const { profile, user } = get();
 
+        if (user && user.id !== 'local') {
+          console.warn('addXP called in authenticated mode. XP must be calculated server-side.');
+          return;
+        }
+
         const oldLevel = Math.floor(profile.xp / 100) + 1;
         const newXP = profile.xp + amount;
         const newLevel = Math.floor(newXP / 100) + 1;
@@ -651,15 +656,7 @@ export const useStore = create<AppState>()(
           });
         }
 
-        if (user) {
-          await supabase
-            .from('profiles')
-            .update({
-              xp: newXP,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', user.id);
-        }
+
       },
 
       dataLoaded: false,

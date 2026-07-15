@@ -419,16 +419,59 @@ export async function checkUnlocksAndMilestones() {
     );
 
     if (!isAlreadyUnlocked && mile.currentValue(stats) >= mile.targetValue) {
-      await logEvent('milestone_unlocked', mile.category, mile.id, {
-        milestoneId: mile.id,
-        milestoneTitle: mile.title,
-        description: `Reached Milestone: ${mile.description}`,
-      });
-      store.showNotification({
-        type: 'challenge',
-        title: mile.title,
-        message: mile.description,
-      });
+      if (!store.user || store.user.id === 'local') {
+        // Guest mode fallback
+        await logEvent('milestone_unlocked', mile.category, mile.id, {
+          milestoneId: mile.id,
+          milestoneTitle: mile.title,
+          description: `Reached Milestone: ${mile.description}`,
+        });
+        store.showNotification({
+          type: 'challenge',
+          title: mile.title,
+          message: mile.description,
+        });
+      } else {
+        // Authenticated flow
+        try {
+          const { data, error } = await supabase.rpc('unlock_milestone', {
+            p_milestone_id: mile.id,
+            p_title: mile.title,
+            p_description: mile.description,
+            p_category: mile.category
+          });
+
+          if (error) {
+            console.warn(`Failed to unlock milestone ${mile.id}:`, error.message);
+            continue;
+          }
+
+          const result = data as any;
+          if (result.unlocked && !result.already_unlocked) {
+            // Fetch the authoritative event to inject into Zustand
+            const { data: dbEvents, error: dbError } = await supabase
+              .from('events')
+              .select('*')
+              .eq('id', result.event_id)
+              .single();
+
+            if (!dbError && dbEvents) {
+               const latestStore = useStore.getState();
+               if (!latestStore.events.some((e: any) => e.id === dbEvents.id)) {
+                 latestStore.addEventLocal(dbEvents);
+               }
+            }
+            
+            store.showNotification({
+              type: 'challenge',
+              title: mile.title,
+              message: mile.description,
+            });
+          }
+        } catch (err) {
+          console.warn(`Error invoking unlock_milestone for ${mile.id}:`, err);
+        }
+      }
     }
   }
 }

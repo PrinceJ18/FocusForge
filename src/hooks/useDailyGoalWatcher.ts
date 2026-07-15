@@ -8,6 +8,7 @@ import {
   getEnabledGoalProgresses,
 } from '../lib/dailyGoalsUtils';
 import { logEvent } from '../lib/events';
+import { supabase } from '../lib/supabase';
 
 /**
  * Global daily-goal watcher — mount ONCE in App.tsx alongside useTimerEngine.
@@ -28,6 +29,7 @@ export function useDailyGoalWatcher() {
   const tasks = useStore((s) => s.tasks);
   const expenses = useStore((s) => s.expenses);
   const profile = useStore((s) => s.profile);
+  const user = useStore((s) => s.user);
 
   const goalConfigs = useDailyGoalsStore((s) => s.goalConfigs);
   const customGoalProgress = useDailyGoalsStore((s) => s.customGoalProgress);
@@ -144,7 +146,21 @@ export function useDailyGoalWatcher() {
         });
 
         // Award XP
-        useStore.getState().addXP(10);
+        if (user) {
+          supabase.rpc('claim_daily_goal', {
+            p_goal_date: format(new Date(), 'yyyy-MM-dd'),
+            p_goal_id: p.id,
+            p_amount: 10
+          }).then(({ data, error }) => {
+             if (!error && data && data.xp_earned > 0) {
+                 useStore.setState((state) => ({
+                    profile: { ...state.profile, xp: data.total_xp }
+                 }));
+             }
+          });
+        } else {
+          useStore.getState().addXP(10);
+        }
 
         // Mark as notified
         useDailyGoalsStore.getState().markGoalNotified(p.id);
@@ -167,11 +183,26 @@ export function useDailyGoalWatcher() {
           xp: bonusXP,
         });
 
-        useStore.getState().addXP(bonusXP);
-        logEvent('daily_goals_completed', 'tasks', undefined, {
-          xpEarned: bonusXP,
-          description: 'Completed all daily goals!',
-        });
+        if (user) {
+          supabase.rpc('claim_daily_goal', {
+            p_goal_date: format(new Date(), 'yyyy-MM-dd'),
+            p_goal_id: 'all',
+            p_amount: bonusXP
+          }).then(({ data, error }) => {
+             if (!error && data && data.xp_earned > 0) {
+                 useStore.setState((state) => ({
+                    profile: { ...state.profile, xp: data.total_xp }
+                 }));
+             }
+          });
+        } else {
+          useStore.getState().addXP(bonusXP);
+          logEvent('daily_goals_completed', 'tasks', undefined, {
+            xpEarned: bonusXP,
+            description: 'Completed all daily goals!',
+          });
+        }
+
         useDailyGoalsStore.getState().markAllCompleteNotified();
         useDailyGoalsStore.getState().lastCompletedAllDate = format(new Date(), 'yyyy-MM-dd');
       }, 600); // Slight delay to stack after individual notification
@@ -197,5 +228,6 @@ export function useDailyGoalWatcher() {
     dailyXPStart,
     dailyXPDate,
     lastSnapshotDate,
+    user,
   ]);
 }

@@ -9,6 +9,18 @@ import { getLevelInfo } from '../lib/levels';
 import { ACHIEVEMENTS, MILESTONES } from '../lib/events';
 import { ALL_BADGES, getEarnedBadgeIds } from '../lib/statsUtils';
 
+const XP_EVENT_MAP: Record<string, string> = {
+  task_completed: 'Task Completed',
+  pomodoro_completed: 'Focus Session',
+  daily_goals_completed: 'All Daily Goals',
+  daily_goal: 'Daily Goal',
+  daily_challenge: 'Daily Challenge',
+  achievement_unlocked: 'Achievement Unlocked',
+  milestone_unlocked: 'Milestone Unlocked',
+  xp_earned: 'Action Completed',
+  badge_earned: 'Badge Earned'
+};
+
 export default function Achievements() {
   const { expenses, tasks, focusSessions, savingsGoals, profile, user, events } = useStore();
 
@@ -134,7 +146,7 @@ export default function Achievements() {
 
   // Section 3: XP Events
   const xpEvents = useMemo(() => {
-    return events.filter(e => e.type === 'xp_earned' || e.category === 'xp');
+    return events.filter(e => (e.metadata?.xp_earned != null) || (e.metadata?.xpEarned != null) || (e.metadata?.amount != null && e.type === 'xp_earned')).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [events]);
 
   // Section 4: Level History
@@ -674,14 +686,14 @@ export default function Achievements() {
                 <div key={e.id} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-center justify-between text-xs hover:bg-white/5 transition-all">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-semibold text-slate-200">
-                      {e.type === 'xp_earned' ? (e.metadata.description || 'Action Completed') : e.type}
+                      {e.metadata?.description || XP_EVENT_MAP[e.type] || e.type.replace(/_/g, ' ')}
                     </span>
                     <span className="text-[10px] text-slate-500">
                       {format(new Date(e.timestamp), 'MMM d, h:mm a')}
                     </span>
                   </div>
                   <span className="font-extrabold text-purple-400">
-                    +{e.metadata.xpEarned || e.metadata.amount || 10} XP
+                    +{e.metadata?.xp_earned || e.metadata?.xpEarned || e.metadata?.amount || 10} XP
                   </span>
                 </div>
               ))}
