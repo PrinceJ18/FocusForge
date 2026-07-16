@@ -9,6 +9,10 @@ import { format, parseISO, isToday, differenceInDays } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
 import { getLevelInfo } from '../lib/levels';
 import { calculateDashboardStatistics } from '../lib/statistics';
+import { calculateProductivityScore, calculateFinancialHealthScore } from '../lib/scoreUtils';
+import { generateInsights } from '../lib/insightUtils';
+import InsightCard from '../components/analytics/InsightCard';
+import TrendChart from '../components/analytics/TrendChart';
 import { payRecurringExpense } from '../lib/recurringUtils';
 import { supabase } from '../lib/supabase';
 import { logEvent } from '../lib/events';
@@ -85,59 +89,32 @@ export default function Dashboard() {
     return Math.max(0, targetFocus - spentFocus);
   }, [preferences, focusSessions]);
 
-  // Insights algorithm
+  const { score: productivityScore, label: prodLabel } = useMemo(() => 
+    calculateProductivityScore({ tasks, focusSessions, profile }),
+  [tasks, focusSessions, profile]);
+
+  const { score: financialScore, label: finLabel } = useMemo(() => 
+    calculateFinancialHealthScore({ expenses, savingsGoals, monthlyBudget: profile.monthly_budget }),
+  [expenses, savingsGoals, profile.monthly_budget]);
+
   const smartInsights = useMemo(() => {
-    const list: Array<{ title: string; desc: string; color: string; icon: any }> = [];
-    const monthlySpent = getMonthlyExpensesAmount(expenses);
-    const todayMinutes = getTodayFocusMinutes(focusSessions);
-    
-    // Level Up Insight
-    const xpNeeded = levelInfo.xpToNext;
-    if (xpNeeded <= 50) {
-      list.push({
-        title: 'Level Up Close!',
-        desc: `You are only ${xpNeeded} XP away from Level ${levelInfo.level + 1}.`,
-        color: '#a855f7',
-        icon: Sparkles
-      });
-    }
+    return generateInsights({ tasks, focusSessions, expenses });
+  }, [tasks, focusSessions, expenses]);
 
-    // Budget Health
-    if (monthlySpent > profile.monthly_budget * 0.8) {
-      list.push({
-        title: 'Budget Alert',
-        desc: 'You have used over 80% of your monthly budget.',
-        color: '#ef4444',
-        icon: AlertTriangle
-      });
-    } else {
-      list.push({
-        title: 'Budget Healthy',
-        desc: 'Your spending is well within limits this month.',
-        color: '#10b981',
-        icon: TrendingUp
-      });
+  // Generate 7-day focus trend data for chart
+  const focusTrendData = useMemo(() => {
+    const data = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const mins = focusSessions
+        .filter(s => s.session_date.startsWith(dateStr))
+        .reduce((sum, s) => sum + s.minutes, 0);
+      data.push({ name: format(d, 'EEE'), focus: mins });
     }
-
-    // Focus Patterns
-    if (todayMinutes > 0) {
-      list.push({
-        title: 'Focus consistency',
-        desc: `You logged ${todayMinutes} focus minutes today. Excellent work!`,
-        color: '#06b6d4',
-        icon: Target
-      });
-    } else {
-      list.push({
-        title: 'Start Focus',
-        desc: 'Set a 25-minute Pomodoro timer to jump-start your productivity.',
-        color: '#6b7280',
-        icon: Timer
-      });
-    }
-
-    return list;
-  }, [profile.xp, levelInfo, expenses, profile.monthly_budget, focusSessions]);
+    return data;
+  }, [focusSessions]);
 
   // Recommendations Engine
   const recommendations = useMemo(() => {
@@ -708,48 +685,13 @@ export default function Dashboard() {
       </div>
 
       {/* ============================================================
-          4. PROGRESS & INSIGHTS
+          4. RECOMMENDED ACTIONS
           ============================================================ */}
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-white tracking-tight pl-1" style={{ fontFamily: 'Space Grotesk' }}>
-          Progress & Insights
+          Actionable Steps
         </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Smart Insights */}
-          <div className="glass-card p-5 space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Smart Insights</h4>
-            <div className="space-y-2 text-xs">
-              {smartInsights.map((insight, idx) => {
-                const Icon = insight.icon;
-                return (
-                  <div key={idx} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-start gap-2.5">
-                    <Icon size={14} style={{ color: insight.color }} className="mt-0.5" />
-                    <div>
-                      <h5 className="font-bold text-white text-left">{insight.title}</h5>
-                      <p className="text-[10px] text-slate-400 mt-0.5 text-left">{insight.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Productivity Score */}
-          <div className="glass-card p-5 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Productivity Score</h4>
-                <span className="text-lg font-black text-purple-400">{productivityScoreExplanation.score}%</span>
-              </div>
-              <p className="text-[10px] text-slate-500 leading-relaxed text-left">{productivityScoreExplanation.desc}</p>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-2 italic text-left">
-              {productivityScoreExplanation.action}
-            </p>
-          </div>
-
-          {/* Recommended Actions */}
+        <div className="grid grid-cols-1 gap-6">
           <div className="glass-card p-5 space-y-3">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recommended Actions</h4>
             <div className="grid grid-cols-1 gap-2 text-xs">

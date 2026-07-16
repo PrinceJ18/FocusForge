@@ -14,6 +14,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { logEvent } from '../lib/events';
 import { useEffect } from 'react';
+import WeeklyReport from './WeeklyReport';
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b', transport: '#06b6d4', shopping: '#ec4899',
@@ -25,6 +26,7 @@ export default function Reports() {
   const { expenses, tasks, focusSessions, savingsGoals, profile } = useStore();
   const { history: goalsHistory } = useDailyGoalsStore();
 
+  const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   useEffect(() => {
@@ -112,6 +114,28 @@ export default function Reports() {
   const handleExportPDF = () => {
     alert("PDF report layout prepared. Direct browser PDF download will be activated next.");
   };
+
+  if (reportType === 'weekly') {
+    return (
+      <div className="space-y-6">
+        <div className="flex gap-2 p-1 rounded-xl w-fit mb-6" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          <button
+            onClick={() => setReportType('weekly')}
+            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all bg-purple-500/20 text-white border border-purple-500/30"
+          >
+            Weekly Report
+          </button>
+          <button
+            onClick={() => setReportType('monthly')}
+            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-white"
+          >
+            Monthly Report
+          </button>
+        </div>
+        <WeeklyReport />
+      </div>
+    );
+  }
 
   if (reportData) {
     return (
@@ -478,6 +502,27 @@ export default function Reports() {
 
   return (
     <div className="page-enter space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>Performance Reports</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Review your long-term focus, tasks, and financial trends.</p>
+        </div>
+        <div className="flex gap-2 p-1 rounded-xl bg-white/5">
+          <button
+            onClick={() => setReportType('weekly')}
+            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-white"
+          >
+            Weekly Report
+          </button>
+          <button
+            onClick={() => setReportType('monthly')}
+            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all bg-purple-500/20 text-white border border-purple-500/30"
+          >
+            Monthly Report
+          </button>
+        </div>
+      </div>
       {/* Overview / Banner */}
       <div
         className="glass-card p-6 sm:p-8 relative overflow-hidden"
