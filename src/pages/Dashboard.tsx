@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import {
   Wallet, Brain, AlertTriangle, Sparkles, Timer, TrendingUp, Target,
   CheckSquare, Zap, ArrowUpRight, ArrowDownRight, Clock, Star,
-  Award, Play, Pause, RotateCcw, Plus, Calendar, Bell, ChevronUp, ChevronDown, Eye, EyeOff, Pin, X, List
+  Award, Play, Pause, RotateCcw, Plus, Calendar, Bell, ChevronUp, ChevronDown, Eye, EyeOff, Pin, X, List,
+  PiggyBank, BarChart3, Lightbulb, Activity
 } from 'lucide-react';
 import { useStore, type Page, type Task, completeTask, uncompleteTask, deleteTask, updateTask } from '../store/useStore';
 import { format, parseISO, isToday, differenceInDays } from 'date-fns';
@@ -35,6 +36,10 @@ import TaskFormModal from '../components/tasks/TaskFormModal';
 import TodaysGoalsCard from '../components/TodaysGoalsCard';
 import RecurringDetailsModal from '../components/finance/RecurringDetailsModal';
 import { type RecurringExpense } from '../store/useStore';
+
+// Import Dashboard Widget System
+import DashboardWidget from '../components/dashboard/DashboardWidget';
+import DashboardGrid from '../components/dashboard/DashboardGrid';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -116,6 +121,21 @@ export default function Dashboard() {
     return data;
   }, [focusSessions]);
 
+  // Generate 7-day expense trend data for chart
+  const expenseTrendData = useMemo(() => {
+    const data = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const spent = expenses
+        .filter(e => e.expense_date.startsWith(dateStr))
+        .reduce((sum, e) => sum + e.amount, 0);
+      data.push({ name: format(d, 'EEE'), spent });
+    }
+    return data;
+  }, [expenses]);
+
   // Recommendations Engine
   const recommendations = useMemo(() => {
     const list: string[] = [];
@@ -168,13 +188,35 @@ export default function Dashboard() {
   const upcomingBills = useMemo(() => {
     return recurringExpenses
       .filter(r => r.status === 'active')
-      .slice(0, 3);
+      .slice(0, 5);
   }, [recurringExpenses]);
 
   // Recent timeline events
   const recentEvents = useMemo(() => {
-    return events.slice(0, 5);
+    return events.slice(0, 8);
   }, [events]);
+
+  // Savings goal summary
+  const savingsSummary = useMemo(() => {
+    if (savingsGoals.length === 0) return null;
+    // Pick the most-progressed active goal (not yet complete)
+    const active = savingsGoals
+      .filter(g => g.current_amount < g.target_amount)
+      .sort((a, b) => (b.current_amount / b.target_amount) - (a.current_amount / a.target_amount));
+    const goal = active[0] || savingsGoals[0];
+    const remaining = Math.max(0, goal.target_amount - goal.current_amount);
+    const pct = goal.target_amount > 0 ? Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100)) : 0;
+    const totalSaved = savingsGoals.reduce((sum, g) => sum + g.current_amount, 0);
+    const totalTarget = savingsGoals.reduce((sum, g) => sum + g.target_amount, 0);
+    return { goal, remaining, pct, totalSaved, totalTarget, count: savingsGoals.length };
+  }, [savingsGoals]);
+
+  // Today's expenses amount
+  const todayExpensesAmount = useMemo(() => {
+    return expenses
+      .filter(e => isToday(parseISO(e.expense_date)))
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses]);
 
   // Quick Timer controllers
   const handleStartTimer = (mins: number) => {
@@ -328,439 +370,574 @@ export default function Dashboard() {
   const monthlySpent = getMonthlyExpensesAmount(expenses);
   const budgetRemaining = profile.monthly_budget - monthlySpent;
 
+  // Score color helpers
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#f59e0b';
+    return '#ef4444';
+  };
+
   return (
-    <div className="page-enter space-y-8 pb-12 text-left">
-      
-      {/* 0. WELCOME HERO SECTION */}
-      <div
-        className="glass-card p-5 relative overflow-hidden flex flex-col justify-between min-h-[160px]"
-        style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(236,72,153,0.08))' }}
-      >
-        <div>
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] text-purple-400 uppercase tracking-widest font-black">Hero Command</span>
-            <span className="text-xs text-slate-400">🌤️ Today • {format(todayDate, 'EEE, MMM d')}</span>
-          </div>
-          
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2" style={{ fontFamily: 'Space Grotesk' }}>
-            {greeting}, {displayName}!
-          </h2>
-          <p className="text-xs text-slate-400 mt-2 max-w-xl italic">
-            "Success is the sum of small efforts, repeated day-in and day-out."
-          </p>
-        </div>
+    <div className="page-enter pb-12 text-left">
+      <DashboardGrid>
 
-        <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-white/5 text-xs text-slate-400">
-          <div>Level: <span className="text-white font-black">{levelInfo.level}</span></div>
-          <div className="w-24 bg-slate-900 h-2 rounded-full overflow-hidden">
-            <div className="bg-purple-500 h-full" style={{ width: `${levelInfo.progress}%` }} />
-          </div>
-          <div>Streak: <span className="text-amber-500 font-bold">🔥 {profile.streak} Days</span></div>
-        </div>
-      </div>
-
-      {/* ============================================================
-          1. DAILY COMMAND CENTER
-          ============================================================ */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-white tracking-tight pl-1" style={{ fontFamily: 'Space Grotesk' }}>
-          Daily Command Center
-        </h2>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left area: Today's Tasks */}
-          <div className="glass-card p-5 lg:col-span-2 flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+        {/* ============================================================
+            SECTION 1 — HERO
+            Dashboard summary: welcome, avatar, level, XP, streak, scores
+            ============================================================ */}
+        <DashboardWidget
+          icon={Sparkles}
+          title="Dashboard"
+          badge={format(todayDate, 'EEE, MMM d')}
+          size="hero"
+          colSpan={12}
+          gradient="linear-gradient(135deg, rgba(168,85,247,0.12), rgba(236,72,153,0.06), rgba(6,182,212,0.05))"
+          iconBg="rgba(168,85,247,0.2)"
+          iconColor="#a855f7"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Left: Greeting */}
+            <div className="flex items-center gap-4">
+              {/* Avatar */}
+              <div
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl font-black"
+                style={{
+                  background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+                  boxShadow: '0 0 24px rgba(168,85,247,0.3)',
+                  color: 'white',
+                }}
+              >
+                {(profile.avatar_url)
+                  ? <img src={profile.avatar_url} alt="avatar" className="w-full h-full rounded-2xl object-cover" />
+                  : displayName.charAt(0).toUpperCase()
+                }
+              </div>
               <div>
-                <h4 className="font-bold text-sm text-white">Today's Tasks</h4>
-                <p className="text-[10px] text-gray-400">Scheduled occurrences for today</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowQuickAddTask(true)}
-                  className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-semibold"
-                >
-                  Quick Add
-                </button>
-                <button
-                  onClick={() => setPage('productivity')}
-                  className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold"
-                >
-                  Manage Board
-                </button>
+                <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
+                  {greeting}, {displayName}!
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Level {levelInfo.level} • {profile.xp} XP
+                </p>
               </div>
             </div>
 
-            {/* Tasks List */}
-            <div className="space-y-2 overflow-y-auto max-h-[300px] pr-1">
-              {todayTaskOccurrences.length === 0 ? (
-                <div className="text-center py-10 text-gray-500">
-                  <CheckSquare size={32} className="mx-auto mb-2 opacity-35 text-gray-400" />
-                  <p className="text-xs">No tasks scheduled for today.</p>
-                  <button 
-                    onClick={() => setShowQuickAddTask(true)}
-                    className="text-[10px] text-purple-400 hover:text-purple-300 font-bold mt-2"
-                  >
-                    + Create a Task
-                  </button>
+            {/* Right: Key metrics row */}
+            <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
+              {/* XP Progress */}
+              <div className="text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">XP Progress</div>
+                <div className="w-20 bg-slate-900 h-2 rounded-full overflow-hidden">
+                  <div className="bg-purple-500 h-full rounded-full" style={{ width: `${levelInfo.progress}%`, transition: 'width 0.8s ease' }} />
                 </div>
-              ) : (
-                todayTaskOccurrences.map(({ task, completed, occurrenceDate }) => {
-                  const section = taskSections.find((s) => s.id === task.section_id);
-                  const isHigh = task.priority === 'high';
-                  const isMed = task.priority === 'medium';
-                  const priorityColor = isHigh ? '#ef4444' : isMed ? '#f59e0b' : '#10b981';
-
-                  return (
-                    <div
-                      key={`${task.id}_${occurrenceDate}`}
-                      onClick={() => setSelectedTaskDetails({ task, completed, date: occurrenceDate })}
-                      className="p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs"
-                    >
-                      {/* Checkbox */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleTask(task, completed, occurrenceDate);
-                        }}
-                        className="text-gray-400 hover:text-white transition-colors"
-                        style={{ color: completed ? '#10b981' : 'var(--text-muted)' }}
-                      >
-                        {completed ? (
-                          <CheckSquare size={16} className="text-green-500" />
-                        ) : (
-                          <div className="w-4 h-4 rounded border border-white/20 hover:border-purple-400 transition-colors" />
-                        )}
-                      </button>
-
-                      {/* Title & Info */}
-                      <div className="flex-1 min-w-0 text-left">
-                        <span 
-                          className="font-semibold text-white block truncate"
-                          style={{
-                            textDecoration: completed ? 'line-through' : 'none',
-                            color: completed ? 'rgba(255,255,255,0.4)' : 'white'
-                          }}
-                        >
-                          {task.title}
-                        </span>
-
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          <span 
-                            className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase"
-                            style={{ backgroundColor: `${priorityColor}15`, color: priorityColor }}
-                          >
-                            {task.priority}
-                          </span>
-                          
-                          {section && (
-                            <span 
-                              className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-                              style={{ backgroundColor: `${section.color}15`, color: section.color }}
-                            >
-                              {section.name}
-                            </span>
-                          )}
-
-                          {task.recurrence_type && task.recurrence_type !== 'none' && (
-                            <span className="text-[9px] text-purple-400 font-bold">Repeating</span>
-                          )}
-
-                          {task.reminder_enabled && (
-                            <span className="text-[9px] text-teal-400 font-bold">🔔 {task.reminder_time || '9:00 AM'}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Right area: Goals, Focus & Quick Actions */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Goals Check list card */}
-            <TodaysGoalsCard />
-
-            {/* Quick Focus timer widget */}
-            <div className="glass-card p-5 flex flex-col justify-between">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-bold text-xs text-slate-400 uppercase tracking-wider">Quick Focus Sprint</h4>
-                <span className="text-[9px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded font-black uppercase">
-                  {timerMode}
-                </span>
+                <div className="text-[10px] text-slate-400 mt-0.5">{levelInfo.progress}%</div>
               </div>
-              <div className="text-center py-2">
-                <div className="text-3xl font-black text-white" style={{ fontFamily: 'Space Grotesk' }}>
-                  {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
-                </div>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={handleToggleTimer}
-                  className="px-3 py-1.5 bg-purple-500 text-white font-bold rounded-lg text-xs flex-1 hover:bg-purple-600 flex items-center justify-center gap-1"
-                >
-                  {timerRunning ? <Pause size={12} /> : <Play size={12} />}
-                  {timerRunning ? 'Pause' : 'Resume'}
-                </button>
-                <button
-                  onClick={() => handleStartTimer(25)}
-                  className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 font-bold rounded-lg text-xs flex-1"
-                >
-                  Start 25m
-                </button>
-              </div>
-            </div>
 
-            {/* Quick Actions Shortcuts */}
-            <div className="glass-card p-5">
-              <h4 className="font-bold text-xs text-slate-400 uppercase tracking-wider mb-3">Quick Actions</h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  onClick={() => handleStartTimer(25)}
-                  className="p-2 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 rounded-xl text-center font-bold"
-                >
-                  Start Focus
-                </button>
-                <button
-                  onClick={() => setShowQuickAddExpense(true)}
-                  className="p-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 rounded-xl text-center font-bold"
-                >
-                  Add Expense
-                </button>
-                <button
-                  onClick={() => setShowQuickAddTask(true)}
-                  className="p-2 bg-pink-500/10 border border-pink-500/20 text-pink-400 hover:bg-pink-500/20 rounded-xl text-center font-bold"
-                >
-                  Create Task
-                </button>
-                <button
-                  onClick={() => setPage('analytics')}
-                  className="p-2 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-xl text-center font-bold"
-                >
-                  View Reports
-                </button>
+              {/* Streak */}
+              <div className="text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Streak</div>
+                <div className="text-lg font-black text-amber-500" style={{ fontFamily: 'Space Grotesk' }}>🔥 {profile.streak}</div>
+              </div>
+
+              {/* Productivity Score */}
+              <div className="text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Productivity</div>
+                <div className="text-lg font-black" style={{ color: getScoreColor(productivityScore), fontFamily: 'Space Grotesk' }}>{productivityScore}%</div>
+                <div className="text-[9px] font-semibold" style={{ color: getScoreColor(productivityScore) }}>{prodLabel}</div>
+              </div>
+
+              {/* Financial Health Score */}
+              <div className="text-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Financial</div>
+                <div className="text-lg font-black" style={{ color: getScoreColor(financialScore), fontFamily: 'Space Grotesk' }}>{financialScore}%</div>
+                <div className="text-[9px] font-semibold" style={{ color: getScoreColor(financialScore) }}>{finLabel}</div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </DashboardWidget>
 
-      {/* ============================================================
-          2. TODAY'S SNAPSHOT
-          ============================================================ */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-white tracking-tight pl-1" style={{ fontFamily: 'Space Grotesk' }}>
-          Today's Snapshot
-        </h2>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <div className="p-4 glass-card border border-white/5 bg-white/[0.01]">
-            <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Focus Today</span>
-            <span className="text-2xl font-black text-purple-400 mt-1 block" style={{ fontFamily: 'Space Grotesk' }}>
-              {getTodayFocusMinutes(focusSessions)}m
-            </span>
-          </div>
-          <div className="p-4 glass-card border border-white/5 bg-white/[0.01]">
-            <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Sessions Completed</span>
-            <span className="text-2xl font-black text-pink-400 mt-1 block" style={{ fontFamily: 'Space Grotesk' }}>
-              {getTodayFocusSessions(focusSessions)}
-            </span>
-          </div>
-          <div className="p-4 glass-card border border-white/5 bg-white/[0.01]">
-            <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Tasks Completed</span>
-            <span className="text-2xl font-black text-cyan-400 mt-1 block" style={{ fontFamily: 'Space Grotesk' }}>
+        {/* ============================================================
+            SECTION 2 — TODAY'S SNAPSHOT (4 KPI widgets)
+            ============================================================ */}
+        <h2 className="dashboard-section-title">Today's Snapshot</h2>
+
+        <DashboardWidget
+          icon={Timer}
+          title="Focus Today"
+          size="kpi"
+          colSpan={3}
+          iconBg="rgba(168,85,247,0.12)"
+          iconColor="#a855f7"
+        >
+          <span className="text-2xl font-black text-purple-400 block text-center" style={{ fontFamily: 'Space Grotesk' }}>
+            {getTodayFocusMinutes(focusSessions)}m
+          </span>
+        </DashboardWidget>
+
+        <DashboardWidget
+          icon={CheckSquare}
+          title="Tasks Today"
+          size="kpi"
+          colSpan={3}
+          iconBg="rgba(6,182,212,0.12)"
+          iconColor="#06b6d4"
+        >
+          <div className="text-center">
+            <span className="text-2xl font-black text-cyan-400" style={{ fontFamily: 'Space Grotesk' }}>
               {todayCompletedCount}
             </span>
+            <span className="text-sm text-slate-500 font-medium"> / {todayTaskOccurrences.length}</span>
           </div>
-          <div className="p-4 glass-card border border-white/5 bg-white/[0.01]">
-            <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Current Streak</span>
-            <span className="text-2xl font-black text-green-400 mt-1 block" style={{ fontFamily: 'Space Grotesk' }}>
-              🔥 {profile.streak} Days
-            </span>
-          </div>
-        </div>
-      </div>
+        </DashboardWidget>
 
-      {/* ============================================================
-          3. FINANCIAL OVERVIEW
-          ============================================================ */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-white tracking-tight pl-1" style={{ fontFamily: 'Space Grotesk' }}>
-          Financial Overview
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Budget stats */}
-          <div className="glass-card p-5 space-y-4">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Monthly Budget & Spending</h4>
-            
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Total Spent</span>
-                <span className="text-white font-bold">{formatCurrency(monthlySpent)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Monthly Budget</span>
-                <span className="text-white font-bold">{formatCurrency(profile.monthly_budget)}</span>
-              </div>
-              <div className="flex justify-between border-t border-white/5 pt-2 font-bold">
-                <span className="text-gray-400">Remaining</span>
-                <span className={budgetRemaining >= 0 ? 'text-green-400' : 'text-red-400'}>
-                  {formatCurrency(budgetRemaining)}
-                </span>
-              </div>
-            </div>
+        <DashboardWidget
+          icon={Wallet}
+          title="Expenses Today"
+          size="kpi"
+          colSpan={3}
+          iconBg="rgba(236,72,153,0.12)"
+          iconColor="#ec4899"
+        >
+          <span className="text-2xl font-black text-pink-400 block text-center" style={{ fontFamily: 'Space Grotesk' }}>
+            {formatCurrency(todayExpensesAmount)}
+          </span>
+        </DashboardWidget>
 
-            <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-              <div 
-                className="h-full rounded-full" 
-                style={{ 
-                  backgroundColor: monthlySpent > profile.monthly_budget ? '#ef4444' : '#10b981',
-                  width: `${Math.min(100, (monthlySpent / Math.max(1, profile.monthly_budget)) * 100)}%` 
-                }} 
-              />
-            </div>
-            
-            <button 
-              onClick={() => setPage('finance')}
-              className="py-1.5 w-full bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 font-bold rounded-lg text-xs text-center"
+        <DashboardWidget
+          icon={Target}
+          title="Budget Left"
+          size="kpi"
+          colSpan={3}
+          iconBg={budgetRemaining >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}
+          iconColor={budgetRemaining >= 0 ? '#10b981' : '#ef4444'}
+        >
+          <span
+            className="text-2xl font-black block text-center"
+            style={{ fontFamily: 'Space Grotesk', color: budgetRemaining >= 0 ? '#10b981' : '#ef4444' }}
+          >
+            {formatCurrency(budgetRemaining)}
+          </span>
+        </DashboardWidget>
+
+        {/* ============================================================
+            SECTION 3 — QUICK ACTIONS
+            ============================================================ */}
+        <h2 className="dashboard-section-title">Quick Actions</h2>
+
+        <DashboardWidget
+          icon={Zap}
+          title="Command Center"
+          colSpan={12}
+          iconBg="rgba(168,85,247,0.12)"
+          iconColor="#a855f7"
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <button
+              onClick={() => handleStartTimer(25)}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-500/8 border border-purple-500/15 hover:bg-purple-500/15 hover:border-purple-500/30 transition-all group"
             >
-              Open Expense Manager
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Play size={20} className="text-purple-400" />
+              </div>
+              <span className="text-xs font-bold text-purple-400">Start Focus</span>
+            </button>
+
+            <button
+              onClick={() => setShowQuickAddTask(true)}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-cyan-500/8 border border-cyan-500/15 hover:bg-cyan-500/15 hover:border-cyan-500/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Plus size={20} className="text-cyan-400" />
+              </div>
+              <span className="text-xs font-bold text-cyan-400">Add Task</span>
+            </button>
+
+            <button
+              onClick={() => setShowQuickAddExpense(true)}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-pink-500/8 border border-pink-500/15 hover:bg-pink-500/15 hover:border-pink-500/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-pink-500/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Wallet size={20} className="text-pink-400" />
+              </div>
+              <span className="text-xs font-bold text-pink-400">Add Expense</span>
+            </button>
+
+            <button
+              onClick={() => setPage('finance')}
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-500/8 border border-green-500/15 hover:bg-green-500/15 hover:border-green-500/30 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <PiggyBank size={20} className="text-green-400" />
+              </div>
+              <span className="text-xs font-bold text-green-400">Savings Goal</span>
             </button>
           </div>
+        </DashboardWidget>
 
-          {/* Spending by Category progress */}
-          <div className="glass-card p-5 space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Spending By Category</h4>
-            
-            <div className="space-y-2.5 overflow-y-auto max-h-[160px] pr-1">
-              {stats.categoryData.length === 0 ? (
-                <p className="text-xs text-gray-500 italic py-6 text-center">No expenses recorded this month.</p>
-              ) : (
-                stats.categoryData.map((cat) => {
-                  const pct = Math.min(100, (cat.value / Math.max(1, stats.totalSpent)) * 100);
-                  return (
-                    <div key={cat.name} className="space-y-1">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-gray-300">{cat.name}</span>
-                        <span className="text-white">{formatCurrency(cat.value)} ({pct.toFixed(0)}%)</span>
-                      </div>
-                      <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full" 
-                          style={{ backgroundColor: cat.fill, width: `${pct}%` }} 
-                        />
+        {/* ============================================================
+            SECTION 4 — TODAY'S WORK
+            Left: Today's Tasks | Right: Upcoming Bills
+            ============================================================ */}
+        <h2 className="dashboard-section-title">Today's Work</h2>
+
+        {/* Today's Tasks */}
+        <DashboardWidget
+          icon={CheckSquare}
+          title="Today's Tasks"
+          badge={`${todayTaskOccurrences.length}`}
+          size="large"
+          colSpan={8}
+          scrollable
+          iconBg="rgba(168,85,247,0.12)"
+          iconColor="#a855f7"
+          headerAction={
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowQuickAddTask(true)}
+                className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-semibold"
+              >
+                Quick Add
+              </button>
+              <button
+                onClick={() => setPage('productivity')}
+                className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold"
+              >
+                Manage Board
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-2">
+            {todayTaskOccurrences.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                <CheckSquare size={32} className="mx-auto mb-2 opacity-35 text-gray-400" />
+                <p className="text-xs">No tasks scheduled for today.</p>
+                <button 
+                  onClick={() => setShowQuickAddTask(true)}
+                  className="text-[10px] text-purple-400 hover:text-purple-300 font-bold mt-2"
+                >
+                  + Create a Task
+                </button>
+              </div>
+            ) : (
+              todayTaskOccurrences.map(({ task, completed, occurrenceDate }) => {
+                const section = taskSections.find((s) => s.id === task.section_id);
+                const isHigh = task.priority === 'high';
+                const isMed = task.priority === 'medium';
+                const priorityColor = isHigh ? '#ef4444' : isMed ? '#f59e0b' : '#10b981';
+
+                return (
+                  <div
+                    key={`${task.id}_${occurrenceDate}`}
+                    onClick={() => setSelectedTaskDetails({ task, completed, date: occurrenceDate })}
+                    className="p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs"
+                  >
+                    {/* Checkbox */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleTask(task, completed, occurrenceDate);
+                      }}
+                      className="text-gray-400 hover:text-white transition-colors"
+                      style={{ color: completed ? '#10b981' : 'var(--text-muted)' }}
+                    >
+                      {completed ? (
+                        <CheckSquare size={16} className="text-green-500" />
+                      ) : (
+                        <div className="w-4 h-4 rounded border border-white/20 hover:border-purple-400 transition-colors" />
+                      )}
+                    </button>
+
+                    {/* Title & Info */}
+                    <div className="flex-1 min-w-0 text-left">
+                      <span 
+                        className="font-semibold text-white block truncate"
+                        style={{
+                          textDecoration: completed ? 'line-through' : 'none',
+                          color: completed ? 'rgba(255,255,255,0.4)' : 'white'
+                        }}
+                      >
+                        {task.title}
+                      </span>
+
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <span 
+                          className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase"
+                          style={{ backgroundColor: `${priorityColor}15`, color: priorityColor }}
+                        >
+                          {task.priority}
+                        </span>
+                        
+                        {section && (
+                          <span 
+                            className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                            style={{ backgroundColor: `${section.color}15`, color: section.color }}
+                          >
+                            {section.name}
+                          </span>
+                        )}
+
+                        {task.recurrence_type && task.recurrence_type !== 'none' && (
+                          <span className="text-[9px] text-purple-400 font-bold">Repeating</span>
+                        )}
+
+                        {task.reminder_enabled && (
+                          <span className="text-[9px] text-teal-400 font-bold">🔔 {task.reminder_time || '9:00 AM'}</span>
+                        )}
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Recurring Bills Preview */}
-          <div className="glass-card p-5 space-y-4">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Upcoming Bills & Subscriptions</h4>
-            
-            <div className="space-y-2 text-xs">
-              {upcomingBills.length === 0 ? (
-                <p className="text-slate-500 text-center py-4">No active bills scheduled.</p>
-              ) : (
-                upcomingBills.map(b => (
-                  <div
-                    key={b.id}
-                    className="flex justify-between items-center p-2 bg-slate-950/40 border border-white/5 rounded-lg cursor-pointer hover:border-purple-500/20 text-left"
-                    onClick={() => setSelectedRecurringDetails(b)}
-                  >
-                    <span className="text-slate-300 truncate max-w-[120px]">{b.name}</span>
-                    <span className="text-[10px] text-cyan-400 font-bold uppercase">-{formatCurrency(b.amount)}</span>
                   </div>
-                ))
-              )}
-            </div>
+                );
+              })
+            )}
           </div>
-        </div>
-      </div>
+        </DashboardWidget>
 
-      {/* ============================================================
-          4. RECOMMENDED ACTIONS
-          ============================================================ */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-white tracking-tight pl-1" style={{ fontFamily: 'Space Grotesk' }}>
-          Actionable Steps
-        </h2>
-        <div className="grid grid-cols-1 gap-6">
-          <div className="glass-card p-5 space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recommended Actions</h4>
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              {recommendations.slice(0, 3).map((rec, idx) => (
-                <div key={idx} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-start gap-2 text-left">
-                  <span className="text-purple-400">⚡</span>
-                  <p className="text-slate-300 leading-relaxed">{rec}</p>
+        {/* Upcoming Bills / Payments */}
+        <DashboardWidget
+          icon={Calendar}
+          title="Upcoming Payments"
+          badge={`${upcomingBills.length}`}
+          size="large"
+          colSpan={4}
+          scrollable
+          iconBg="rgba(245,158,11,0.12)"
+          iconColor="#f59e0b"
+          headerAction={
+            <button
+              onClick={() => setPage('finance')}
+              className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold"
+            >
+              View All
+            </button>
+          }
+        >
+          <div className="space-y-2 text-xs">
+            {upcomingBills.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                <Calendar size={32} className="mx-auto mb-2 opacity-35 text-gray-400" />
+                <p className="text-xs">No active bills scheduled.</p>
+              </div>
+            ) : (
+              upcomingBills.map(b => (
+                <div
+                  key={b.id}
+                  className="flex justify-between items-center p-3 bg-slate-950/40 border border-white/5 rounded-xl cursor-pointer hover:border-amber-500/20 hover:bg-white/[0.02] transition-all text-left"
+                  onClick={() => setSelectedRecurringDetails(b)}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                      <Wallet size={14} className="text-amber-400" />
+                    </div>
+                    <span className="text-slate-300 truncate font-medium">{b.name}</span>
+                  </div>
+                  <span className="text-sm text-amber-400 font-bold flex-shrink-0 ml-2">
+                    {formatCurrency(b.amount)}
+                  </span>
                 </div>
+              ))
+            )}
+          </div>
+        </DashboardWidget>
+
+        {/* ============================================================
+            SECTION 5 — ANALYTICS
+            Focus Trend + Expense Trend (equal height charts)
+            ============================================================ */}
+        <h2 className="dashboard-section-title">Analytics</h2>
+
+        <DashboardWidget
+          icon={BarChart3}
+          title="Focus Trend"
+          badge="7 Days"
+          size="medium"
+          colSpan={6}
+          iconBg="rgba(168,85,247,0.12)"
+          iconColor="#a855f7"
+        >
+          <TrendChart data={focusTrendData} xKey="name" yKey="focus" color="#a855f7" height={200} />
+        </DashboardWidget>
+
+        <DashboardWidget
+          icon={TrendingUp}
+          title="Expense Trend"
+          badge="7 Days"
+          size="medium"
+          colSpan={6}
+          iconBg="rgba(236,72,153,0.12)"
+          iconColor="#ec4899"
+        >
+          <TrendChart data={expenseTrendData} xKey="name" yKey="spent" color="#ec4899" height={200} />
+        </DashboardWidget>
+
+        {/* ============================================================
+            SECTION 6 — INSIGHTS
+            AI Insights + Recent Activity Timeline
+            ============================================================ */}
+        <h2 className="dashboard-section-title">Insights</h2>
+
+        {/* AI Insights */}
+        <DashboardWidget
+          icon={Lightbulb}
+          title="AI Insights"
+          badge={`${smartInsights.length}`}
+          size="medium"
+          colSpan={6}
+          iconBg="rgba(245,158,11,0.12)"
+          iconColor="#f59e0b"
+        >
+          {smartInsights.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              <Lightbulb size={28} className="mx-auto mb-2 opacity-35" />
+              <p className="text-xs">Log more activity to unlock personalized insights.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {smartInsights.map(insight => (
+                <InsightCard key={insight.id} insight={insight} />
               ))}
             </div>
-          </div>
-        </div>
-      </div>
+          )}
+        </DashboardWidget>
 
-      {/* ============================================================
-          5. RECENT PROGRESS
-          ============================================================ */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold text-white tracking-tight pl-1" style={{ fontFamily: 'Space Grotesk' }}>
-          Recent Progress
-        </h2>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Timeline Activity */}
-          <div className="glass-card p-5 space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider text-left">Recent Activity</h4>
-            <div className="space-y-2 text-xs">
-              {recentEvents.length === 0 ? (
-                <p className="text-slate-500 text-center py-4">No activity logged.</p>
-              ) : (
-                recentEvents.map(e => (
-                  <div key={e.id} className="flex justify-between items-center border-b border-white/5 pb-1">
-                    <div className="text-left">
-                      <span className="text-white block font-semibold">{e.metadata.title || e.type}</span>
-                      <span className="text-[10px] text-slate-500">{format(parseISO(e.timestamp), 'h:mm a')}</span>
-                    </div>
-                    <span className="text-[10px] text-purple-400 uppercase font-black">{e.category}</span>
+        {/* Recent Activity Timeline */}
+        <DashboardWidget
+          icon={Activity}
+          title="Recent Activity"
+          badge={`${recentEvents.length}`}
+          size="medium"
+          colSpan={6}
+          scrollable
+          iconBg="rgba(6,182,212,0.12)"
+          iconColor="#06b6d4"
+        >
+          <div className="space-y-1 text-xs">
+            {recentEvents.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <Activity size={28} className="mx-auto mb-2 opacity-35" />
+                <p className="text-xs">No activity logged yet.</p>
+              </div>
+            ) : (
+              recentEvents.map((e, idx) => (
+                <div key={e.id} className="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0">
+                  {/* Timeline dot */}
+                  <div className="flex flex-col items-center flex-shrink-0 pt-0.5">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: e.category === 'tasks' ? '#06b6d4' : e.category === 'focus' ? '#a855f7' : '#ec4899' }}
+                    />
+                    {idx < recentEvents.length - 1 && (
+                      <div className="w-px h-full bg-white/5 mt-1" style={{ minHeight: 16 }} />
+                    )}
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Journey Map & Achievements Preview */}
-          <div className="glass-card p-5 flex flex-col justify-between">
-            <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Journey Progress</h4>
-              
-              <div className="p-3 bg-white/2 rounded-xl border border-white/5 space-y-2 text-xs text-left">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Total Badges Earned</span>
-                  <span className="font-bold text-white">{achievementsPreview.totalBadges}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-white block font-semibold truncate">{e.metadata.title || e.type}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-slate-500">{format(parseISO(e.timestamp), 'h:mm a')}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase"
+                        style={{
+                          background: e.category === 'tasks' ? 'rgba(6,182,212,0.1)' : e.category === 'focus' ? 'rgba(168,85,247,0.1)' : 'rgba(236,72,153,0.1)',
+                          color: e.category === 'tasks' ? '#06b6d4' : e.category === 'focus' ? '#a855f7' : '#ec4899',
+                        }}
+                      >
+                        {e.category}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Latest Achievement Unlock</span>
-                  <span className="font-bold text-purple-400 truncate max-w-[150px]">{achievementsPreview.latestAch}</span>
+              ))
+            )}
+          </div>
+        </DashboardWidget>
+
+        {/* ============================================================
+            SECTION 7 — SAVINGS
+            ============================================================ */}
+        <h2 className="dashboard-section-title">Savings</h2>
+
+        <DashboardWidget
+          icon={PiggyBank}
+          title="Savings Progress"
+          badge={savingsSummary ? `${savingsSummary.count} goal${savingsSummary.count !== 1 ? 's' : ''}` : '0'}
+          colSpan={12}
+          iconBg="rgba(16,185,129,0.12)"
+          iconColor="#10b981"
+          headerAction={
+            <button
+              onClick={() => setPage('finance')}
+              className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold"
+            >
+              Manage
+            </button>
+          }
+        >
+          {!savingsSummary ? (
+            <div className="text-center py-6 text-gray-500">
+              <PiggyBank size={28} className="mx-auto mb-2 opacity-35" />
+              <p className="text-xs">No savings goals created yet.</p>
+              <button
+                onClick={() => setPage('finance')}
+                className="text-[10px] text-green-400 hover:text-green-300 font-bold mt-2"
+              >
+                + Create a Savings Goal
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              {/* Current Goal */}
+              <div className="sm:col-span-2 p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-3 h-3 rounded-full" style={{ background: savingsSummary.goal.color || '#10b981' }} />
+                  <span className="text-sm font-bold text-white truncate">{savingsSummary.goal.title}</span>
+                </div>
+                <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      background: `linear-gradient(90deg, ${savingsSummary.goal.color || '#10b981'}, #06b6d4)`,
+                      width: `${savingsSummary.pct}%`,
+                      transition: 'width 0.8s ease',
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">{formatCurrency(savingsSummary.goal.current_amount)} saved</span>
+                  <span className="text-white font-bold">{savingsSummary.pct}%</span>
+                </div>
+              </div>
+
+              {/* Remaining Amount */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Remaining</div>
+                <div className="text-lg font-black text-amber-400" style={{ fontFamily: 'Space Grotesk' }}>
+                  {formatCurrency(savingsSummary.remaining)}
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">of {formatCurrency(savingsSummary.goal.target_amount)}</div>
+              </div>
+
+              {/* Expected Completion / Deadline */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">
+                  {savingsSummary.goal.deadline ? 'Deadline' : 'Total Saved'}
+                </div>
+                <div className="text-lg font-black text-green-400" style={{ fontFamily: 'Space Grotesk' }}>
+                  {savingsSummary.goal.deadline
+                    ? format(parseISO(savingsSummary.goal.deadline), 'MMM d')
+                    : formatCurrency(savingsSummary.totalSaved)
+                  }
+                </div>
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  {savingsSummary.goal.deadline
+                    ? format(parseISO(savingsSummary.goal.deadline), 'yyyy')
+                    : `across ${savingsSummary.count} goals`
+                  }
                 </div>
               </div>
             </div>
-            
-            <button
-              onClick={() => setPage('achievements')}
-              className="mt-4 py-2 w-full bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 font-bold rounded-lg text-xs text-center"
-            >
-              Open Journey Map
-            </button>
-          </div>
-        </div>
-      </div>
+          )}
+        </DashboardWidget>
+
+      </DashboardGrid>
 
       {/* ============================================================
           MODALS & FORM POPUPS
