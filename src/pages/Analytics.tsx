@@ -5,6 +5,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis,
 } from 'recharts';
+import { CustomTooltip } from '../components/analytics/CustomTooltip';
 import { format } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
 import { calculateAnalyticsData } from '../lib/statistics';
@@ -124,11 +125,7 @@ export default function Analytics() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} interval={Math.floor(days / 7)} />
               <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12 }}
-                labelStyle={{ color: 'white' }}
-                formatter={(val: any) => [`${val} min`, 'Focus']}
-              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)', stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
               <Area type="monotone" dataKey="focus" name="Focus (min)" stroke="#a855f7" fill="url(#focusGradAnalytics)" strokeWidth={2.5} dot={false} activeDot={{ r: 4, stroke: '#a855f7', strokeWidth: 2, fill: '#1a1a2e' }} />
             </AreaChart>
           </ResponsiveContainer>
@@ -162,11 +159,7 @@ export default function Analytics() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} interval={Math.floor(days / 7)} />
               <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(236,72,153,0.3)', borderRadius: 10, fontSize: 12 }}
-                labelStyle={{ color: 'white' }}
-                formatter={(val: any) => [formatCurrency(val), 'Spending']}
-              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)', stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
               <Area type="monotone" dataKey="spending" name="Spending" stroke="#ec4899" fill="url(#spendGradAnalytics)" strokeWidth={2.5} dot={false} activeDot={{ r: 4, stroke: '#ec4899', strokeWidth: 2, fill: '#1a1a2e' }} />
             </AreaChart>
           </ResponsiveContainer>
@@ -192,10 +185,7 @@ export default function Analytics() {
                       <Cell key={i} fill={entry.fill} stroke="transparent" />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12, color: 'white' }}
-                    formatter={(val: any) => [`${formatCurrency(val)}`, '']}
-                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)', stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="grid grid-cols-2 gap-2 mt-2">
@@ -221,10 +211,7 @@ export default function Analytics() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="week" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12, color: 'white' }}
-                formatter={(val: any) => [`${formatCurrency(val)}h`, 'Focus']}
-              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)', stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
               <Bar dataKey="hours" name="Focus Hours" fill="url(#focusBarGrad)" radius={[6, 6, 0, 0]} />
               <defs>
                 <linearGradient id="focusBarGrad" x1="0" y1="0" x2="0" y2="1">
@@ -303,10 +290,7 @@ export default function Analytics() {
               <XAxis dataKey="x" name="Focus (min)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} label={{ value: 'Focus (min)', position: 'insideBottomRight', offset: -10, fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
               <YAxis dataKey="y" name="Spending ($)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} label={{ value: `Spending (${formatCurrency(data.totalSpent)})`, angle: -90, position: 'insideLeft', fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
               <ZAxis dataKey="z" range={[40, 80]} />
-              <Tooltip
-                contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12, color: 'white' }}
-                cursor={{ strokeDasharray: '3 3', stroke: 'rgba(168,85,247,0.3)' }}
-              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)', stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
               <Scatter data={data.scatterData} fill="#a855f7" fillOpacity={0.7} />
             </ScatterChart>
           </ResponsiveContainer>

@@ -15,6 +15,7 @@ import { format, parseISO } from 'date-fns';
 import { logEvent } from '../lib/events';
 import { useEffect } from 'react';
 import WeeklyReport from './WeeklyReport';
+import { CustomTooltip } from '../components/analytics/CustomTooltip';
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b', transport: '#06b6d4', shopping: '#ec4899',

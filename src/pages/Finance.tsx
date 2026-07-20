@@ -15,6 +15,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
+import { CustomTooltip } from '../components/analytics/CustomTooltip';
 import { formatCurrency } from '../lib/formatCurrency';
 import { logEvent } from '../lib/events';
 import {
@@ -361,10 +362,7 @@ export default function Finance() {
                             <Cell key={i} fill={entry.fill} stroke="transparent" />
                           ))}
                         </Pie>
-                        <Tooltip
-                          contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12, color: 'white' }}
-                          formatter={(val: any) => [`${formatCurrency(val)}`, '']}
-                        />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)', stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -394,10 +392,7 @@ export default function Finance() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                     <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 10, fontSize: 12, color: 'white' }}
-                      formatter={(val: any) => [`${formatCurrency(val)}`, 'Spent']}
-                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)', stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
                     <Bar dataKey="amount" fill="url(#barGrad)" radius={[4, 4, 0, 0]} />
                     <defs>
                       <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">

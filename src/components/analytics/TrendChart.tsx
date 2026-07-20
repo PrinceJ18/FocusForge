@@ -2,6 +2,7 @@ import React from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { CustomTooltip } from './CustomTooltip';
 
 interface TrendChartProps {
   data: any[];
@@ -23,9 +24,9 @@ export default function TrendChart({
   }
 
   return (
-    <div style={{ width: '100%', height }}>
+    <div className="chart-fade-in" style={{ width: '100%', height }}>
       <ResponsiveContainer>
-        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 10 }}>
           <defs>
             <linearGradient id={`color-${yKey}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
@@ -46,15 +47,7 @@ export default function TrendChart({
             tickLine={false}
             axisLine={false}
           />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'rgba(15, 15, 25, 0.95)', 
-              borderColor: 'rgba(255,255,255,0.1)',
-              borderRadius: '12px',
-              fontSize: '12px'
-            }} 
-            itemStyle={{ color: '#fff' }}
-          />
+          <Tooltip content={<CustomTooltip valueSuffix={yKey === 'spent' ? '' : 'm'} valuePrefix={yKey === 'spent' ? '$' : ''} />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }} />
           <Area 
             type="monotone" 
             dataKey={yKey} 

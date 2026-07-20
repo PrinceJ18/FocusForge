@@ -97,7 +97,7 @@ export default function DashboardWidget({
               ...(iconColor ? { color: iconColor } : {}),
             }}
           >
-            <Icon size={16} />
+            <Icon size={18} />
           </div>
           <span className="dashboard-widget-header__title">{title}</span>
           {badge !== undefined && badge !== null && (

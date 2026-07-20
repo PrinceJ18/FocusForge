@@ -2,6 +2,7 @@ import React from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
+import { CustomTooltip } from './CustomTooltip';
 
 interface CategoryPieChartProps {
   data: { name: string; value: number; color?: string }[];
@@ -16,7 +17,7 @@ export default function CategoryPieChart({ data, height = 250 }: CategoryPieChar
   }
 
   return (
-    <div style={{ width: '100%', height }}>
+    <div className="chart-fade-in" style={{ width: '100%', height }}>
       <ResponsiveContainer>
         <PieChart>
           <Pie
@@ -33,15 +34,7 @@ export default function CategoryPieChart({ data, height = 250 }: CategoryPieChar
               <Cell key={`cell-${index}`} fill={entry.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'rgba(15, 15, 25, 0.95)', 
-              borderColor: 'rgba(255,255,255,0.1)',
-              borderRadius: '12px',
-              fontSize: '12px'
-            }} 
-            itemStyle={{ color: '#fff' }}
-          />
+          <Tooltip content={<CustomTooltip />} />
           <Legend 
             verticalAlign="bottom" 
             height={36} 
