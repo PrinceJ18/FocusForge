@@ -44,6 +44,8 @@ import KpiCard from '../components/dashboard/KpiCard';
 import DashboardCustomizeDrawer from '../components/dashboard/DashboardCustomizeDrawer';
 import { WIDGET_REGISTRY } from '../components/dashboard/dashboardWidgets';
 import DashboardWidgetWrapper from '../components/dashboard/DashboardWidgetWrapper';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -57,11 +59,13 @@ export default function Dashboard() {
   const {
     expenses, tasks, focusSessions, savingsGoals, profile, user, setPage,
     timerSeconds, timerRunning, timerMode, setTimerSeconds, setTimerRunning, setTimerMode,
-    preferences, events, recurringExpenses, addExpenseLocal, addTaskLocal, updateTaskLocal, removeTaskLocal, removeRecurringExpenseLocal, addXP, taskCompletions, taskSections, updatePreferencesLocal
+    preferences, events, recurringExpenses, addExpenseLocal, addTaskLocal, updateTaskLocal, removeTaskLocal, removeRecurringExpenseLocal, addXP, taskCompletions, taskSections, updatePreferencesLocal, showNotification
   } = useStore();
 
   const [showQuickAddExpense, setShowQuickAddExpense] = useState(false);
   const [showQuickAddTask, setShowQuickAddTask] = useState(false);
+  const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false);
 
   // Quick inputs
   const [quickExpenseName, setQuickExpenseName] = useState('');
@@ -291,86 +295,102 @@ export default function Dashboard() {
   const handleQuickAddExpense = async () => {
     const amt = parseFloat(quickExpenseAmount);
     if (quickExpenseName && !isNaN(amt)) {
-      const newExp = {
-        id: crypto.randomUUID(),
-        user_id: user?.id || 'local',
-        title: quickExpenseName,
-        amount: amt,
-        category: 'other',
-        note: 'Quick logged expense from Command Center',
-        expense_date: format(new Date(), 'yyyy-MM-dd'),
-        created_at: new Date().toISOString(),
-      };
-      addExpenseLocal(newExp);
-      if (user) {
-        await supabase.from('expenses').insert({
-          user_id: user.id,
-          title: newExp.title,
-          amount: newExp.amount,
-          category: newExp.category,
-          note: newExp.note,
-          expense_date: newExp.expense_date,
-        });
+      setIsSubmittingExpense(true);
+      try {
+        const newExp = {
+          id: crypto.randomUUID(),
+          user_id: user?.id || 'local',
+          title: quickExpenseName,
+          amount: amt,
+          category: 'other',
+          note: 'Quick logged expense from Command Center',
+          expense_date: format(new Date(), 'yyyy-MM-dd'),
+          created_at: new Date().toISOString(),
+        };
+        addExpenseLocal(newExp);
+        if (user) {
+          await supabase.from('expenses').insert({
+            user_id: user.id,
+            title: newExp.title,
+            amount: newExp.amount,
+            category: newExp.category,
+            note: newExp.note,
+            expense_date: newExp.expense_date,
+          });
+        }
+        setQuickExpenseName('');
+        setQuickExpenseAmount('');
+        setShowQuickAddExpense(false);
+        showNotification({ type: 'success', title: 'Expense Added', message: `Added ${formatCurrency(amt)} for ${quickExpenseName}` });
+      } catch (error) {
+        showNotification({ type: 'error', title: 'Error', message: 'Failed to add expense.' });
+      } finally {
+        setIsSubmittingExpense(false);
       }
-      setQuickExpenseName('');
-      setQuickExpenseAmount('');
-      setShowQuickAddExpense(false);
     }
   };
 
   const handleQuickAddTask = async () => {
     if (quickTaskTitle) {
-      const now = new Date().toISOString();
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
-      const newT = {
-        id: crypto.randomUUID(),
-        user_id: user?.id || 'local',
-        title: quickTaskTitle,
-        description: '',
-        priority: 'medium' as const,
-        section_id: null,
-        scheduled_date: todayStr,
-        deadline: null,
-        has_no_end_date: false,
-        reminder_enabled: false,
-        reminder_time: null,
-        recurrence_type: 'none' as const,
-        recurrence_interval: null,
-        recurrence_weekdays: null,
-        recurrence_end_date: null,
-        completed: false,
-        subject: 'Other',
-        created_at: now,
-        completed_at: null,
-        updated_at: now,
-      };
-      addTaskLocal(newT);
-      if (user) {
-        await supabase.from('tasks').insert({
-          id: newT.id,
-          user_id: user.id,
-          title: newT.title,
-          description: newT.description,
-          priority: newT.priority,
-          section_id: newT.section_id,
-          scheduled_date: newT.scheduled_date,
-          deadline: newT.deadline,
-          has_no_end_date: newT.has_no_end_date,
-          reminder_enabled: newT.reminder_enabled,
-          reminder_time: newT.reminder_time,
-          recurrence_type: newT.recurrence_type,
-          recurrence_interval: newT.recurrence_interval,
-          recurrence_weekdays: newT.recurrence_weekdays,
-          recurrence_end_date: newT.recurrence_end_date,
-          completed: newT.completed,
-          subject: newT.subject,
-          created_at: newT.created_at,
-          completed_at: newT.completed_at,
-          updated_at: newT.updated_at,
-        });
+      setIsSubmittingTask(true);
+      try {
+        const now = new Date().toISOString();
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const newT = {
+          id: crypto.randomUUID(),
+          user_id: user?.id || 'local',
+          title: quickTaskTitle,
+          description: '',
+          priority: 'medium' as const,
+          section_id: null,
+          scheduled_date: todayStr,
+          deadline: null,
+          has_no_end_date: false,
+          reminder_enabled: false,
+          reminder_time: null,
+          recurrence_type: 'none' as const,
+          recurrence_interval: null,
+          recurrence_weekdays: null,
+          recurrence_end_date: null,
+          completed: false,
+          subject: 'Other',
+          created_at: now,
+          completed_at: null,
+          updated_at: now,
+        };
+        addTaskLocal(newT);
+        if (user) {
+          await supabase.from('tasks').insert({
+            id: newT.id,
+            user_id: user.id,
+            title: newT.title,
+            description: newT.description,
+            priority: newT.priority,
+            section_id: newT.section_id,
+            scheduled_date: newT.scheduled_date,
+            deadline: newT.deadline,
+            has_no_end_date: newT.has_no_end_date,
+            reminder_enabled: newT.reminder_enabled,
+            reminder_time: newT.reminder_time,
+            recurrence_type: newT.recurrence_type,
+            recurrence_interval: newT.recurrence_interval,
+            recurrence_weekdays: newT.recurrence_weekdays,
+            recurrence_end_date: newT.recurrence_end_date,
+            completed: newT.completed,
+            subject: newT.subject,
+            created_at: newT.created_at,
+            completed_at: newT.completed_at,
+            updated_at: newT.updated_at,
+          });
+        }
+        setQuickTaskTitle('');
+        setShowQuickAddTask(false);
+        showNotification({ type: 'success', title: 'Task Added', message: `Task "${quickTaskTitle}" created` });
+      } catch (error) {
+        showNotification({ type: 'error', title: 'Error', message: 'Failed to create task.' });
+      } finally {
+        setIsSubmittingTask(false);
       }
-      setQuickTaskTitle('');
-      setShowQuickAddTask(false);
     }
   };
 
@@ -483,32 +503,32 @@ export default function Dashboard() {
           ============================================================ */}
       {showQuickAddExpense && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-card p-5 w-full max-w-sm space-y-4">
+          <Card className="w-full max-w-sm space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-bold text-sm text-white">Quick Add Expense</h4>
-              <button onClick={() => setShowQuickAddExpense(false)} className="text-slate-500"><X size={16} /></button>
+              <button onClick={() => setShowQuickAddExpense(false)} className="text-text-muted hover:text-text-primary transition-colors"><X size={16} /></button>
             </div>
             <div className="space-y-3 text-xs">
-              <input type="text" placeholder="Expense name" value={quickExpenseName} onChange={(e) => setQuickExpenseName(e.target.value)} className="input-glass w-full px-3 py-2" />
-              <input type="number" placeholder="Amount" value={quickExpenseAmount} onChange={(e) => setQuickExpenseAmount(e.target.value)} className="input-glass w-full px-3 py-2" />
+              <input type="text" placeholder="Expense name" value={quickExpenseName} onChange={(e) => setQuickExpenseName(e.target.value)} className="w-full px-3 py-2 bg-background-card/50 border border-border rounded-md text-text-primary outline-none focus:border-primary" />
+              <input type="number" placeholder="Amount" value={quickExpenseAmount} onChange={(e) => setQuickExpenseAmount(e.target.value)} className="w-full px-3 py-2 bg-background-card/50 border border-border rounded-md text-text-primary outline-none focus:border-primary" />
             </div>
-            <button onClick={handleQuickAddExpense} className="btn-neon w-full py-2 text-xs font-bold">Add Expense</button>
-          </div>
+            <Button onClick={handleQuickAddExpense} isLoading={isSubmittingExpense} className="w-full">Add Expense</Button>
+          </Card>
         </div>
       )}
 
       {showQuickAddTask && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-card p-5 w-full max-w-sm space-y-4">
+          <Card className="w-full max-w-sm space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="font-bold text-sm text-white">Quick Add Task</h4>
-              <button onClick={() => setShowQuickAddTask(false)} className="text-slate-500"><X size={16} /></button>
+              <button onClick={() => setShowQuickAddTask(false)} className="text-text-muted hover:text-text-primary transition-colors"><X size={16} /></button>
             </div>
             <div className="space-y-3 text-xs">
-              <input type="text" placeholder="Task title" value={quickTaskTitle} onChange={(e) => setQuickTaskTitle(e.target.value)} className="input-glass w-full px-3 py-2" />
+              <input type="text" placeholder="Task title" value={quickTaskTitle} onChange={(e) => setQuickTaskTitle(e.target.value)} className="w-full px-3 py-2 bg-background-card/50 border border-border rounded-md text-text-primary outline-none focus:border-primary" />
             </div>
-            <button onClick={handleQuickAddTask} className="btn-neon w-full py-2 text-xs font-bold">Create Task</button>
-          </div>
+            <Button onClick={handleQuickAddTask} isLoading={isSubmittingTask} className="w-full">Create Task</Button>
+          </Card>
         </div>
       )}
 

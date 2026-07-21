@@ -3,6 +3,7 @@ import { X, Calendar, Clock, RotateCcw, FolderPlus } from 'lucide-react';
 import { useStore, Task } from '../../store/useStore';
 import TaskSectionManager from './TaskSectionManager';
 import { format, parseISO, isBefore } from 'date-fns';
+import Button from '../ui/Button';
 
 interface TaskFormModalProps {
   onClose: () => void;
@@ -486,13 +487,13 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
               >
                 Cancel
               </button>
-              <button
+              <Button
                 type="submit"
-                className="btn-neon flex-1 py-3 text-sm font-bold"
-                disabled={saving}
+                className="w-full flex-1 py-3 text-sm font-bold"
+                isLoading={saving}
               >
-                {saving ? 'Saving...' : initialTask ? 'Save Changes' : 'Create Task'}
-              </button>
+                {initialTask ? 'Save Changes' : 'Create Task'}
+              </Button>
             </div>
           </form>
         </div>

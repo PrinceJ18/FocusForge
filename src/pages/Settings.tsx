@@ -7,6 +7,7 @@ import {
 import { useStore, type UserPreferences, defaultPreferences } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { logEvent } from '../lib/events';
+import Button from '../components/ui/Button';
 
 const ACCENT_COLORS = [
   { id: 'purple', name: 'Purple', color: '#a855f7' },
@@ -18,7 +19,7 @@ const ACCENT_COLORS = [
 ];
 
 export default function Settings() {
-  const { preferences, updatePreferencesLocal, user, profile, updateProfile, expenses, tasks, focusSessions, savingsGoals, customCategories, events, recurringExpenses } = useStore();
+  const { preferences, updatePreferencesLocal, user, profile, updateProfile, expenses, tasks, focusSessions, savingsGoals, customCategories, events, recurringExpenses, showNotification } = useStore();
   const [activeTab, setActiveTab] = useState<'appearance' | 'focus' | 'goals' | 'notifications' | 'finance' | 'analytics' | 'accessibility' | 'backup' | 'account' | 'about'>('appearance');
 
   const [displayName, setDisplayName] = useState(profile.display_name || '');
@@ -40,16 +41,25 @@ export default function Settings() {
     }
   };
 
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   const handleSaveProfile = async () => {
-    updateProfile({ display_name: displayName, avatar_url: avatarUrl });
-    if (user) {
-      await supabase.from('profiles').upsert({
-        id: user.id,
-        display_name: displayName,
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString(),
-      });
-      alert('Profile updated successfully!');
+    setIsSavingProfile(true);
+    try {
+      updateProfile({ display_name: displayName, avatar_url: avatarUrl });
+      if (user) {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          display_name: displayName,
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString(),
+        });
+        showNotification({ type: 'success', title: 'Profile Saved', message: 'Your profile has been updated.' });
+      }
+    } catch (error) {
+      showNotification({ type: 'error', title: 'Error', message: 'Failed to save profile.' });
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -708,12 +718,13 @@ export default function Settings() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     onClick={handleSaveProfile}
+                    isLoading={isSavingProfile}
                     className="px-4 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 font-bold rounded-xl hover:bg-purple-500/30 flex items-center gap-1.5"
                   >
                     <Save size={14} /> Update Profile
-                  </button>
+                  </Button>
                 </div>
 
                 <hr className="border-white/5 my-4" />

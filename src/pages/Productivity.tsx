@@ -34,6 +34,8 @@ import {
   completeTask, 
   uncompleteTask
 } from '../store/useStore';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -54,7 +56,7 @@ export default function Productivity() {
     tasks, focusSessions, profile, user,
     timerSeconds, timerRunning, timerMode, pomodoroMinutes, breakMinutes, longBreakMinutes,
     setTimerSeconds, setTimerRunning, setTimerMode, setPomodoroMinutes,
-    addTaskLocal, updateTaskLocal, removeTaskLocal, addXP: addXPLocal, taskCompletions, taskSections
+    addTaskLocal, updateTaskLocal, removeTaskLocal, addXP: addXPLocal, taskCompletions, taskSections, showNotification
   } = useStore();
 
   const [completedSession, setCompletedSession] = useState(false);
@@ -164,44 +166,60 @@ export default function Productivity() {
 
   // Task Actions
   const handleCreateTask = async (taskData: any) => {
-    if (!user) {
-      // Local fallback
-      const newTask = {
-        id: crypto.randomUUID(),
-        user_id: 'local',
-        ...taskData,
-        completed: false,
-        created_at: new Date().toISOString(),
-        completed_at: null,
-      };
-      addTaskLocal(newTask);
+    try {
+      if (!user) {
+        // Local fallback
+        const newTask = {
+          id: crypto.randomUUID(),
+          user_id: 'local',
+          ...taskData,
+          completed: false,
+          created_at: new Date().toISOString(),
+          completed_at: null,
+        };
+        addTaskLocal(newTask);
+        setShowAddTask(false);
+        showNotification({ type: 'success', title: 'Task Created', message: 'Task added successfully.' });
+        return;
+      }
+      await createTask(taskData, user.id);
+      logEvent('task_created', 'tasks', crypto.randomUUID(), {
+        title: taskData.title,
+        description: `Created task: ${taskData.title}`,
+      });
       setShowAddTask(false);
-      return;
+      showNotification({ type: 'success', title: 'Task Created', message: 'Task added successfully.' });
+    } catch (error: any) {
+      showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to create task' });
     }
-    await createTask(taskData, user.id);
-    logEvent('task_created', 'tasks', crypto.randomUUID(), {
-      title: taskData.title,
-      description: `Created task: ${taskData.title}`,
-    });
-    setShowAddTask(false);
   };
 
   const handleUpdateTask = async (taskData: any) => {
     if (!editingTask) return;
-    await updateTask(editingTask.id, taskData);
-    logEvent('task_updated', 'tasks', editingTask.id, {
-      title: taskData.title,
-      description: `Updated task: ${taskData.title}`,
-    });
-    setEditingTask(null);
+    try {
+      await updateTask(editingTask.id, taskData);
+      logEvent('task_updated', 'tasks', editingTask.id, {
+        title: taskData.title,
+        description: `Updated task: ${taskData.title}`,
+      });
+      setEditingTask(null);
+      showNotification({ type: 'success', title: 'Task Updated', message: 'Task updated successfully.' });
+    } catch (error: any) {
+      showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to update task' });
+    }
   };
 
   const handleDeleteTask = async (task: Task) => {
-    await deleteTask(task.id);
-    logEvent('task_deleted', 'tasks', task.id, {
-      title: task.title,
-      description: `Deleted task: ${task.title}`,
-    });
+    try {
+      await deleteTask(task.id);
+      logEvent('task_deleted', 'tasks', task.id, {
+        title: task.title,
+        description: `Deleted task: ${task.title}`,
+      });
+      showNotification({ type: 'info', title: 'Task Deleted', message: 'Task was deleted.' });
+    } catch (error: any) {
+      showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to delete task' });
+    }
   };
 
   const handleToggleTask = async (task: Task, currentlyCompleted: boolean, dateStr: string) => {
@@ -215,6 +233,7 @@ export default function Productivity() {
       }
     } catch (err: any) {
       console.error('Failed to toggle task:', err);
+      showNotification({ type: 'error', title: 'Error', message: err.message || 'Failed to update task status' });
     }
   };
 
@@ -227,7 +246,7 @@ export default function Productivity() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Timer */}
-        <div className="glass-card p-6 flex flex-col items-center">
+        <Card padding="lg" className="flex flex-col items-center">
           {/* Mode selector */}
           <div className="flex gap-1 p-1 rounded-xl mb-6 self-stretch" style={{ background: 'rgba(255,255,255,0.05)' }}>
             {TIMER_MODES.map((mode) => (
@@ -533,10 +552,10 @@ export default function Productivity() {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Tasks Management Section */}
-        <div className="glass-card p-5 flex flex-col gap-4">
+        <Card padding="md" className="flex flex-col gap-4">
           {/* Header & View Switcher */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
             <div className="text-left">
@@ -574,15 +593,15 @@ export default function Productivity() {
               </div>
 
               {/* Add Task Primary Button */}
-              <button
+              <Button
                 onClick={() => {
                   setDefaultDateForNewTask(undefined);
                   setShowAddTask(true);
                 }}
-                className="btn-neon px-3.5 py-1.5 text-xs flex items-center gap-1.5 font-bold rounded-lg"
+                className="px-3.5 py-1.5 text-xs flex items-center gap-1.5 font-bold rounded-lg"
               >
                 <Plus size={14} /> Add Task
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -685,10 +704,10 @@ export default function Productivity() {
               />
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Focus history */}
-        <div className="glass-card p-5 lg:col-span-2">
+        <Card padding="md" className="lg:col-span-2">
           <h3 className="font-semibold mb-4 text-left" style={{ color: 'var(--text-primary)' }}>Recent Focus Sessions</h3>
           {focusSessions.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
@@ -716,7 +735,7 @@ export default function Productivity() {
               <p className="text-sm">Start your first focus session!</p>
             </div>
           )}
-        </div>
+        </Card>
 
       </div>
 

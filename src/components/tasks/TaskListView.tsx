@@ -3,7 +3,8 @@ import { format, addDays, subDays, parseISO } from 'date-fns';
 import { useStore, Task } from '../../store/useStore';
 import { getTasksForDate } from '../../lib/taskRecurrence';
 import TaskItem from './TaskItem';
-import { AlertCircle, CheckCircle2, Calendar, Star } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Calendar, Star, Search } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
 
 interface TaskListViewProps {
   searchQuery: string;
@@ -134,6 +135,16 @@ export default function TaskListView({
         <p className="text-base text-gray-400 font-medium">No tasks found matching these filters.</p>
         <p className="text-xs text-gray-600 mt-1">Try resetting filters or adding a new task!</p>
       </div>
+    );
+  }
+
+  if (filtered.length === 0) {
+    return (
+      <EmptyState
+        icon={searchQuery ? Search : CheckCircle2}
+        title={searchQuery ? "No results found" : "All Caught Up!"}
+        description={searchQuery ? "Try adjusting your search or filters." : "You have no tasks matching the current filters. Enjoy your free time or add a new task."}
+      />
     );
   }
 

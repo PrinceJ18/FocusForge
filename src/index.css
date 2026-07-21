@@ -12,9 +12,12 @@
   --bg-card-hover: rgba(255, 255, 255, 0.07);
   --border-color: rgba(255, 255, 255, 0.08);
   --border-glow: rgba(168, 85, 247, 0.3);
+  
   --text-primary: #f1f0ff;
   --text-secondary: #9d9db4;
   --text-muted: #6b6b84;
+  
+  /* Core Colors */
   --purple-primary: #a855f7;
   --purple-secondary: #7c3aed;
   --pink-primary: #ec4899;
@@ -22,6 +25,12 @@
   --green-primary: #10b981;
   --amber-primary: #f59e0b;
   --red-primary: #ef4444;
+
+  /* Semantic Colors */
+  --color-success: var(--green-primary);
+  --color-warning: var(--amber-primary);
+  --color-danger: var(--red-primary);
+  --color-info: var(--cyan-primary);
   
   /* Dynamic Accent presets */
   --accent-primary: #a855f7;
@@ -36,13 +45,31 @@
   --glow-purple: var(--accent-glow);
   --glow-pink: 0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(236, 72, 153, 0.1);
   --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.4);
+  
+  /* Spacing System */
+  --density-padding: 1.25rem;
+  --density-gap: 1.5rem;
   --sidebar-width: 260px;
+  
+  /* Radius System */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --card-radius: 16px;
+  
+  /* Shadow System */
+  --elevation-1: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --elevation-2: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --elevation-3: 0 8px 32px rgba(0, 0, 0, 0.4);
+  
+  /* Transition System */
+  --transition-fast: 0.15s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.5s;
   
   /* Dynamic sizes */
   --base-font-size: 15px;
-  --card-radius: 16px;
-  --density-padding: 1.25rem;
-  --density-gap: 1.5rem;
 }
 
 /* Theme definitions */
@@ -182,6 +209,13 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessibility: Focus States */
+*:focus-visible {
+  outline: 2px solid var(--purple-primary) !important;
+  outline-offset: 2px !important;
+  border-radius: inherit;
 }
 
 /* Scrollbar */

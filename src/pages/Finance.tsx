@@ -26,6 +26,7 @@ import {
 } from '../lib/statistics/finance';
 import { payRecurringExpense, skipRecurringExpense } from '../lib/recurringUtils';
 import RecurringDetailsModal from '../components/finance/RecurringDetailsModal';
+import Button from '../components/ui/Button';
 
 const DEFAULT_CATEGORIES = [
   { id: 'food', name: 'Food', icon: '🍔', color: '#f59e0b' },
@@ -52,7 +53,7 @@ export default function Finance() {
   const {
     expenses, savingsGoals, customCategories, profile, user,
     addExpenseLocal, removeExpenseLocal, updateProfile, setSavingsGoals, setCustomCategories,
-    recurringExpenses, addRecurringExpenseLocal, updateRecurringExpenseLocal, removeRecurringExpenseLocal
+    recurringExpenses, addRecurringExpenseLocal, updateRecurringExpenseLocal, removeRecurringExpenseLocal, showNotification
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'expenses' | 'recurring' | 'savings' | 'categories'>('overview');
@@ -973,33 +974,39 @@ export default function Finance() {
           categories={allCategories}
           onClose={() => setShowAddExpense(false)}
           onAdd={async (data: any) => {
-            const newExp = {
-              id: crypto.randomUUID(),
-              user_id: user?.id || 'local',
-              ...data,
-              created_at: new Date().toISOString(),
-            };
-            addExpenseLocal(newExp);
-            logEvent('expense_added', 'finance', newExp.id, {
-              title: data.title,
-              amount: data.amount,
-              description: `Logged expense: ${data.title} (-${formatCurrency(data.amount)})`,
-            });
-            if (user) {
-              const { data: inserted } = await supabase.from('expenses').insert({
-                user_id: user.id,
+            try {
+              const newExp = {
+                id: crypto.randomUUID(),
+                user_id: user?.id || 'local',
+                ...data,
+                created_at: new Date().toISOString(),
+              };
+              addExpenseLocal(newExp);
+              logEvent('expense_added', 'finance', newExp.id, {
                 title: data.title,
                 amount: data.amount,
-                category: data.category,
-                note: data.note,
-                expense_date: data.expense_date,
-              }).select().single();
-              if (inserted) {
-                removeExpenseLocal(newExp.id);
-                addExpenseLocal(inserted);
+                description: `Logged expense: ${data.title} (-${formatCurrency(data.amount)})`,
+              });
+              if (user) {
+                const { data: inserted, error } = await supabase.from('expenses').insert({
+                  user_id: user.id,
+                  title: data.title,
+                  amount: data.amount,
+                  category: data.category,
+                  note: data.note,
+                  expense_date: data.expense_date,
+                }).select().single();
+                if (error) throw error;
+                if (inserted) {
+                  removeExpenseLocal(newExp.id);
+                  addExpenseLocal(inserted);
+                }
               }
+              setShowAddExpense(false);
+              showNotification({ type: 'success', title: 'Expense Added', message: `Added ${formatCurrency(data.amount)} for ${data.title}` });
+            } catch (error: any) {
+              showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to add expense' });
             }
-            setShowAddExpense(false);
           }}
         />
       )}
@@ -1419,16 +1426,16 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
         </div>
         <div className="flex gap-3 mt-5">
           <button onClick={onClose} className="btn-ghost flex-1 px-4 py-2 text-sm font-semibold">Cancel</button>
-          <button
+          <Button
             onClick={() => {
               if (title && amount) {
                 onAdd({ title, amount: parseFloat(amount), category, note, expense_date: date });
               }
             }}
-            className="btn-neon flex-1 px-4 py-2 text-sm font-semibold"
+            className="flex-1 px-4 py-2 text-sm font-semibold"
           >
             Add Expense
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,24 +1,27 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from './lib/supabase';
-import { useStore, loadUserData, checkAndUpdateGuestStreak } from './store/useStore';
+import { useStore, loadUserData, checkAndUpdateGuestStreak, applyPreferencesToDOM } from './store/useStore';
 import { useTimerEngine } from './hooks/useTimerEngine';
 import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import MobileNav from './components/MobileNav';
-import Dashboard from './pages/Dashboard';
-import Finance from './pages/Finance';
-import Productivity from './pages/Productivity';
-import Analytics from './pages/Analytics';
-import Rewards from './pages/Rewards';
-import Splits from './pages/Splits';
-import Reports from './pages/Reports';
-import AuthScreen from './pages/AuthScreen';
-import Achievements from './pages/Achievements';
-import Settings from './pages/Settings';
 import AchievementNotification from './components/AchievementNotification';
 import { processAutoAddRecurringExpenses } from './lib/recurringUtils';
-import { applyPreferencesToDOM } from './store/useStore';
+import { LoadingState, PageSkeleton } from './components/ui/Loading';
+
+// Lazy loaded pages for code splitting
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Finance = React.lazy(() => import('./pages/Finance'));
+const Productivity = React.lazy(() => import('./pages/Productivity'));
+const Analytics = React.lazy(() => import('./pages/Analytics'));
+const Rewards = React.lazy(() => import('./pages/Rewards'));
+const Splits = React.lazy(() => import('./pages/Splits'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const AuthScreen = React.lazy(() => import('./pages/AuthScreen'));
+const Achievements = React.lazy(() => import('./pages/Achievements'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+
 
 
 const PAGE_TITLES: Record<string, string> = {
@@ -156,7 +159,11 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthScreen />;
+    return (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingState message="Loading Auth..." /></div>}>
+        <AuthScreen />
+      </Suspense>
+    );
   }
 
 
@@ -184,17 +191,19 @@ export default function App() {
         <div style={{ maxWidth: 1600, margin: '0 auto', paddingLeft: window.innerWidth >= 1024 ? '2rem' : '0.75rem', paddingRight: window.innerWidth >= 768 ? '1.5rem' : '0.75rem', width: '100%', boxSizing: 'border-box', }} >
           <Header onMenuClick={() => setSidebarOpen(true)} title={PAGE_TITLES[currentPage]} />
 
-          {currentPage === 'dashboard' && <Dashboard />}
-          {currentPage === 'finance' && <Finance />}
-          {currentPage === 'productivity' && <Productivity />}
-          {currentPage === 'analytics' && <Analytics />}
-          {currentPage === 'rewards' && <Rewards />}
-          {currentPage === 'splits' && <Splits />}
-          {currentPage === 'reports' && <Reports />}
-          {currentPage === 'achievements' && <Achievements />}
-          {currentPage === 'settings' && <Settings />}
+          <Suspense fallback={<div className="p-4 md:p-8"><PageSkeleton /></div>}>
+            {currentPage === 'dashboard' && <Dashboard />}
+            {currentPage === 'finance' && <Finance />}
+            {currentPage === 'productivity' && <Productivity />}
+            {currentPage === 'analytics' && <Analytics />}
+            {currentPage === 'rewards' && <Rewards />}
+            {currentPage === 'splits' && <Splits />}
+            {currentPage === 'reports' && <Reports />}
+            {currentPage === 'achievements' && <Achievements />}
+            {currentPage === 'settings' && <Settings />}
+          </Suspense>
         </div>
-      </main >
+      </main>
 
       {/* Mobile navigation */}
       < MobileNav />

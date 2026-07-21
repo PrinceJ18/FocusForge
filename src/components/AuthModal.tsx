@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getLevelInfo } from "../lib/levels";
+import Button from './ui/Button';
+import { useStore } from '../store/useStore';
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
 }
 
 export default function AuthModal({ open, onClose }: AuthModalProps) {
+  const showNotification = useStore((s) => s.showNotification);
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -46,15 +49,11 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
       const message = err.message?.toLowerCase() || '';
 
       if (message.includes('invalid login credentials')) {
-        setError(
-          'Invalid email or password. If this account was created with Google, please continue with Google.'
-        );
+        showNotification({ type: 'error', title: 'Login Failed', message: 'Invalid email or password. If this account was created with Google, please continue with Google.' });
       } else if (message.includes('email not confirmed')) {
-        setError(
-          'Email verification is required for this account. Try creating the account again.'
-        );
+        showNotification({ type: 'error', title: 'Email Unconfirmed', message: 'Email verification is required for this account. Try creating the account again.' });
       } else {
-        setError(err.message);
+        showNotification({ type: 'error', title: 'Authentication Error', message: err.message });
       }
     }
 
@@ -124,23 +123,16 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
             className="w-full px-4 py-3 rounded-xl bg-transparent border"
           />
 
-          {error && (
-            <p className="text-sm text-red-500">
-              {error}
-            </p>
-          )}
 
-          <button
+
+          <Button
             onClick={handleAuth}
             disabled={loading}
+            isLoading={loading}
             className="w-full btn-neon py-3 rounded-xl font-medium"
           >
-            {loading
-              ? 'Please wait...'
-              : isSignup
-                ? 'Create Account'
-                : 'Sign In'}
-          </button>
+            {isSignup ? 'Create Account' : 'Sign In'}
+          </Button>
 
           <button
             onClick={handleGoogleLogin}

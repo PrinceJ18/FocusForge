@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import WidgetHeader from '../ui/WidgetHeader';
 
 // ============================================================
 // DashboardWidget — Reusable widget card component
@@ -87,29 +88,14 @@ export default function DashboardWidget({
       className={`dashboard-widget ${sizeClass} ${className}`.trim()}
       style={widgetStyle}
     >
-      {/* Header */}
-      <div className="dashboard-widget-header">
-        <div className="dashboard-widget-header__left">
-          <div
-            className="dashboard-widget-header__icon"
-            style={{
-              ...(iconBg ? { background: iconBg } : {}),
-              ...(iconColor ? { color: iconColor } : {}),
-            }}
-          >
-            <Icon size={18} />
-          </div>
-          <span className="dashboard-widget-header__title">{title}</span>
-          {badge !== undefined && badge !== null && (
-            <span className="dashboard-widget-header__badge">{badge}</span>
-          )}
-        </div>
-        {headerAction && (
-          <div className="dashboard-widget-header__actions">
-            {headerAction}
-          </div>
-        )}
-      </div>
+      <WidgetHeader
+        title={title}
+        icon={Icon}
+        badge={badge}
+        action={headerAction}
+        iconBg={iconBg}
+        iconColor={iconColor}
+      />
 
       {/* Body */}
       <div

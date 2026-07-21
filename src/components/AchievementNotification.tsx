@@ -9,6 +9,9 @@ const NOTIF_CONFIG: Record<NotificationType, { icon: string; gradient: string; l
   challenge: { icon: '🎯', gradient: 'linear-gradient(135deg, #ec4899, #a855f7)', label: 'Milestone Reached', borderGlow: 'rgba(236,72,153,0.5)' },
   achievement: { icon: '🌟', gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)', label: 'Achievement Unlocked', borderGlow: 'rgba(6,182,212,0.5)' },
   goal: { icon: '✓', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', label: 'Goal Complete', borderGlow: 'rgba(16,185,129,0.4)' },
+  success: { icon: '✅', gradient: 'linear-gradient(135deg, #10b981, #059669)', label: 'Success', borderGlow: 'rgba(16,185,129,0.4)' },
+  error: { icon: '⚠️', gradient: 'linear-gradient(135deg, #ef4444, #dc2626)', label: 'Error', borderGlow: 'rgba(239,68,68,0.4)' },
+  info: { icon: 'ℹ️', gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)', label: 'Information', borderGlow: 'rgba(59,130,246,0.4)' },
 };
 
 const AUTO_DISMISS_MS = 4000;
