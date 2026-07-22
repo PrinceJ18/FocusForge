@@ -91,7 +91,20 @@ export interface WidgetConfig {
 // ----------------------------------------------------
 
 const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { greeting, displayName, levelInfo, profile, todayDate, setShowCustomize } = context;
+  const { greeting, displayName, levelInfo, profile, todayDate, setShowCustomize, stats, todayCompletedCount, todayTaskOccurrences, budgetRemaining } = context;
+
+  const focusMinutes = stats.todayMinutes ?? 0;
+  const streak = profile.streak ?? 0;
+  const tasksTotal = todayTaskOccurrences?.length ?? 0;
+  const tasksDone = todayCompletedCount ?? 0;
+
+  const heroStats = [
+    { icon: Timer, label: "Today's Focus", value: `${focusMinutes} min`, color: '#a855f7' },
+    { icon: CheckSquare, label: "Today's Tasks", value: `${tasksDone} / ${tasksTotal}`, color: '#06b6d4' },
+    { icon: Wallet, label: 'Budget Remaining', value: formatCurrency(budgetRemaining ?? 0), color: '#10b981' },
+    { icon: Flame, label: 'Current Streak', value: `${streak} ${streak === 1 ? 'Day' : 'Days'}`, color: '#f59e0b' },
+  ];
+
   return (
     <DashboardWidget
       icon={Sparkles}
@@ -111,27 +124,58 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
         </button>
       }
     >
-      <div className="flex items-center gap-4">
-        <div
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl font-black"
-          style={{
-            background: 'linear-gradient(135deg, #a855f7, #ec4899)',
-            boxShadow: '0 0 24px rgba(168,85,247,0.3)',
-            color: 'white',
-          }}
-        >
-          {profile.avatar_url
-            ? <img src={profile.avatar_url} alt="avatar" className="w-full h-full rounded-2xl object-cover" />
-            : displayName.charAt(0).toUpperCase()
-          }
+      <div className="flex flex-col gap-4">
+        {/* Greeting + Profile row */}
+        <div className="flex items-center gap-4">
+          <div
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl font-black"
+            style={{
+              background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+              boxShadow: '0 0 24px rgba(168,85,247,0.3)',
+              color: 'white',
+            }}
+          >
+            {profile.avatar_url
+              ? <img src={profile.avatar_url} alt="avatar" className="w-full h-full rounded-2xl object-cover" />
+              : displayName.charAt(0).toUpperCase()
+            }
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
+              {greeting}, {displayName}! 👋
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Level {levelInfo.level} • {levelInfo.title} — {profile.xp} XP Total
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
-            {greeting}, {displayName}!
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Level {levelInfo.level} · {levelInfo.title} · {profile.xp} XP Total
-          </p>
+
+        {/* Daily summary chips */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {heroStats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.label}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                style={{
+                  background: `${stat.color}08`,
+                  border: `1px solid ${stat.color}18`,
+                }}
+              >
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${stat.color}15`, color: stat.color }}
+                >
+                  <Icon size={14} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider leading-tight truncate">{stat.label}</div>
+                  <div className="text-xs font-bold text-white leading-tight mt-0.5">{stat.value}</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </DashboardWidget>
@@ -140,6 +184,7 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
 
 const KpiMetricsWidget: React.FC<WidgetProps> = ({ context }) => {
   const { levelInfo, profile, productivityScore, prodLabel, financialScore, finLabel, budgetRemaining, getScoreColor } = context;
+  const streak = profile.streak ?? 0;
   return (
     <>
       <KpiCard
@@ -156,13 +201,13 @@ const KpiMetricsWidget: React.FC<WidgetProps> = ({ context }) => {
       <KpiCard
         icon={Flame}
         title="Day Streak"
-        value={profile.streak}
+        value={`${streak} ${streak === 1 ? 'Day' : 'Days'}`}
         valueColor="#f59e0b"
         iconBg="rgba(245,158,11,0.15)"
         iconColor="#f59e0b"
         colSpan={3}
-        badge={profile.streak >= 7 ? { label: '🔥 On Fire!', color: '#f59e0b' } : profile.streak >= 3 ? { label: 'Building!', color: '#06b6d4' } : undefined}
-        footer={profile.streak > 0 ? 'Keep going — consistency is key!' : 'Start your streak today!'}
+        badge={streak >= 7 ? { label: '🔥 On Fire!', color: '#f59e0b' } : streak >= 3 ? { label: 'Building!', color: '#06b6d4' } : undefined}
+        footer={streak === 0 ? 'Start your streak today!' : streak === 1 ? 'Keep it going!' : 'Continue your amazing streak!'}
       />
       <KpiCard
         icon={Brain}
@@ -194,19 +239,20 @@ const KpiMetricsWidget: React.FC<WidgetProps> = ({ context }) => {
 const SnapshotWidget: React.FC<WidgetProps> = ({ context }) => {
   const { stats, preferences, estimatedTimeLeft, todayCompletedCount, todayTaskOccurrences, todayExpensesAmount, budgetRemaining, profile, setPage } = context;
   const monthlySpent = profile.monthly_budget - budgetRemaining;
+  const focusMinutesToday = stats.todayMinutes ?? 0;
   return (
     <>
       <h2 className="dashboard-section-title w-full col-span-12">Today's Snapshot</h2>
       <KpiCard
         icon={Timer}
         title="Focus Time"
-        value={`${stats.focusMinutesToday}m`}
+        value={`${focusMinutesToday} min`}
         valueColor="#a855f7"
         iconBg="rgba(168,85,247,0.15)"
         iconColor="#a855f7"
         colSpan={3}
-        progressBar={{ value: stats.focusMinutesToday, max: preferences.default_daily_focus_goal || 120, gradient: 'linear-gradient(90deg, #a855f7, #7c3aed)' }}
-        footer={estimatedTimeLeft > 0 ? `${estimatedTimeLeft}m remaining` : 'Daily goal reached! 🎉'}
+        progressBar={{ value: focusMinutesToday, max: preferences.default_daily_focus_goal || 120, gradient: 'linear-gradient(90deg, #a855f7, #7c3aed)' }}
+        footer={estimatedTimeLeft > 0 ? `${estimatedTimeLeft} min remaining` : 'Daily goal reached! 🎉'}
         onClick={() => setPage('productivity')}
       />
       <KpiCard

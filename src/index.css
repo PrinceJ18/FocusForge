@@ -1311,17 +1311,22 @@ select.input-glass option {
   background: rgba(10, 10, 18, 0.97);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-left: 1px solid var(--border-color);
+  border-left: 1px solid transparent;
   z-index: 300;
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.4);
+  visibility: hidden;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease, visibility 0s 0.35s, border-color 0s 0.35s;
+  box-shadow: none;
 }
 
 .customize-drawer--open {
   transform: translateX(0);
+  visibility: visible;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.4);
+  border-left-color: var(--border-color);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease, visibility 0s 0s, border-color 0s 0s;
 }
 
 /* Header */
