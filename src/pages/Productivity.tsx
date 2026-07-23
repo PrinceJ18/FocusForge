@@ -555,82 +555,57 @@ export default function Productivity() {
         </Card>
 
         {/* Tasks Management Section */}
-        <Card padding="md" className="flex flex-col gap-4">
-          {/* Header & View Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
-            <div className="text-left">
-              <h3 className="font-bold text-lg text-white" style={{ fontFamily: 'Space Grotesk' }}>
+        <Card padding="md" className="flex flex-col gap-4" style={{ maxHeight: 'calc(100vh - 8rem)', overflow: 'hidden' }}>
+          {/* ═══ ROW 1 — Title + Search + Add Task ═══ */}
+          <div className="flex items-center gap-3 pb-3 border-b border-white/5 flex-shrink-0">
+            {/* Title */}
+            <div className="text-left flex-shrink-0">
+              <h3 className="font-bold text-base text-white leading-tight" style={{ fontFamily: 'Space Grotesk' }}>
                 Tasks Board
               </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {todayPendingCount} tasks pending for today
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                {todayPendingCount} pending today
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* View Switcher */}
-              <div className="flex p-0.5 rounded-lg bg-white/5 border border-white/5">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className="px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1"
-                  style={{
-                    background: viewMode === 'list' ? 'rgba(168,85,247,0.15)' : 'transparent',
-                    color: viewMode === 'list' ? '#a855f7' : '#9ca3af',
-                  }}
-                >
-                  <List size={13} /> List
-                </button>
-                <button
-                  onClick={() => setViewMode('calendar')}
-                  className="px-2.5 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1"
-                  style={{
-                    background: viewMode === 'calendar' ? 'rgba(168,85,247,0.15)' : 'transparent',
-                    color: viewMode === 'calendar' ? '#a855f7' : '#9ca3af',
-                  }}
-                >
-                  <CalendarIcon size={13} /> Calendar
-                </button>
-              </div>
-
-              {/* Add Task Primary Button */}
-              <Button
-                onClick={() => {
-                  setDefaultDateForNewTask(undefined);
-                  setShowAddTask(true);
-                }}
-                className="px-3.5 py-1.5 text-xs flex items-center gap-1.5 font-bold rounded-lg"
-              >
-                <Plus size={14} /> Add Task
-              </Button>
-            </div>
-          </div>
-
-          {/* Filtering Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Search Input */}
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                <Search size={14} />
+            {/* Search — fills remaining space */}
+            <div className="relative flex-1 min-w-0" style={{ maxWidth: 360 }}>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500">
+                <Search size={13} />
               </span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-glass w-full pl-9 pr-4 py-2 text-xs text-white"
-                placeholder="Search tasks, descriptions, sections..."
+                className="input-glass w-full pl-8 pr-8 py-1.5 text-xs text-white"
+                placeholder="Search tasks..."
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                 >
-                  <X size={12} />
+                  <X size={11} />
                 </button>
               )}
             </div>
 
-            {/* Priority Selector */}
-            <div className="flex gap-1 p-0.5 rounded-lg bg-white/5 border border-white/5">
+            {/* Add Task */}
+            <Button
+              onClick={() => {
+                setDefaultDateForNewTask(undefined);
+                setShowAddTask(true);
+              }}
+              className="px-3 py-1.5 text-xs flex items-center gap-1.5 font-bold rounded-lg flex-shrink-0"
+            >
+              <Plus size={14} /> Add Task
+            </Button>
+          </div>
+
+          {/* ═══ ROW 2 — Priority + Section + View Toggle ═══ */}
+          <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+            {/* Priority Chips */}
+            <div className="flex p-0.5 rounded-lg bg-white/5 border border-white/5">
               {(['all', 'high', 'medium', 'low'] as const).map((p) => {
                 const active = filterPriority === p;
                 return (
@@ -638,10 +613,10 @@ export default function Productivity() {
                     key={p}
                     type="button"
                     onClick={() => setFilterPriority(p)}
-                    className="flex-1 py-1 text-[10px] font-bold rounded-md capitalize transition-all"
+                    className="px-2.5 py-1 text-[10px] font-bold rounded-md capitalize transition-all"
                     style={{
-                      background: active ? 'rgba(255,255,255,0.05)' : 'transparent',
-                      color: active ? 'white' : '#9ca3af',
+                      background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                      color: active ? 'white' : '#6b7280',
                     }}
                   >
                     {p}
@@ -650,16 +625,19 @@ export default function Productivity() {
               })}
             </div>
 
-            {/* Section Selector */}
-            <div className="flex gap-1.5 items-center">
+            {/* Separator */}
+            <div className="w-px h-5 bg-white/5 hidden sm:block" />
+
+            {/* Section Dropdown + Manage */}
+            <div className="flex items-center gap-1">
               <select
                 value={filterSectionId}
                 onChange={(e) => setFilterSectionId(e.target.value)}
-                className="input-glass flex-1 px-3 py-2 text-xs text-white"
-                style={{ colorScheme: 'dark' }}
+                className="input-glass px-2.5 py-1.5 text-xs text-white"
+                style={{ colorScheme: 'dark', maxWidth: 220 }}
               >
                 <option value="all">All Sections</option>
-                <option value="">No Section / Uncategorized</option>
+                <option value="">Uncategorized</option>
                 {taskSections.map((sec) => (
                   <option key={sec.id} value={sec.id}>
                     {sec.name}
@@ -668,16 +646,43 @@ export default function Productivity() {
               </select>
               <button
                 onClick={() => setShowSectionManager(true)}
-                className="p-2 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors"
+                className="p-1.5 rounded-md bg-white/5 border border-white/5 text-gray-500 hover:text-white transition-colors"
                 title="Manage Sections"
               >
-                <FolderPlus size={14} />
+                <FolderPlus size={13} />
+              </button>
+            </div>
+
+            {/* Spacer pushes view toggle right on desktop */}
+            <div className="flex-1" />
+
+            {/* View Toggle */}
+            <div className="flex p-0.5 rounded-lg bg-white/5 border border-white/5">
+              <button
+                onClick={() => setViewMode('list')}
+                className="px-2 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
+                style={{
+                  background: viewMode === 'list' ? 'rgba(168,85,247,0.15)' : 'transparent',
+                  color: viewMode === 'list' ? '#a855f7' : '#6b7280',
+                }}
+              >
+                <List size={12} /> List
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className="px-2 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
+                style={{
+                  background: viewMode === 'calendar' ? 'rgba(168,85,247,0.15)' : 'transparent',
+                  color: viewMode === 'calendar' ? '#a855f7' : '#6b7280',
+                }}
+              >
+                <CalendarIcon size={12} /> Calendar
               </button>
             </div>
           </div>
 
           {/* Core Content View */}
-          <div className="mt-2 min-h-[300px]">
+          <div className="mt-2 flex-1 overflow-y-auto min-h-0" style={{ scrollBehavior: 'smooth' }}>
             {viewMode === 'list' ? (
               <TaskListView
                 searchQuery={searchQuery}

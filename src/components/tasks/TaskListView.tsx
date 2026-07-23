@@ -153,7 +153,7 @@ export default function TaskListView({
       {/* 1. OVERDUE SECTION */}
       {overdue.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-red-400 text-xs font-bold uppercase tracking-wider pl-1">
+          <div className="flex items-center gap-1.5 text-red-400 text-xs font-bold uppercase tracking-wider pl-1 sticky top-0 z-10 py-1.5 -mt-1.5" style={{ background: 'var(--bg-secondary)' }}>
             <AlertCircle size={14} />
             Overdue ({overdue.length})
           </div>
@@ -177,7 +177,7 @@ export default function TaskListView({
       {/* 2. TODAY SECTION */}
       {todayList.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-purple-400 text-xs font-bold uppercase tracking-wider pl-1">
+          <div className="flex items-center gap-1.5 text-purple-400 text-xs font-bold uppercase tracking-wider pl-1 sticky top-0 z-10 py-1.5 -mt-1.5" style={{ background: 'var(--bg-secondary)' }}>
             <Star size={14} />
             Today ({todayList.length})
           </div>
@@ -201,7 +201,7 @@ export default function TaskListView({
       {/* 3. UPCOMING SECTION */}
       {upcoming.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-blue-400 text-xs font-bold uppercase tracking-wider pl-1">
+          <div className="flex items-center gap-1.5 text-blue-400 text-xs font-bold uppercase tracking-wider pl-1 sticky top-0 z-10 py-1.5 -mt-1.5" style={{ background: 'var(--bg-secondary)' }}>
             <Calendar size={14} />
             Upcoming ({upcoming.length})
           </div>
@@ -225,7 +225,7 @@ export default function TaskListView({
       {/* 4. COMPLETED SECTION */}
       {completed.length > 0 && (
         <div className="space-y-2 pt-2 border-t border-white/5">
-          <div className="flex items-center gap-1.5 text-gray-500 text-xs font-bold uppercase tracking-wider pl-1">
+          <div className="flex items-center gap-1.5 text-gray-500 text-xs font-bold uppercase tracking-wider pl-1 sticky top-0 z-10 py-1.5 -mt-1.5" style={{ background: 'var(--bg-secondary)' }}>
             <CheckCircle2 size={14} />
             Completed ({completed.length})
           </div>
