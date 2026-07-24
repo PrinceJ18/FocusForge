@@ -15,7 +15,7 @@ const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Finance = React.lazy(() => import('./pages/Finance'));
 const Productivity = React.lazy(() => import('./pages/Productivity'));
 const Analytics = React.lazy(() => import('./pages/Analytics'));
-const Rewards = React.lazy(() => import('./pages/Rewards'));
+
 const Splits = React.lazy(() => import('./pages/Splits'));
 const Reports = React.lazy(() => import('./pages/Reports'));
 const AuthScreen = React.lazy(() => import('./pages/AuthScreen'));
@@ -29,7 +29,7 @@ const PAGE_TITLES: Record<string, string> = {
   finance: 'Finance & Budget',
   productivity: 'Productivity Center',
   analytics: 'Analytics & Trends',
-  rewards: 'Rewards & Badges',
+
   splits: 'Group Splits',
   reports: 'Performance Reports',
   achievements: 'Achievement Center',
@@ -196,7 +196,7 @@ export default function App() {
             {currentPage === 'finance' && <Finance />}
             {currentPage === 'productivity' && <Productivity />}
             {currentPage === 'analytics' && <Analytics />}
-            {currentPage === 'rewards' && <Rewards />}
+
             {currentPage === 'splits' && <Splits />}
             {currentPage === 'reports' && <Reports />}
             {currentPage === 'achievements' && <Achievements />}

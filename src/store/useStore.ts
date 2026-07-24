@@ -303,7 +303,7 @@ export interface Profile {
   };
 }
 
-export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'rewards' | 'splits' | 'reports' | 'achievements' | 'settings';
+export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'splits' | 'reports' | 'achievements' | 'settings';
 
 export type NotificationType = 'xp' | 'level' | 'badge' | 'challenge' | 'achievement' | 'goal' | 'success' | 'error' | 'info';
 

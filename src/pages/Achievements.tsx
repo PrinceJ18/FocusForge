@@ -1,13 +1,40 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Trophy, Zap, Flame, Award, Star, Activity, Map, Sparkles,
-  Search, Filter, Calendar, DollarSign, ArrowRight
+  Search, Filter, Calendar, DollarSign, ArrowRight, Target
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { supabase } from '../lib/supabase';
 import { format, parseISO, isWithinInterval, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { getLevelInfo } from '../lib/levels';
 import { ACHIEVEMENTS, MILESTONES } from '../lib/events';
 import { ALL_BADGES, getEarnedBadgeIds } from '../lib/statsUtils';
+import {
+  calculateTodaySessions,
+  calculateTodayFocus,
+  calculateTodayTasks,
+  isDateToday,
+} from '../lib/statistics';
+
+const DAILY_CHALLENGES = [
+  { id: 'c1', text: 'Complete 2 focus sessions', reward: 20, icon: '⏱', color: '#a855f7' },
+  { id: 'c2', text: 'Add 3 expenses', reward: 10, icon: '💸', color: '#ec4899' },
+  { id: 'c3', text: 'Complete 5 tasks', reward: 25, icon: '✅', color: '#10b981' },
+  { id: 'c4', text: 'Focus for 60+ minutes', reward: 30, icon: '🧠', color: '#06b6d4' },
+];
+
+function checkChallengeCompletion(
+  id: string,
+  { focusSessions, tasks, expenses }: { focusSessions: any[]; tasks: any[]; expenses: any[] }
+): boolean {
+  if (id === 'c1') return calculateTodaySessions(focusSessions) >= 2;
+  if (id === 'c2') {
+    return expenses.filter(e => isDateToday(e.expense_date) || (e.created_at && isDateToday(e.created_at))).length >= 3;
+  }
+  if (id === 'c3') return calculateTodayTasks(tasks) >= 5;
+  if (id === 'c4') return calculateTodayFocus(focusSessions) >= 60;
+  return false;
+}
 
 const XP_EVENT_MAP: Record<string, string> = {
   task_completed: 'Task Completed',
@@ -22,12 +49,54 @@ const XP_EVENT_MAP: Record<string, string> = {
 };
 
 export default function Achievements() {
-  const { expenses, tasks, focusSessions, savingsGoals, profile, user, events } = useStore();
+  const { expenses, tasks, focusSessions, savingsGoals, profile, user, events, addXP } = useStore();
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'focus' | 'finance' | 'tasks' | 'xp' | 'achievements' | 'reports'>('all');
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
+
+  // ═══ Daily Challenge state & logic ═══
+  const today = new Date().toISOString().split('T')[0];
+  const [claimedChallenges, setClaimedChallenges] = useState<string[]>([]);
+
+  useEffect(() => {
+    const currentDay = new Date().toISOString().split('T')[0];
+    const savedClaims = profile?.daily_challenge_claims;
+    if (savedClaims?.date === currentDay) {
+      setClaimedChallenges(savedClaims.claimed || []);
+    }
+  }, [profile]);
+
+  const claimChallenge = async (challengeId: string, reward: number) => {
+    if (claimedChallenges.includes(challengeId)) return;
+    const challengeInfo = DAILY_CHALLENGES.find(c => c.id === challengeId);
+
+    if (user) {
+      const { data, error } = await supabase.rpc('claim_daily_challenge', {
+        p_challenge_id: challengeId,
+        p_challenge_date: today,
+        p_amount: reward,
+      });
+      if (error || data?.already_claimed) return;
+      useStore.setState(state => ({ profile: { ...state.profile, xp: data.total_xp } }));
+    } else {
+      await addXP(reward);
+    }
+
+    useStore.getState().showNotification({
+      type: 'challenge',
+      title: 'Daily Challenge Complete',
+      message: challengeInfo?.text || 'Challenge completed!',
+      xp: reward,
+    });
+
+    const updatedClaims = [...claimedChallenges, challengeId];
+    setClaimedChallenges(updatedClaims);
+    useStore.setState(state => ({
+      profile: { ...state.profile, daily_challenge_claims: { date: today, claimed: updatedClaims } },
+    }));
+  };
 
   // Stats calculation
   const totalFocusSessions = useMemo(() => focusSessions.reduce((sum, s) => sum + (s.sessions_count || 1), 0), [focusSessions]);
@@ -262,7 +331,7 @@ export default function Achievements() {
   }, [events, searchQuery, categoryFilter, timeFilter]);
 
   return (
-    <div className="space-y-12 pb-16 page-enter" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="space-y-6 pb-16 page-enter" style={{ fontFamily: 'Inter, sans-serif' }}>
       
       {/* SECTION 1: Profile Summary */}
       <section className="glass-card p-6 md:p-8 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(16,12,30,0.8), rgba(26,16,48,0.7))', border: '1px solid rgba(168,85,247,0.25)', borderRadius: '24px' }}>
@@ -324,6 +393,65 @@ export default function Achievements() {
         </div>
       </section>
 
+      {/* DAILY CHALLENGES (Moved from Rewards) */}
+      <section className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+        <h2 className="text-xl font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <Target size={20} style={{ color: '#a855f7' }} />
+          Daily Challenges
+          <span className="text-xs px-2 py-0.5 rounded-full ml-2 font-semibold tracking-wide uppercase" style={{ background: 'rgba(168,85,247,0.15)', color: '#a855f7' }}>Resets daily</span>
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {DAILY_CHALLENGES.map((challenge) => {
+            const isDone = checkChallengeCompletion(challenge.id, { focusSessions, tasks, expenses });
+
+            return (
+              <div
+                key={challenge.id}
+                className="flex flex-col gap-3 p-4 rounded-2xl transition-all duration-300 relative group"
+                style={{
+                  background: isDone ? `${challenge.color}10` : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isDone ? challenge.color + '30' : 'var(--border-color)'}`,
+                  opacity: isDone ? 1 : 0.85,
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                    style={{ background: `${challenge.color}15` }}
+                  >
+                    {challenge.icon}
+                  </div>
+                  <div className="flex-shrink-0">
+                    {!isDone ? (
+                      <div className="text-[10px] px-2 py-1 rounded-md uppercase font-bold tracking-wider" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)' }}>
+                        In Progress
+                      </div>
+                    ) : claimedChallenges.includes(challenge.id) ? (
+                      <div className="text-[10px] px-2 py-1 rounded-md uppercase font-bold tracking-wider" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
+                        Claimed
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => claimChallenge(challenge.id, challenge.reward)}
+                        className="btn-neon px-3 py-1 text-xs"
+                      >
+                        Claim
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 mt-1">
+                  <p className="text-sm font-semibold" style={{ color: isDone ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                    {challenge.text}
+                  </p>
+                  <p className="text-xs mt-1 font-bold" style={{ color: challenge.color }}>+{challenge.reward} XP</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* SEARCH & FILTERS BAR */}
       <section className="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderRadius: '16px' }}>
         <div className="relative w-full md:w-80">
@@ -374,15 +502,16 @@ export default function Achievements() {
         <div className="lg:col-span-2 space-y-8">
           
           {/* SECTION 2: Achievement Timeline */}
-          <div className="glass-card p-6" style={{ borderRadius: '20px' }}>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Trophy className="text-yellow-500" size={20} />
               Key Milestones Timeline
             </h2>
             {keyTimelineEvents.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-sm">No milestones logged yet. Keep focusing!</div>
             ) : (
-              <div className="relative pl-6 border-l border-purple-500/20 space-y-6 ml-2">
+              <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                <div className="relative pl-6 border-l border-purple-500/20 space-y-6 ml-2">
                 {keyTimelineEvents.map((evt, idx) => (
                   <div key={idx} className="relative group">
                     {/* Circle Dot */}
@@ -408,13 +537,14 @@ export default function Achievements() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             )}
           </div>
 
-          {/* SECTION 10: Journey Map */}
-          <div className="glass-card p-6" style={{ borderRadius: '20px' }}>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          {/* SECTION 10: Journey Roadmap */}
+          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Map className="text-cyan-400" size={20} />
               Your Journey Roadmap
             </h2>
@@ -482,12 +612,12 @@ export default function Achievements() {
         <div className="space-y-8">
           
           {/* SECTION 8: Milestones */}
-          <div className="glass-card p-6" style={{ borderRadius: '20px' }}>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Sparkles className="text-pink-400" size={20} />
               Important Milestones
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               {MILESTONES.map((mile) => {
                 const statsObj = {
                   totalFocusSessions,
@@ -528,12 +658,12 @@ export default function Achievements() {
           </div>
 
           {/* SECTION 9: Statistics Overview */}
-          <div className="glass-card p-6" style={{ borderRadius: '20px' }}>
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Activity className="text-cyan-400" size={20} />
               Statistics Overview
             </h2>
-            <div className="space-y-3.5">
+            <div className="space-y-3.5 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               <div className="flex justify-between items-center py-2 border-b border-white/5">
                 <span className="text-xs text-slate-400">Total XP Accumulated</span>
                 <span className="text-xs font-bold text-white">{profile.xp} XP</span>
@@ -673,15 +803,15 @@ export default function Achievements() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* SECTION 3: XP History */}
-        <div className="glass-card p-6" style={{ borderRadius: '20px' }}>
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Zap className="text-purple-400" size={18} />
+        <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+            <Zap className="text-purple-400" size={20} />
             XP Log History
           </h2>
           {xpEvents.length === 0 ? (
             <div className="text-center py-8 text-slate-500 text-sm">No XP earned logs yet.</div>
           ) : (
-            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               {xpEvents.slice(0, 15).map((e) => (
                 <div key={e.id} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-center justify-between text-xs hover:bg-white/5 transition-all">
                   <div className="flex flex-col gap-0.5">
@@ -702,15 +832,15 @@ export default function Achievements() {
         </div>
 
         {/* SECTION 4: Level History */}
-        <div className="glass-card p-6" style={{ borderRadius: '20px' }}>
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Star className="text-yellow-500" size={18} />
+        <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+            <Star className="text-yellow-500" size={20} />
             Level History
           </h2>
           {levelHistory.length === 0 ? (
             <div className="text-center py-8 text-slate-500 text-sm">Unlock Level up events to populate!</div>
           ) : (
-            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               {levelHistory.map((e, idx) => (
                 <div key={e.id || idx} className="p-3 bg-slate-900/40 rounded-xl border border-white/5 relative overflow-hidden">
                   <div className="flex justify-between items-center mb-1">
@@ -726,15 +856,15 @@ export default function Achievements() {
         </div>
 
         {/* SECTION 7: Activity Timeline */}
-        <div className="glass-card p-6" style={{ borderRadius: '20px' }}>
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Activity className="text-cyan-400" size={18} />
+        <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+            <Activity className="text-cyan-400" size={20} />
             Complete Activity Log
           </h2>
           {filteredEvents.length === 0 ? (
             <div className="text-center py-8 text-slate-500 text-sm">No activity events found matching criteria.</div>
           ) : (
-            <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-2">
+            <div className="space-y-3.5 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               {filteredEvents.slice(0, 30).map((e) => (
                 <div key={e.id} className="p-3 bg-white/2 rounded-xl border border-white/5 flex gap-3 hover:bg-white/5 transition-all text-xs">
                   <div className="text-lg">

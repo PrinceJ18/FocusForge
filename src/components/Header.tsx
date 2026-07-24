@@ -18,7 +18,6 @@ const PAGE_SUBTITLES: Record<string, string> = {
   finance: 'Track expenses & manage budget',
   productivity: 'Focus sessions & task management',
   analytics: 'Insights & data visualization',
-  rewards: 'Achievements & gamification',
   splits: 'Track and settle shared expenses with anyone',
   achievements: 'Unlock badges, track milestones, and view your complete journey',
   settings: 'Personalize colors, theme overrides, layout variables, and target goals',

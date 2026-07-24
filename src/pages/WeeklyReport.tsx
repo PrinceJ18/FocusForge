@@ -94,10 +94,9 @@ export default function WeeklyReport() {
   }, [weekOffset, expenses, tasks, taskCompletions, focusSessions, profile]);
 
   return (
-    <div className="page-enter space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>Weekly Report</h1>
+    <div className="space-y-6 pb-12">
+      {/* Week Navigator */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-4 bg-white/5 rounded-lg p-1 border border-white/10">
           <button 
             disabled={!reportData.hasPrevWeek}

@@ -14,11 +14,8 @@ const navItems: Array<{ id: string; label: string; icon: React.ReactNode; badge?
   { id: 'finance', label: 'Finance', icon: <Wallet size={18} /> },
   { id: 'productivity', label: 'Focus', icon: <Timer size={18} /> },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
-  { id: 'splits', label: 'Expense Buddy', icon: <Users size={18} /> },
-  { id: 'rewards', label: 'Rewards', icon: <Trophy size={18} /> },
-  { id: 'reports', label: 'Monthly Reports', icon: <BookOpen size={18} /> },
+  { id: 'reports', label: 'Performance Reports', icon: <BookOpen size={18} /> },
   { id: 'achievements', label: 'Achievement Center', icon: <Award size={18} /> },
-  { id: 'settings', label: 'Settings', icon: <Settings size={18} /> },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -115,6 +112,39 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             ))}
           </div>
         </nav>
+
+        {/* Tools Section */}
+        <div className="px-4 pb-4 shrink-0">
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">Tools</h3>
+          <div className="space-y-2">
+            <button
+              title="Expense Buddy"
+              onClick={() => handleNav('splits')}
+              className={`w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-all duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(168,85,247,0.15)] ${currentPage === 'splits' ? 'border-purple-500/50 bg-purple-500/10' : ''}`}
+            >
+              <div className="w-8 h-8 shrink-0 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200">
+                <Users size={16} />
+              </div>
+              <div className="text-left flex-1 min-w-0 overflow-hidden">
+                <div className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors truncate">Expense Buddy</div>
+                <div className="text-[9px] text-slate-400 truncate">AI-powered assistant</div>
+              </div>
+            </button>
+            <button
+              title="Settings"
+              onClick={() => handleNav('settings')}
+              className={`w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-slate-500/30 transition-all duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)] ${currentPage === 'settings' ? 'border-slate-500/50 bg-slate-500/10' : ''}`}
+            >
+              <div className="w-8 h-8 shrink-0 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200 group-hover:rotate-45">
+                <Settings size={16} />
+              </div>
+              <div className="text-left flex-1 min-w-0 overflow-hidden">
+                <div className="text-xs font-bold text-white transition-colors truncate">Settings</div>
+                <div className="text-[9px] text-slate-400 truncate">Preferences & config</div>
+              </div>
+            </button>
+          </div>
+        </div>
 
         {/* Streak display */}
         {profile.streak > 0 && (

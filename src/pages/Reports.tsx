@@ -115,24 +115,66 @@ export default function Reports() {
   const handleExportPDF = () => {
     alert("PDF report layout prepared. Direct browser PDF download will be activated next.");
   };
+  // ═══ Level 1: Fixed Page Header (never changes) ═══
+  const PageHeader = (
+    <div className="flex-shrink-0">
+      <h1 className="text-2xl font-black text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+        Performance Reports
+      </h1>
+      <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+        Analyze your productivity, focus sessions, task completion, and financial performance through comprehensive reports.
+      </p>
+    </div>
+  );
+
+  // ═══ Toggle: Weekly / Monthly selector ═══
+  const ReportToggle = (
+    <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/5 w-fit">
+      <button
+        onClick={() => setReportType('weekly')}
+        className="px-4 py-1.5 text-xs font-bold rounded-lg transition-all"
+        style={{
+          background: reportType === 'weekly' ? 'rgba(168,85,247,0.15)' : 'transparent',
+          color: reportType === 'weekly' ? '#a855f7' : '#6b7280',
+          border: reportType === 'weekly' ? '1px solid rgba(168,85,247,0.25)' : '1px solid transparent',
+        }}
+      >
+        Weekly
+      </button>
+      <button
+        onClick={() => setReportType('monthly')}
+        className="px-4 py-1.5 text-xs font-bold rounded-lg transition-all"
+        style={{
+          background: reportType === 'monthly' ? 'rgba(168,85,247,0.15)' : 'transparent',
+          color: reportType === 'monthly' ? '#a855f7' : '#6b7280',
+          border: reportType === 'monthly' ? '1px solid rgba(168,85,247,0.25)' : '1px solid transparent',
+        }}
+      >
+        Monthly
+      </button>
+    </div>
+  );
+
+  // ═══ Level 2: Section Header (changes per view) ═══
+  const SectionHeader = (
+    <div className="flex-shrink-0 pb-1">
+      <h2 className="text-base font-bold text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+        {reportType === 'weekly' ? 'Weekly Performance' : 'Monthly Performance'}
+      </h2>
+      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+        {reportType === 'weekly'
+          ? 'Review productivity trends, focus sessions, completed tasks, and spending insights for the selected week.'
+          : 'Review productivity trends, focus sessions, completed tasks, financial performance, and monthly progress for the selected month.'}
+      </p>
+    </div>
+  );
 
   if (reportType === 'weekly') {
     return (
-      <div className="space-y-6">
-        <div className="flex gap-2 p-1 rounded-xl w-fit mb-6" style={{ background: 'rgba(255,255,255,0.05)' }}>
-          <button
-            onClick={() => setReportType('weekly')}
-            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all bg-purple-500/20 text-white border border-purple-500/30"
-          >
-            Weekly Report
-          </button>
-          <button
-            onClick={() => setReportType('monthly')}
-            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-white"
-          >
-            Monthly Report
-          </button>
-        </div>
+      <div className="page-enter space-y-5">
+        {PageHeader}
+        {ReportToggle}
+        {SectionHeader}
         <WeeklyReport />
       </div>
     );
@@ -140,7 +182,10 @@ export default function Reports() {
 
   if (reportData) {
     return (
-      <div className="page-enter space-y-8 pb-12">
+      <div className="page-enter space-y-5 pb-12">
+        {PageHeader}
+        {ReportToggle}
+        {SectionHeader}
         {/* Navigation / Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <button
@@ -502,49 +547,10 @@ export default function Reports() {
   }
 
   return (
-    <div className="page-enter space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>Performance Reports</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Review your long-term focus, tasks, and financial trends.</p>
-        </div>
-        <div className="flex gap-2 p-1 rounded-xl bg-white/5">
-          <button
-            onClick={() => setReportType('weekly')}
-            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all text-slate-400 hover:text-white"
-          >
-            Weekly Report
-          </button>
-          <button
-            onClick={() => setReportType('monthly')}
-            className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all bg-purple-500/20 text-white border border-purple-500/30"
-          >
-            Monthly Report
-          </button>
-        </div>
-      </div>
-      {/* Overview / Banner */}
-      <div
-        className="glass-card p-6 sm:p-8 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(6,182,212,0.08))' }}
-      >
-        <div
-          className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #a855f7, transparent)', transform: 'translate(30%, -30%)' }}
-        />
-        <div className="relative z-10">
-          <h2
-            className="text-2xl sm:text-3xl font-black mb-2"
-            style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)' }}
-          >
-            Monthly Productivity Review
-          </h2>
-          <p className="text-sm max-w-xl" style={{ color: 'var(--text-secondary)' }}>
-            Revisit your stats, track progress milestones, review financial budgets, and view personalized productivity summaries for each calendar month.
-          </p>
-        </div>
-      </div>
+    <div className="page-enter space-y-5">
+      {PageHeader}
+      {ReportToggle}
+      {SectionHeader}
 
       {/* History Grid */}
       <div className="glass-card p-5">

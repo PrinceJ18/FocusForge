@@ -12,11 +12,16 @@ import {
   Search, 
   List, 
   Calendar as CalendarIcon, 
-  FolderPlus 
+  FolderPlus,
+  Flame,
+  CheckSquare,
+  Target,
+  AlertTriangle,
+  TrendingUp
 } from 'lucide-react';
 import { useStore, Task } from '../store/useStore';
 import { supabase } from '../lib/supabase';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, subDays, addDays } from 'date-fns';
 import { calculateTodayFocus, calculateTodaySessions } from '../lib/statistics';
 import { logEvent } from '../lib/events';
 import { getTasksForDate } from '../lib/taskRecurrence';
@@ -240,6 +245,37 @@ export default function Productivity() {
   // Pending count for today's summary
   const todayOccurrences = getTasksForDate(tasks, new Date(), taskCompletions);
   const todayPendingCount = todayOccurrences.filter((o) => !o.completed).length;
+  const todayCompletedCount = todayOccurrences.filter((o) => o.completed).length;
+  const todayTotalCount = todayOccurrences.length;
+  const completionPct = todayTotalCount > 0 ? Math.round((todayCompletedCount / todayTotalCount) * 100) : 0;
+
+  // Overdue tasks: scan past 30 days for incomplete occurrences before today
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const overdueCount = (() => {
+    const seen = new Set<string>();
+    let count = 0;
+    let d = subDays(new Date(), 30);
+    const end = new Date();
+    while (d < end) {
+      const occs = getTasksForDate(tasks, d, taskCompletions);
+      for (const occ of occs) {
+        const key = `${occ.task.id}_${occ.occurrenceDate}`;
+        if (!seen.has(key) && !occ.completed && occ.occurrenceDate < todayStr) {
+          seen.add(key);
+          count++;
+        }
+      }
+      d = addDays(d, 1);
+    }
+    return count;
+  })();
+
+  // Next pending task: highest priority among today's pending
+  const priorityRank = (p: string) => p === 'high' ? 3 : p === 'medium' ? 2 : 1;
+  const todayPending = todayOccurrences
+    .filter((o) => !o.completed)
+    .sort((a, b) => priorityRank(b.task.priority) - priorityRank(a.task.priority));
+  const nextPendingTask = todayPending.length > 0 ? todayPending[0].task : null;
 
   return (
     <div className="page-enter space-y-6">
@@ -708,6 +744,112 @@ export default function Productivity() {
                 }}
               />
             )}
+          </div>
+        </Card>
+
+        {/* ═══ Productivity Summary Panel ═══ */}
+        <Card padding="md" className="lg:col-span-2">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp size={15} style={{ color: '#a855f7' }} />
+            <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Today's Productivity</h3>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            {/* Today's Focus */}
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.12)' }}
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(168,85,247,0.15)', color: '#a855f7' }}>
+                <Clock size={13} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Focus</div>
+                <div className="text-xs font-bold text-white leading-tight mt-0.5">{todayMinutes} min</div>
+              </div>
+            </div>
+
+            {/* Today's Tasks */}
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.12)' }}
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(6,182,212,0.15)', color: '#06b6d4' }}>
+                <CheckSquare size={13} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Tasks</div>
+                <div className="text-xs font-bold text-white leading-tight mt-0.5">{todayCompletedCount} / {todayTotalCount}</div>
+              </div>
+            </div>
+
+            {/* Completion % */}
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }}
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
+                <Target size={13} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Done</div>
+                <div className="text-xs font-bold text-white leading-tight mt-0.5">{completionPct}%</div>
+              </div>
+            </div>
+
+            {/* Current Streak */}
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                <Flame size={13} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Streak</div>
+                <div className="text-xs font-bold text-white leading-tight mt-0.5">{profile.streak ?? 0} {(profile.streak ?? 0) === 1 ? 'Day' : 'Days'}</div>
+              </div>
+            </div>
+
+            {/* Overdue */}
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{
+                background: overdueCount > 0 ? 'rgba(239,68,68,0.06)' : 'rgba(107,114,128,0.06)',
+                border: `1px solid ${overdueCount > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(107,114,128,0.12)'}`,
+              }}
+            >
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: overdueCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(107,114,128,0.15)',
+                  color: overdueCount > 0 ? '#ef4444' : '#6b7280',
+                }}
+              >
+                <AlertTriangle size={13} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Overdue</div>
+                <div className={`text-xs font-bold leading-tight mt-0.5 ${overdueCount > 0 ? 'text-red-400' : 'text-white'}`}>
+                  {overdueCount > 0 ? `${overdueCount} ${overdueCount === 1 ? 'task' : 'tasks'}` : 'None'}
+                </div>
+              </div>
+            </div>
+
+            {/* Next Pending */}
+            <div
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+              style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)' }}
+            >
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}>
+                <Brain size={13} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Next Up</div>
+                <div className="text-xs font-bold text-white leading-tight mt-0.5 truncate">
+                  {nextPendingTask ? nextPendingTask.title : 'No pending tasks'}
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
 
