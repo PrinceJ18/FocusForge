@@ -10,13 +10,15 @@ import { format, parseISO, isToday, differenceInDays } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
 import { getLevelInfo } from '../lib/levels';
 import { calculateDashboardStatistics } from '../lib/statistics';
-import { calculateProductivityScore, calculateFinancialHealthScore } from '../lib/scoreUtils';
+import { calculateProductivityScore } from '../lib/scoreUtils';
 import { generateInsights } from '../lib/insightUtils';
 import InsightCard from '../components/analytics/InsightCard';
 import TrendChart from '../components/analytics/TrendChart';
 import { payRecurringExpense } from '../lib/recurringUtils';
 import { supabase } from '../lib/supabase';
 import { logEvent } from '../lib/events';
+import { useDailyProductivityScore } from '../hooks/useDailyProductivityScore';
+import { useFinancialHealthScore } from '../hooks/useFinancialHealthScore';
 
 // Import statistics single-source-of-truth helpers
 import {
@@ -46,6 +48,7 @@ import { WIDGET_REGISTRY } from '../components/dashboard/dashboardWidgets';
 import DashboardWidgetWrapper from '../components/dashboard/DashboardWidgetWrapper';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -155,13 +158,9 @@ export default function Dashboard() {
     return Math.max(0, targetFocus - spentFocus);
   }, [preferences, focusSessions]);
 
-  const { score: productivityScore, label: prodLabel } = useMemo(() => 
-    calculateProductivityScore({ tasks, focusSessions, profile }),
-  [tasks, focusSessions, profile]);
+  const { score: productivityScore, label: prodLabel } = useDailyProductivityScore();
 
-  const { score: financialScore, label: finLabel } = useMemo(() => 
-    calculateFinancialHealthScore({ expenses, savingsGoals, monthlyBudget: profile.monthly_budget }),
-  [expenses, savingsGoals, profile.monthly_budget]);
+  const { score: financialScore, label: finLabel } = useFinancialHealthScore();
 
   const smartInsights = useMemo(() => {
     return generateInsights({ tasks, focusSessions, expenses });
@@ -227,16 +226,16 @@ export default function Dashboard() {
 
   // Productivity Score Explanation
   const productivityScoreExplanation = useMemo(() => {
-    let score = Math.round(stats.productivityScore || 70);
-    let desc = 'Calculated from focus minutes completed, task ratio, and budget adherence.';
-    let action = 'To improve, complete pending tasks and maintain a daily streak.';
+    let score = productivityScore;
+    let desc = 'Calculated from focus minutes, task completion, daily streaks, budget health, and daily challenges.';
+    let action = 'To improve, complete pending tasks, log focus sessions, and maintain a daily streak.';
     if (score >= 80) {
       action = 'Perfect alignment! Keep doing what you are doing.';
     } else if (score < 50) {
       action = 'Try starting a short break between focus sessions and clear overdue tasks.';
     }
     return { score, desc, action };
-  }, [stats.productivityScore]);
+  }, [productivityScore]);
 
   // Achievements Preview
   const achievementsPreview = useMemo(() => {
@@ -501,36 +500,65 @@ export default function Dashboard() {
       {/* ============================================================
           MODALS & FORM POPUPS
           ============================================================ */}
-      {showQuickAddExpense && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm space-y-4">
-            <div className="flex justify-between items-center">
-              <h4 className="font-bold text-sm text-white">Quick Add Expense</h4>
-              <button onClick={() => setShowQuickAddExpense(false)} className="text-text-muted hover:text-text-primary transition-colors"><X size={16} /></button>
-            </div>
-            <div className="space-y-3 text-xs">
-              <input type="text" placeholder="Expense name" value={quickExpenseName} onChange={(e) => setQuickExpenseName(e.target.value)} className="w-full px-3 py-2 bg-background-card/50 border border-border rounded-md text-text-primary outline-none focus:border-primary" />
-              <input type="number" placeholder="Amount" value={quickExpenseAmount} onChange={(e) => setQuickExpenseAmount(e.target.value)} className="w-full px-3 py-2 bg-background-card/50 border border-border rounded-md text-text-primary outline-none focus:border-primary" />
-            </div>
-            <Button onClick={handleQuickAddExpense} isLoading={isSubmittingExpense} className="w-full">Add Expense</Button>
-          </Card>
+      <Modal
+        isOpen={showQuickAddExpense}
+        onClose={() => setShowQuickAddExpense(false)}
+        title="Quick Add Expense"
+        maxWidth="sm"
+        footer={
+          <Button onClick={handleQuickAddExpense} isLoading={isSubmittingExpense} className="w-full">
+            Add Expense
+          </Button>
+        }
+      >
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Expense Description</label>
+            <input
+              type="text"
+              placeholder="e.g. Coffee, Books"
+              value={quickExpenseName}
+              onChange={(e) => setQuickExpenseName(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Amount ($)</label>
+            <input
+              type="number"
+              placeholder="0.00"
+              value={quickExpenseAmount}
+              onChange={(e) => setQuickExpenseAmount(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+            />
+          </div>
         </div>
-      )}
+      </Modal>
 
-      {showQuickAddTask && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm space-y-4">
-            <div className="flex justify-between items-center">
-              <h4 className="font-bold text-sm text-white">Quick Add Task</h4>
-              <button onClick={() => setShowQuickAddTask(false)} className="text-text-muted hover:text-text-primary transition-colors"><X size={16} /></button>
-            </div>
-            <div className="space-y-3 text-xs">
-              <input type="text" placeholder="Task title" value={quickTaskTitle} onChange={(e) => setQuickTaskTitle(e.target.value)} className="w-full px-3 py-2 bg-background-card/50 border border-border rounded-md text-text-primary outline-none focus:border-primary" />
-            </div>
-            <Button onClick={handleQuickAddTask} isLoading={isSubmittingTask} className="w-full">Create Task</Button>
-          </Card>
+      <Modal
+        isOpen={showQuickAddTask}
+        onClose={() => setShowQuickAddTask(false)}
+        title="Quick Add Task"
+        maxWidth="sm"
+        footer={
+          <Button onClick={handleQuickAddTask} isLoading={isSubmittingTask} className="w-full">
+            Create Task
+          </Button>
+        }
+      >
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Task Title</label>
+            <input
+              type="text"
+              placeholder="Enter task title..."
+              value={quickTaskTitle}
+              onChange={(e) => setQuickTaskTitle(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+            />
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Task Details Modal sharing */}
       {selectedTaskDetails && (

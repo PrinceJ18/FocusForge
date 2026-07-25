@@ -27,6 +27,7 @@ import {
 import { payRecurringExpense, skipRecurringExpense } from '../lib/recurringUtils';
 import RecurringDetailsModal from '../components/finance/RecurringDetailsModal';
 import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
 
 const DEFAULT_CATEGORIES = [
   { id: 'food', name: 'Food', icon: '🍔', color: '#f59e0b' },
@@ -355,7 +356,7 @@ export default function Finance() {
               <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Spending by Category</h3>
               {stats.categoryData.length > 0 ? (
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                  <div style={{ width: window.innerWidth < 640 ? 180 : 140, height: window.innerWidth < 640 ? 180 : 140, }} >
+                  <div className="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] mx-auto shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie data={stats.categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3} dataKey="value">
@@ -1361,84 +1362,87 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>Add Expense</h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
-        </div>
-        <div className="space-y-4 text-xs">
-          <div>
-            <label className="font-medium mb-1 block" style={{ color: 'var(--text-muted)' }}>Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="input-glass w-full px-4 py-2.5"
-              placeholder="Coffee, Groceries..."
-              autoFocus
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-medium mb-1 block" style={{ color: 'var(--text-muted)' }}>Amount</label>
-              <input
-                type="number"
-                min = "1"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="input-glass w-full px-4 py-2.5"
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <label className="font-medium mb-1 block" style={{ color: 'var(--text-muted)' }}>Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="input-glass w-full px-4 py-2.5"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="font-medium mb-1 block" style={{ color: 'var(--text-muted)' }}>Category</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="input-glass w-full px-4 py-2.5"
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="font-medium mb-1 block" style={{ color: 'var(--text-muted)' }}>Note (optional)</label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="input-glass w-full px-4 py-2.5"
-              placeholder="Optional note..."
-            />
-          </div>
-        </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="btn-ghost flex-1 px-4 py-2 text-sm font-semibold">Cancel</button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Add Expense"
+      maxWidth="md"
+      footer={
+        <div className="flex gap-3 w-full">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">
+            Cancel
+          </button>
           <Button
             onClick={() => {
               if (title && amount) {
                 onAdd({ title, amount: parseFloat(amount), category, note, expense_date: date });
               }
             }}
-            className="flex-1 px-4 py-2 text-sm font-semibold"
+            className="flex-1 py-2.5 text-xs font-semibold"
           >
             Add Expense
           </Button>
         </div>
+      }
+    >
+      <div className="space-y-4 text-xs text-left">
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            placeholder="Coffee, Groceries..."
+            autoFocus
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Amount ($)</label>
+            <input
+              type="number"
+              min="1"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Category</label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Note (optional)</label>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            placeholder="Optional note..."
+          />
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1538,150 +1542,170 @@ function AddEditRecurringModal({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>
-            {initialData ? 'Edit Recurring Expense' : 'Create Recurring Expense'}
-          </h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={initialData ? 'Edit Recurring Expense' : 'Create Recurring Expense'}
+      maxWidth="xl"
+      footer={
+        <div className="flex gap-3 w-full">
+          {initialData && onDelete && (
+            <button 
+              type="button"
+              onClick={onDelete} 
+              className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold"
+            >
+              Delete
+            </button>
+          )}
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleValidateAndSave}
+            className="btn-neon flex-1 px-4 py-2.5 text-xs font-semibold"
+          >
+            {initialData ? 'Save Changes' : 'Create Bill'}
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4 text-xs text-left">
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Expense Name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Netflix, Gym membership, Rent..." />
         </div>
 
-        <div className="space-y-4 text-xs">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-medium text-slate-400 mb-1 block">Expense Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-glass w-full px-4 py-2.5" placeholder="Netflix, Gym membership, Rent..." />
+            <label className="font-semibold text-slate-300 mb-1 block">Amount ($)</label>
+            <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="0.00" />
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Amount</label>
-              <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className="input-glass w-full px-4 py-2.5" placeholder="0.00" />
-            </div>
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Category</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="input-glass w-full px-4 py-2.5">
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
           <div>
-            <label className="font-medium text-slate-400 mb-1 block">Description (Optional)</label>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="input-glass w-full px-4 py-2.5" placeholder="Additional details..." />
+            <label className="font-semibold text-slate-300 mb-1 block">Category</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition">
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              ))}
+            </select>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Start Date</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-glass w-full px-4 py-2.5" />
-            </div>
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">First Billing Date</label>
-              <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="input-glass w-full px-4 py-2.5" />
-            </div>
-          </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Description (Optional)</label>
+          <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Additional details..." />
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Frequency</label>
-              <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="input-glass w-full px-4 py-2.5">
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="bi-weekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="half-yearly">Half-yearly</option>
-                <option value="yearly">Yearly</option>
-                <option value="custom">Custom (Days)</option>
-              </select>
-            </div>
-            {frequency === 'custom' && (
-              <div>
-                <label className="font-medium text-slate-400 mb-1 block">Custom Interval (Days)</label>
-                <input type="number" min="1" value={customInterval} onChange={(e) => setCustomInterval(e.target.value)} className="input-glass w-full px-4 py-2.5" />
-              </div>
-            )}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Start Date</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
           </div>
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">First Billing Date</label>
+            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+          </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Recurrence Status</label>
-              <select 
-                value={status} 
-                onChange={(e) => setStatus(e.target.value)} 
-                className="input-glass w-full px-4 py-2.5"
-              >
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">End Date (Optional)</label>
-              <input 
-                type="date" 
-                value={endDate} 
-                onChange={(e) => setEndDate(e.target.value)} 
-                className="input-glass w-full px-4 py-2.5" 
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Frequency</label>
+            <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="bi-weekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="half-yearly">Half-yearly</option>
+              <option value="yearly">Yearly</option>
+              <option value="custom">Custom (Days)</option>
+            </select>
           </div>
+          {frequency === 'custom' && (
+            <div>
+              <label className="font-semibold text-slate-300 mb-1 block">Custom Interval (Days)</label>
+              <input type="number" min="1" value={customInterval} onChange={(e) => setCustomInterval(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+            </div>
+          )}
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Reminder Preferences</label>
-              <select value={reminder} onChange={(e) => setReminder(e.target.value)} className="input-glass w-full px-4 py-2.5">
-                <option value="same-day">Same Day</option>
-                <option value="1-day">1 Day Before</option>
-                <option value="2-days">2 Days Before</option>
-                <option value="3-days">3 Days Before</option>
-                <option value="7-days">7 Days Before</option>
-                <option value="custom">Custom (Days)</option>
-              </select>
-            </div>
-            {reminder === 'custom' && (
-              <div>
-                <label className="font-medium text-slate-400 mb-1 block">Custom Reminder (Days)</label>
-                <input type="number" min="0" value={reminderCustomDays} onChange={(e) => setReminderCustomDays(e.target.value)} className="input-glass w-full px-4 py-2.5" />
-              </div>
-            )}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Recurrence Status</label>
+            <select 
+              value={status} 
+              onChange={(e) => setStatus(e.target.value)} 
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
+            >
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
           </div>
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">End Date (Optional)</label>
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)} 
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" 
+            />
+          </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div className="flex items-center justify-between p-2 bg-white/2 rounded-lg border border-white/5">
-              <span>Auto Confirm</span>
-              <input type="checkbox" checked={autoConfirm} onChange={(e) => setAutoConfirm(e.target.checked)} className="w-4 h-4 accent-purple-500" />
-            </div>
-            <div className="flex items-center justify-between p-2 bg-white/2 rounded-lg border border-white/5">
-              <span>Auto Add Expense</span>
-              <input type="checkbox" checked={autoAdd} onChange={(e) => setAutoAdd(e.target.checked)} className="w-4 h-4 accent-purple-500" />
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Reminder Preferences</label>
+            <select value={reminder} onChange={(e) => setReminder(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition">
+              <option value="same-day">Same Day</option>
+              <option value="1-day">1 Day Before</option>
+              <option value="2-days">2 Days Before</option>
+              <option value="3-days">3 Days Before</option>
+              <option value="7-days">7 Days Before</option>
+              <option value="custom">Custom (Days)</option>
+            </select>
           </div>
-          <div className="text-[10px] text-slate-500 italic mt-0.5 text-right">
-            * Auto options process in-app when you open the application.
-          </div>
+          {reminder === 'custom' && (
+            <div>
+              <label className="font-semibold text-slate-300 mb-1 block">Custom Reminder (Days)</label>
+              <input type="number" min="0" value={reminderCustomDays} onChange={(e) => setReminderCustomDays(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+            </div>
+          )}
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Visual Icon</label>
-              <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} className="input-glass w-full px-4 py-2.5 text-center" />
-            </div>
-            <div>
-              <label className="font-medium text-slate-400 mb-1 block">Accent Color</label>
-              <div className="flex gap-2 flex-wrap mt-1">
-                {RANDOM_COLORS.map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="w-5 h-5 rounded-full border border-white/10"
-                    style={{ background: c, transform: color === c ? 'scale(1.2)' : 'none' }}
-                  />
-                ))}
-              </div>
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-slate-700/60">
+            <span className="text-slate-300 font-medium">Auto Confirm</span>
+            <input type="checkbox" checked={autoConfirm} onChange={(e) => setAutoConfirm(e.target.checked)} className="w-4 h-4 accent-purple-500" />
+          </div>
+          <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-slate-700/60">
+            <span className="text-slate-300 font-medium">Auto Add Expense</span>
+            <input type="checkbox" checked={autoAdd} onChange={(e) => setAutoAdd(e.target.checked)} className="w-4 h-4 accent-purple-500" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Visual Icon</label>
+            <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 text-center outline-none focus:border-purple-500 transition" />
+          </div>
+          <div>
+            <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
+            <div className="flex gap-2 flex-wrap mt-1">
+              {RANDOM_COLORS.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className="w-5 h-5 rounded-full border border-white/10"
+                  style={{ background: c, transform: color === c ? 'scale(1.2)' : 'none' }}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -1692,34 +1716,8 @@ function AddEditRecurringModal({
             <span>{validationError}</span>
           </div>
         )}
-
-        <div className="flex gap-3 mt-6">
-          {initialData && onDelete && (
-            <button 
-              type="button"
-              onClick={onDelete} 
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold"
-            >
-              Delete
-            </button>
-          )}
-          <button 
-            type="button"
-            onClick={onClose} 
-            className="btn-ghost flex-1 px-4 py-2 text-xs font-semibold"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleValidateAndSave}
-            className="btn-neon flex-1 px-4 py-2 text-xs font-semibold"
-          >
-            {initialData ? 'Save Changes' : 'Create Bill'}
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1730,22 +1728,48 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (data: a
   const [color, setColor] = useState('#06b6d4');
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>New Savings Goal</h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="New Savings Goal"
+      maxWidth="md"
+      footer={
+        <div className="flex gap-3 w-full">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">Cancel</button>
+          <Button
+            onClick={() => {
+              if (title && target) {
+                onAdd({ title, target_amount: parseFloat(target), current_amount: 0, deadline: deadline || null, color });
+              }
+            }}
+            className="flex-1 py-2.5 text-xs font-semibold"
+          >
+            Create Goal
+          </Button>
         </div>
-        <div className="space-y-4">
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-glass w-full px-4 py-3 text-sm" placeholder="Goal title (e.g. MacBook Pro)" />
-          <input type="number" min="1" value={target} onChange={(e) => setTarget(e.target.value)} className="input-glass w-full px-4 py-3 text-sm" placeholder={`Target amount (${formatCurrency(0)})`} />
-          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="input-glass w-full px-4 py-3 text-sm" />
+      }
+    >
+      <div className="space-y-4 text-xs text-left">
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Goal Title</label>
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Goal title (e.g. MacBook Pro)" autoFocus />
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Target Amount ($)</label>
+          <input type="number" min="1" value={target} onChange={(e) => setTarget(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="0.00" />
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Target Date (Optional)</label>
+          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
           <div className="flex gap-2.5 flex-wrap">
             {RANDOM_COLORS.map((c) => (
               <button
                 key={c}
                 onClick={() => setColor(c)}
-                className="w-8 h-8 rounded-full border border-white/10"
+                className="w-7 h-7 rounded-full border border-white/10 transition"
                 style={{
                   background: c,
                   transform: color === c ? 'scale(1.2)' : 'none',
@@ -1755,21 +1779,8 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (data: a
             ))}
           </div>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="btn-ghost flex-1 px-4 py-2.5 text-sm">Cancel</button>
-          <button
-            onClick={() => {
-              if (title && target) {
-                onAdd({ title, target_amount: parseFloat(target), current_amount: 0, deadline: deadline || null, color });
-              }
-            }}
-            className="btn-neon flex-1 px-4 py-2.5 text-sm"
-          >
-            Create Goal
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1778,41 +1789,47 @@ function AddCategoryModal({ onClose, onAdd }: { onClose: () => void; onAdd: (dat
   const [color, setColor] = useState('#a855f7');
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>New Category</h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="New Category"
+      maxWidth="md"
+      footer={
+        <div className="flex gap-3 w-full">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">Cancel</button>
+          <Button
+            onClick={() => { if (name) onAdd({ name, icon: '🏷', color }); }}
+            className="flex-1 py-2.5 text-xs font-semibold"
+          >
+            Create Category
+          </Button>
         </div>
-        <div className="space-y-4">
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-glass w-full px-4 py-3 text-sm" placeholder="Category name" />
+      }
+    >
+      <div className="space-y-4 text-xs text-left">
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Category Name</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Category name" autoFocus />
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
           <div className="flex gap-3 flex-wrap">
             {RANDOM_COLORS.map((c) => (
               <button
                 key={c}
                 onClick={() => setColor(c)}
-                className="w-8 h-8 rounded-full"
+                className="w-7 h-7 rounded-full transition"
                 style={{
                   background: c,
                   transform: color === c ? 'scale(1.2)' : 'scale(1)',
                   boxShadow: color === c ? `0 0 12px ${c}` : 'none',
-                  transition: 'all 0.2s',
                 }}
               />
             ))}
           </div>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="btn-ghost flex-1 px-4 py-2.5 text-sm">Cancel</button>
-          <button
-            onClick={() => { if (name) onAdd({ name, icon: '🏷', color }); }}
-            className="btn-neon flex-1 px-4 py-2.5 text-sm"
-          >
-            Create
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

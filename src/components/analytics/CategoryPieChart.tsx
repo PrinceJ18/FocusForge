@@ -17,8 +17,8 @@ export default function CategoryPieChart({ data, height = 250 }: CategoryPieChar
   }
 
   return (
-    <div className="chart-fade-in" style={{ width: '100%', height }}>
-      <ResponsiveContainer>
+    <div className="chart-fade-in w-full" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}

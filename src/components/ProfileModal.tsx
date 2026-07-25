@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
-import { getLevelInfo } from "../lib/levels";
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface ProfileModalProps {
   open: boolean;
@@ -23,8 +23,6 @@ export default function ProfileModal({
       setDisplayName(profile.display_name);
     }
   }, [profile]);
-
-  if (!open) return null;
 
   const handleSave = async () => {
     if (!user) return;
@@ -55,84 +53,48 @@ export default function ProfileModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-      }}
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      title="Edit Profile"
+      subtitle="Manage your account details"
+      maxWidth="md"
     >
-      <div
-        className="w-full max-w-md p-6 rounded-2xl"
-        style={{
-          background: 'rgba(15,15,25,0.95)',
-          border: '1px solid rgba(168,85,247,0.2)',
-        }}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2
-              className="text-2xl font-bold"
-              style={{ color: 'white' }}
-            >
-              Edit Profile
-            </h2>
-
-            <p
-              className="text-sm mt-1"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Manage your account details
-            </p>
-          </div>
-
-          <button onClick={onClose}>
-            <X />
-          </button>
+      <div className="space-y-4 text-left">
+        <div>
+          <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+            Username
+          </label>
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 text-sm outline-none focus:border-purple-500 transition"
+          />
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label
-              className="text-sm block mb-2"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Username
-            </label>
-
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-transparent border"
-            />
-          </div>
-
-          <div>
-            <label
-              className="text-sm block mb-2"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Email
-            </label>
-
-            <input
-              type="email"
-              value={user?.email || ''}
-              disabled
-              className="w-full px-4 py-3 rounded-xl bg-transparent border opacity-60"
-            />
-          </div>
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full btn-neon py-3 rounded-xl font-medium"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
+        <div>
+          <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+            Email Address
+          </label>
+          <input
+            type="email"
+            value={user?.email || ''}
+            disabled
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/40 border border-slate-700/50 text-slate-400 text-sm opacity-70 cursor-not-allowed"
+          />
         </div>
+
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          isLoading={saving}
+          className="w-full btn-neon py-3 rounded-xl font-medium"
+        >
+          Save Changes
+        </Button>
       </div>
-    </div>
+    </Modal>
   );
 }
+

@@ -51,10 +51,16 @@ export default function WeeklyReport() {
     const totalMinutes = weekSessions.reduce((sum, s) => sum + s.minutes, 0);
 
     // Productivity Score
+    const activeDaysInWeek = weekSessions.length; // rough estimate
     const { score: prodScore, label: prodLabel } = calculateProductivityScore({
-      tasks, // Send all tasks for score consistency for now
-      focusSessions: weekSessions,
-      profile
+      completedTasks,
+      totalTasks: completedTasks + pendingTasks,
+      focusMinutes: totalMinutes,
+      focusGoal: (useStore.getState().preferences.default_daily_focus_goal || 120) * 7,
+      streak: profile.streak,
+      hasActivity: activeDaysInWeek > 0,
+      budgetHealth: 'Unknown', // Not tracked effectively for historical weeks
+      challengeCompleted: false, // Not tracked effectively for historical weeks
     });
 
     const smartInsights = generateInsights({ tasks, focusSessions: weekSessions, expenses: weekExpenses });

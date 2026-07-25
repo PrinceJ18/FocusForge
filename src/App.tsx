@@ -187,8 +187,8 @@ export default function App() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main content */}
-      <main className="main-content" style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ maxWidth: 1600, margin: '0 auto', paddingLeft: window.innerWidth >= 1024 ? '2rem' : '0.75rem', paddingRight: window.innerWidth >= 768 ? '1.5rem' : '0.75rem', width: '100%', boxSizing: 'border-box', }} >
+      <main className="main-content relative z-10">
+        <div className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 pb-24 md:pb-8">
           <Header onMenuClick={() => setSidebarOpen(true)} title={PAGE_TITLES[currentPage]} />
 
           <Suspense fallback={<div className="p-4 md:p-8"><PageSkeleton /></div>}>

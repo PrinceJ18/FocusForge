@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { getLevelInfo } from "../lib/levels";
 import Button from './ui/Button';
 import { useStore } from '../store/useStore';
+import Modal from './ui/Modal';
+
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
@@ -16,13 +16,9 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  if (!open) return null;
 
   const handleAuth = async () => {
     setLoading(true);
-    setError('');
 
     try {
       if (isSignup) {
@@ -33,7 +29,6 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
 
         if (error) throw error;
 
-        setError('');
         onClose();
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -70,89 +65,63 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   };
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-      }}
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      title={isSignup ? 'Create Account' : 'Welcome Back'}
+      subtitle="Continue to FocusForge"
+      maxWidth="md"
     >
-      <div
-        className="w-full max-w-md p-6 rounded-2xl"
-        style={{
-          background: 'rgba(15,15,25,0.95)',
-          border: '1px solid rgba(168,85,247,0.2)',
-        }}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2
-              className="text-2xl font-bold"
-              style={{ color: 'white' }}
-            >
-              {isSignup ? 'Create Account' : 'Welcome Back'}
-            </h2>
-
-            <p
-              className="text-sm mt-1"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Continue to focusForge
-            </p>
-          </div>
-
-          <button onClick={onClose}>
-            <X />
-          </button>
-        </div>
-
-        <div className="space-y-4">
+      <div className="space-y-4 text-left">
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
           <input
             type="email"
-            placeholder="Email"
+            placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-transparent border"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
           />
+        </div>
 
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
           <input
             type="password"
-            placeholder="Password"
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-transparent border"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
           />
-
-
-
-          <Button
-            onClick={handleAuth}
-            disabled={loading}
-            isLoading={loading}
-            className="w-full btn-neon py-3 rounded-xl font-medium"
-          >
-            {isSignup ? 'Create Account' : 'Sign In'}
-          </Button>
-
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full py-3 rounded-xl border"
-          >
-            Continue with Google
-          </button>
-
-          <button
-            onClick={() => setIsSignup(!isSignup)}
-            className="w-full text-sm mt-2"
-            style={{ color: 'var(--primary)' }}
-          >
-            {isSignup
-              ? 'Already have an account? Sign In'
-              : "Don't have an account? Create one"}
-          </button>
         </div>
+
+        <Button
+          onClick={handleAuth}
+          disabled={loading}
+          isLoading={loading}
+          className="w-full btn-neon py-3 rounded-xl font-medium"
+        >
+          {isSignup ? 'Create Account' : 'Sign In'}
+        </Button>
+
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-medium transition"
+        >
+          Continue with Google
+        </button>
+
+        <button
+          onClick={() => setIsSignup(!isSignup)}
+          className="w-full text-xs text-purple-400 hover:text-purple-300 font-semibold pt-1 text-center"
+        >
+          {isSignup
+            ? 'Already have an account? Sign In'
+            : "Don't have an account? Create one"}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }
+
 

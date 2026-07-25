@@ -29,8 +29,6 @@ export interface DashboardStats {
   pendingTasks: number;
   completedToday: number;
   categoryData: Array<{ name: string; value: number; fill: string }>;
-  productivityScore: number;
-  productivityStatus: string;
   budgetUsedPercent: number;
   budgetHealth: string;
   budgetColor: string;
@@ -83,25 +81,7 @@ export function calculateDashboardStatistics(params: {
     fill: entry.fill || '#8b5cf6',
   })).slice(0, 5);
 
-  // Productivity Score
-  const productivityScore = Math.min(
-    100,
-    Math.round(
-      (completedTasks * 12) +
-      (totalFocusMinutes * 0.35) +
-      (streak * 5) +
-      (totalSpent < profile.monthly_budget ? 15 : 0)
-    )
-  );
 
-  let productivityStatus = 'Needs Improvement';
-  if (productivityScore >= 80) {
-    productivityStatus = 'Excellent';
-  } else if (productivityScore >= 60) {
-    productivityStatus = 'Good';
-  } else if (productivityScore >= 40) {
-    productivityStatus = 'Average';
-  }
 
   const budgetUsedPercent = Math.min(
     100,
@@ -138,8 +118,6 @@ export function calculateDashboardStatistics(params: {
     pendingTasks,
     completedToday,
     categoryData,
-    productivityScore,
-    productivityStatus,
     budgetUsedPercent,
     budgetHealth,
     budgetColor,

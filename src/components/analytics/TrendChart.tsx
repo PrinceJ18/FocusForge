@@ -24,9 +24,9 @@ export default function TrendChart({
   }
 
   return (
-    <div className="chart-fade-in" style={{ width: '100%', height }}>
-      <ResponsiveContainer>
-        <AreaChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 10 }}>
+    <div className="chart-fade-in w-full" style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
           <defs>
             <linearGradient id={`color-${yKey}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.3}/>

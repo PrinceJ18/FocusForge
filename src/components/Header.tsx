@@ -19,6 +19,7 @@ const PAGE_SUBTITLES: Record<string, string> = {
   productivity: 'Focus sessions & task management',
   analytics: 'Insights & data visualization',
   splits: 'Track and settle shared expenses with anyone',
+  reports: 'Analyze your productivity, focus sessions, task completion, and financial performance through comprehensive reports.',
   achievements: 'Unlock badges, track milestones, and view your complete journey',
   settings: 'Personalize colors, theme overrides, layout variables, and target goals',
 };
@@ -54,26 +55,26 @@ export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
       className="flex items-center justify-between mb-8"
       style={{ paddingTop: 4 }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
         <Button
           variant="icon"
           onClick={onMenuClick}
-          className="md:hidden"
+          className="md:hidden touch-target shrink-0"
           aria-label="Toggle navigation menu"
           aria-expanded="false"
         >
           <Menu size={20} aria-hidden="true" />
         </Button>
 
-        <div>
+        <div className="min-w-0 flex-1">
           <h1
-            className="text-2xl font-bold"
+            className="text-lg sm:text-xl md:text-2xl font-bold truncate"
             style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)', lineHeight: 1.2 }}
           >
             {title}
           </h1>
           {displaySubtitle && (
-            <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs sm:text-sm mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
               {displaySubtitle}
             </p>
           )}

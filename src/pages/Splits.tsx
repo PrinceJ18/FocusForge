@@ -3,6 +3,8 @@ import { Plus, Trash2, X, Users, TrendingDown, TrendingUp, CheckCircle2 } from '
 import { useStore } from '../store/useStore';
 import { format } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
+import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
 type SplitType = 'owe' | 'owed';
 
 interface Split {
@@ -292,76 +294,80 @@ function AddSplitModal({ onClose, onAdd }: {
   const [type, setType] = useState<SplitType>('owe');
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>New Split Entry</h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Person / Description</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="input-glass w-full px-4 py-3 text-sm"
-              placeholder="John — Dinner"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Amount ({formatCurrency(0)})</label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="input-glass w-full px-4 py-3 text-sm"
-              placeholder="0.00"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: 'var(--text-muted)' }}>Type</label>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setType('owe')}
-                className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
-                style={{
-                  background: type === 'owe' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
-                  color: type === 'owe' ? '#ef4444' : 'var(--text-muted)',
-                  border: `1px solid {formatCurrency(type === 'owe' ? 'rgba(239,68,68,0.3)' : 'transparent')}`,
-                  borderRadius: 10,
-                }}
-              >
-                I owe them
-              </button>
-              <button
-                onClick={() => setType('owed')}
-                className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
-                style={{
-                  background: type === 'owed' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.05)',
-                  color: type === 'owed' ? '#10b981' : 'var(--text-muted)',
-                  border: `1px solid {formatCurrency(type === 'owed' ? 'rgba(16,185,129,0.3)' : 'transparent')}`,
-                  borderRadius: 10,
-                }}
-              >
-                They owe me
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="btn-ghost flex-1 px-4 py-2.5 text-sm">Cancel</button>
-          <button
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="New Split Entry"
+      maxWidth="md"
+      footer={
+        <div className="flex gap-3 w-full">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">
+            Cancel
+          </button>
+          <Button
             onClick={() => {
               if (name && amount) onAdd({ name, amount: parseFloat(amount), type });
             }}
-            className="btn-neon flex-1 px-4 py-2.5 text-sm"
+            className="flex-1 py-2.5 text-xs font-semibold"
           >
             Add Entry
-          </button>
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4 text-xs text-left">
+        <div>
+          <label className="font-semibold text-slate-300 mb-1.5 block">Person / Description</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            placeholder="John — Dinner"
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1.5 block">Amount ($)</label>
+          <input
+            type="number"
+            min="1"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            placeholder="0.00"
+          />
+        </div>
+        <div>
+          <label className="font-semibold text-slate-300 mb-1.5 block">Type</label>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setType('owe')}
+              className="flex-1 py-2.5 text-xs font-semibold rounded-xl transition-all"
+              style={{
+                background: type === 'owe' ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)',
+                color: type === 'owe' ? '#ef4444' : '#94a3b8',
+                border: `1px solid ${type === 'owe' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                borderRadius: 10,
+              }}
+            >
+              I owe them
+            </button>
+            <button
+              onClick={() => setType('owed')}
+              className="flex-1 py-2.5 text-xs font-semibold rounded-xl transition-all"
+              style={{
+                background: type === 'owed' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                color: type === 'owed' ? '#10b981' : '#94a3b8',
+                border: `1px solid ${type === 'owed' ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.05)'}`,
+                borderRadius: 10,
+              }}
+            >
+              They owe me
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

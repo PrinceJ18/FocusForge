@@ -3,6 +3,7 @@ import { useStore, type FocusSession, type Task, type Expense, type SavingsGoal,
 import type { DailyGoalHistory } from '../../store/useDailyGoalsStore';
 import { getEarnedBadgeIds, ALL_BADGES } from '../statsUtils';
 import { formatCurrency } from '../formatCurrency';
+import { calculateProductivityScore } from '../scoreUtils';
 
 export interface MonthlyReportData {
   yearMonth: string;
@@ -327,15 +328,16 @@ export function calculateMonthlyReportData(params: {
   const quoteObj = MOTIVATIONAL_QUOTES[totalXP % MOTIVATIONAL_QUOTES.length];
 
   // Productivity Score
-  const monthlyOverallScore = Math.min(
-    100,
-    Math.round(
-      (completed * 12) +
-      (totalMinutes * 0.35) +
-      (Math.min(10, monthSessions.length) * 5) +
-      (monthlySpending < profile.monthly_budget ? 15 : 0)
-    )
-  );
+  const monthlyOverallScore = calculateProductivityScore({
+    completedTasks: completed,
+    totalTasks: completed + pending,
+    focusMinutes: totalMinutes,
+    focusGoal: (useStore.getState().preferences.default_daily_focus_goal || 120) * Math.max(1, activeDaysInMonth),
+    streak: profile.streak,
+    hasActivity: activeDaysInMonth > 0,
+    budgetHealth: budgetHealth as 'Healthy' | 'Warning' | 'Critical',
+    challengeCompleted: false, // Not tracked effectively for historical months
+  }).score;
 
   // Growth (Mock Comparisons vs Prev Month)
   const focusGrowth = totalMinutes > 0 ? 12 : 0;

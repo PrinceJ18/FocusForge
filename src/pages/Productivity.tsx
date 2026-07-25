@@ -32,6 +32,7 @@ import TaskFormModal from '../components/tasks/TaskFormModal';
 import TaskDetailsModal from '../components/tasks/TaskDetailsModal';
 import TaskListView from '../components/tasks/TaskListView';
 import TaskCalendarView from '../components/tasks/TaskCalendarView';
+import Modal from '../components/ui/Modal';
 import { 
   createTask, 
   updateTask, 
@@ -303,16 +304,9 @@ export default function Productivity() {
           </div>
 
           {/* Timer ring */}
-          <div
-            className="timer-ring mb-6 relative flex items-center justify-center mx-auto"
-            style={{
-              width: window.innerWidth < 640 ? 260 : 340,
-              height: window.innerWidth < 640 ? 260 : 340,
-            }}
-          >
+          <div className="timer-ring mb-6 relative flex items-center justify-center mx-auto w-full max-w-[260px] sm:max-w-[320px] md:max-w-[340px] aspect-square">
             <svg
-              width={window.innerWidth < 640 ? 260 : 340}
-              height={window.innerWidth < 640 ? 260 : 340}
+              className="w-full h-full"
               viewBox="0 0 340 340"
             >
               <defs>
@@ -983,45 +977,14 @@ function TimerSettingsModal({
   const [longBrk, setLongBrk] = useState(String(longBreakMinutes));
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3
-            className="font-bold text-lg"
-            style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}
-          >
-            Timer Settings
-          </h3>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}>
-            <X size={20} />
-          </button>
-        </div>
-        <div className="space-y-4">
-          {[
-            { label: 'Focus Duration', value: pomo, set: setPomo, color: '#a855f7' },
-            { label: 'Short Break', value: brk, set: setBrk, color: '#10b981' },
-            { label: 'Long Break', value: longBrk, set: setLongBrk, color: '#06b6d4' },
-          ].map(({ label, value, set, color }) => (
-            <div key={label}>
-              <label
-                className="text-xs font-medium mb-1.5 block"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {label} (minutes)
-              </label>
-              <input
-                type="number"
-                value={value}
-                onChange={(e) => set(e.target.value)}
-                className="input-glass w-full px-4 py-3 text-sm"
-                min="1"
-                max="120"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="btn-ghost flex-1 px-4 py-2.5 text-sm">
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Timer Settings"
+      maxWidth="md"
+      footer={
+        <div className="flex gap-3 w-full">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">
             Cancel
           </button>
           <button
@@ -1032,12 +995,34 @@ function TimerSettingsModal({
               const lb = isNaN(lbVal) ? 15 : Math.max(1, Math.min(120, lbVal));
               onSave(p, b, lb);
             }}
-            className="btn-neon flex-1 px-4 py-2.5 text-sm"
+            className="btn-neon flex-1 py-2.5 text-xs font-semibold"
           >
             Save Settings
           </button>
         </div>
+      }
+    >
+      <div className="space-y-4 text-xs text-left">
+        {[
+          { label: 'Focus Duration', value: pomo, set: setPomo, color: '#a855f7' },
+          { label: 'Short Break', value: brk, set: setBrk, color: '#10b981' },
+          { label: 'Long Break', value: longBrk, set: setLongBrk, color: '#06b6d4' },
+        ].map(({ label, value, set }) => (
+          <div key={label}>
+            <label className="font-semibold text-slate-300 mb-1.5 block">
+              {label} (minutes)
+            </label>
+            <input
+              type="number"
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+              min="1"
+              max="120"
+            />
+          </div>
+        ))}
       </div>
-    </div>
+    </Modal>
   );
 }

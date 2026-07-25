@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
+import { useDailyProductivityScore } from '../hooks/useDailyProductivityScore';
 import { format, parseISO, isWithinInterval, subDays, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { getLevelInfo } from '../lib/levels';
 import { ACHIEVEMENTS, MILESTONES } from '../lib/events';
@@ -279,13 +280,8 @@ export default function Achievements() {
     });
   }, [events, totalFocusSessions, totalFocusMinutes, completedTasks, totalExpensesCount, totalSavings, profile.streak, levelInfo.level, daysActive, profile.xp]);
 
-  // Productivity Score logic (Single Source of Truth helper from Dashboard.tsx stats)
-  const productivityScore = useMemo(() => {
-    const taskScore = completedTasks > 0 ? Math.min(40, (completedTasks / Math.max(1, tasks.length)) * 40) : 0;
-    const focusScore = totalFocusMinutes > 0 ? Math.min(40, (totalFocusMinutes / 60) * 2) : 0;
-    const streakScore = Math.min(20, profile.streak * 2);
-    return Math.round(taskScore + focusScore + streakScore);
-  }, [completedTasks, tasks.length, totalFocusMinutes, profile.streak]);
+  // Productivity Score logic (Unified Source of Truth)
+  const { score: productivityScore } = useDailyProductivityScore();
 
   // General Filter & Search logic for Activities / Events
   const filteredEvents = useMemo(() => {

@@ -14,19 +14,19 @@ export default function MobileNav() {
   const { currentPage, setPage } = useStore();
 
   return (
-    <nav className="mobile-nav justify-around px-2 py-2" style={{ backdropFilter: 'blur(20px)', background: 'rgba(10,10,20,0.88)', borderTop: '1px solid rgba(255,255,255,0.06)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)', }} >
+    <nav className="mobile-nav flex items-center justify-around px-1 py-1.5" style={{ backdropFilter: 'blur(20px)', background: 'rgba(10,10,20,0.92)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 6px)' }}>
       {items.map((item) => (
         <button
           key={item.id}
           onClick={() => setPage(item.id)}
-          className="flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-300 min-w-[72px] touch-manipulation active:scale-95"
+          className="flex flex-col items-center justify-center flex-1 min-w-0 py-1.5 px-1 rounded-xl transition-all duration-200 touch-manipulation active:scale-95 min-h-[44px]"
           style={{
-            color: currentPage === item.id ? 'var(--purple-primary)' : 'var(--text-muted)',
-            background: currentPage === item.id ? 'linear-gradient(135deg, rgba(168,85,247,0.18), rgba(236,72,153,0.12))' : 'transparent', transform: currentPage === item.id ? 'translateY(-2px)' : 'translateY(0)',
+            color: currentPage === item.id ? '#c084fc' : '#94a3b8',
+            background: currentPage === item.id ? 'rgba(168,85,247,0.15)' : 'transparent',
           }}
         >
           {item.icon}
-          <span className="text-[11px] font-semibold tracking-wide">{item.label}</span>
+          <span className="text-[10px] font-medium tracking-tight truncate w-full text-center mt-0.5">{item.label}</span>
         </button>
       ))}
     </nav>

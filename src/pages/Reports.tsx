@@ -115,17 +115,6 @@ export default function Reports() {
   const handleExportPDF = () => {
     alert("PDF report layout prepared. Direct browser PDF download will be activated next.");
   };
-  // ═══ Level 1: Fixed Page Header (never changes) ═══
-  const PageHeader = (
-    <div className="flex-shrink-0">
-      <h1 className="text-2xl font-black text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-        Performance Reports
-      </h1>
-      <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-        Analyze your productivity, focus sessions, task completion, and financial performance through comprehensive reports.
-      </p>
-    </div>
-  );
 
   // ═══ Toggle: Weekly / Monthly selector ═══
   const ReportToggle = (
@@ -172,7 +161,6 @@ export default function Reports() {
   if (reportType === 'weekly') {
     return (
       <div className="page-enter space-y-5">
-        {PageHeader}
         {ReportToggle}
         {SectionHeader}
         <WeeklyReport />
@@ -183,7 +171,6 @@ export default function Reports() {
   if (reportData) {
     return (
       <div className="page-enter space-y-5 pb-12">
-        {PageHeader}
         {ReportToggle}
         {SectionHeader}
         {/* Navigation / Header */}
@@ -548,7 +535,6 @@ export default function Reports() {
 
   return (
     <div className="page-enter space-y-5">
-      {PageHeader}
       {ReportToggle}
       {SectionHeader}
 

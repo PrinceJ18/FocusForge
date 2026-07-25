@@ -165,14 +165,14 @@ export default function Settings() {
       <div className="flex flex-col lg:flex-row gap-6">
         
         {/* TABS SIDEBAR */}
-        <div className="lg:w-64 space-y-1">
+        <div className="lg:w-64 flex lg:flex-col overflow-x-auto no-scrollbar pb-2 lg:pb-0 gap-1.5 lg:gap-1 shrink-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-semibold rounded-xl border transition-all ${
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap touch-manipulation min-h-[44px] shrink-0 ${
                 activeTab === tab.id
-                  ? 'bg-purple-500/10 border-purple-500/20 text-white font-bold'
+                  ? 'bg-purple-500/10 border-purple-500/30 text-white font-bold'
                   : 'bg-white/2 border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
               }`}
             >

@@ -38,6 +38,28 @@ export default function DashboardCustomizeDrawer({
 }: DashboardCustomizeDrawerProps) {
   const visibleCount = WIDGET_REGISTRY.length - hiddenWidgets.size;
 
+  React.useEffect(() => {
+    if (!open) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
   return (
     <>
       {/* Backdrop */}

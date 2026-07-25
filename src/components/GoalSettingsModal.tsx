@@ -35,6 +35,8 @@ const DIFFICULTY_OPTIONS: Array<{ value: GoalDifficulty; label: string; desc: st
 // Component
 // ============================================================
 
+import Modal from './ui/Modal';
+
 interface GoalSettingsModalProps {
   onClose: () => void;
 }
@@ -80,48 +82,31 @@ export default function GoalSettingsModal({ onClose }: GoalSettingsModalProps) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content p-0"
-        onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 pb-0">
-          <div>
-            <h3
-              className="font-bold text-lg"
-              style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}
-            >
-              Goal Settings
-            </h3>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Customize your daily goals
-            </p>
-          </div>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}>
-            <X size={20} />
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Goal Settings"
+      subtitle="Customize your daily goals"
+      maxWidth="xl"
+    >
+      {/* Tab selector */}
+      <div className="flex gap-1 p-1 mb-4 rounded-xl bg-slate-800/80 border border-slate-700/60">
+        {(['goals', 'custom', 'settings'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className="flex-1 py-2 text-xs font-medium rounded-lg transition-all capitalize"
+            style={{
+              background: activeTab === tab ? 'rgba(168,85,247,0.2)' : 'transparent',
+              color: activeTab === tab ? 'white' : '#94a3b8',
+              border: activeTab === tab ? '1px solid rgba(168,85,247,0.3)' : '1px solid transparent',
+              borderRadius: 10,
+            }}
+          >
+            {tab === 'custom' ? 'Custom Goals' : tab === 'goals' ? 'Default Goals' : 'Preferences'}
           </button>
-        </div>
-
-        {/* Tab selector */}
-        <div className="flex gap-1 p-1 mx-5 mt-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)' }}>
-          {(['goals', 'custom', 'settings'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="flex-1 py-2 text-xs font-medium rounded-lg transition-all capitalize"
-              style={{
-                background: activeTab === tab ? 'rgba(168,85,247,0.2)' : 'transparent',
-                color: activeTab === tab ? 'white' : 'var(--text-muted)',
-                border: activeTab === tab ? '1px solid rgba(168,85,247,0.3)' : '1px solid transparent',
-                borderRadius: 10,
-              }}
-            >
-              {tab === 'custom' ? 'Custom Goals' : tab === 'goals' ? 'Default Goals' : 'Preferences'}
-            </button>
-          ))}
-        </div>
+        ))}
+      </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4" style={{ scrollbarWidth: 'thin' }}>
@@ -305,18 +290,7 @@ export default function GoalSettingsModal({ onClose }: GoalSettingsModalProps) {
             </>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="p-5 pt-0">
-          <button
-            onClick={onClose}
-            className="btn-neon w-full px-4 py-2.5 text-sm"
-          >
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

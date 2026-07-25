@@ -9,25 +9,25 @@ export default function AuthScreen() {
     return (
         <>
             <div
-                className="min-h-screen flex items-center justify-center px-6"
+                className="min-h-screen flex items-center justify-center px-4 sm:px-6 py-8"
                 style={{
                     background:
                         'radial-gradient(circle at top, rgba(168,85,247,0.15), transparent 40%), #050510',
                 }}
             >
-                <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-12 items-center">
+                <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                     {/* LEFT SIDE */}
                     <div>
                         <div
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+                            className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full mb-6 max-w-full"
                             style={{
                                 background: 'rgba(168,85,247,0.1)',
                                 border: '1px solid rgba(168,85,247,0.2)',
                             }}
                         >
-                            <Zap size={16} color="#c084fc" />
+                            <Zap size={16} color="#c084fc" className="shrink-0" />
                             <span
-                                className="text-sm"
+                                className="text-xs sm:text-sm truncate"
                                 style={{ color: '#c084fc' }}
                             >
                                 AI-Powered Student Productivity Platform
@@ -35,7 +35,7 @@ export default function AuthScreen() {
                         </div>
 
                         <h1
-                            className="text-5xl lg:text-7xl font-black leading-tight"
+                            className="text-3xl sm:text-5xl lg:text-7xl font-black leading-tight"
                             style={{ color: 'white' }}
                         >
                             Build Better
