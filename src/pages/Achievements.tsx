@@ -232,7 +232,7 @@ export default function Achievements() {
       const unlockEvent = earnedBadgeEvents.find(e => e.metadata.badgeId === badge.id);
       const isUnlocked = earnedBadgeIds.has(badge.id) || !!unlockEvent;
       const unlockedAt = unlockEvent ? unlockEvent.timestamp : null;
-      
+
       // Categorize
       let category = 'Special Events';
       if (badge.id.includes('focus')) category = 'Focus';
@@ -328,12 +328,12 @@ export default function Achievements() {
 
   return (
     <div className="space-y-6 pb-16 page-enter" style={{ fontFamily: 'Inter, sans-serif' }}>
-      
+
       {/* SECTION 1: Profile Summary */}
       <section className="glass-card p-6 md:p-8 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(16,12,30,0.8), rgba(26,16,48,0.7))', border: '1px solid rgba(168,85,247,0.25)', borderRadius: '24px' }}>
         <div className="absolute top-0 right-0 w-80 h-80 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-600/10 rounded-full blur-[100px] pointer-events-none" />
-        
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 z-10 relative">
           <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
             <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-4xl font-extrabold relative shadow-[0_0_30px_rgba(168,85,247,0.35)]" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}>
@@ -493,10 +493,10 @@ export default function Achievements() {
 
       {/* GRID LAYOUT FOR VARIOUS TIMELINES AND SECTION PANELS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* LEFT COLUMN: SECTION 2 (Achievement Timeline) & SECTION 10 (Journey Map) */}
         <div className="lg:col-span-2 space-y-8">
-          
+
           {/* SECTION 2: Achievement Timeline */}
           <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
@@ -508,31 +508,31 @@ export default function Achievements() {
             ) : (
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                 <div className="relative pl-6 border-l border-purple-500/20 space-y-6 ml-2">
-                {keyTimelineEvents.map((evt, idx) => (
-                  <div key={idx} className="relative group">
-                    {/* Circle Dot */}
-                    <div className="absolute -left-[33px] top-1 w-4 h-4 rounded-full bg-slate-950 border-2 border-purple-500 flex items-center justify-center group-hover:scale-125 transition-transform">
-                      <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-                    </div>
-                    {/* Event Box */}
-                    <div className="glass-card p-4 hover:border-purple-500/40 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.015)' }}>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-bold text-purple-400 uppercase tracking-widest">{evt.type}</span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <Calendar size={10} />
-                          {evt.date}
-                        </span>
+                  {keyTimelineEvents.map((evt, idx) => (
+                    <div key={idx} className="relative group">
+                      {/* Circle Dot */}
+                      <div className="absolute -left-[33px] top-1 w-4 h-4 rounded-full bg-slate-950 border-2 border-purple-500 flex items-center justify-center group-hover:scale-125 transition-transform">
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
                       </div>
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{evt.icon}</span>
-                        <div>
-                          <h4 className="text-sm font-semibold text-white">{evt.title}</h4>
-                          <p className="text-xs text-slate-400">{evt.desc}</p>
+                      {/* Event Box */}
+                      <div className="glass-card p-4 hover:border-purple-500/40 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.015)' }}>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-bold text-purple-400 uppercase tracking-widest">{evt.type}</span>
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <Calendar size={10} />
+                            {evt.date}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">{evt.icon}</span>
+                          <div>
+                            <h4 className="text-sm font-semibold text-white">{evt.title}</h4>
+                            <p className="text-xs text-slate-400">{evt.desc}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
               </div>
             )}
@@ -554,7 +554,7 @@ export default function Achievements() {
                   <div className="text-xs text-slate-400">Title: {levelInfo.title}</div>
                 </div>
               </div>
-              
+
               <div className="flex-1 w-full flex flex-col gap-1.5">
                 <div className="flex justify-between text-xs text-slate-400">
                   <span>Progress to Level {levelInfo.level + 1}</span>
@@ -606,7 +606,7 @@ export default function Achievements() {
 
         {/* RIGHT COLUMN: SECTION 8 (Milestones) & SECTION 9 (Statistics) */}
         <div className="space-y-8">
-          
+
           {/* SECTION 8: Milestones */}
           <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
@@ -731,7 +731,7 @@ export default function Achievements() {
               </div>
               <h4 className="text-xs font-bold text-slate-200 mb-1">{badge.name}</h4>
               <p className="text-[10px] text-slate-400 leading-tight line-clamp-2">{badge.desc}</p>
-              
+
               {/* Tooltip detail */}
               <div className="absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-950 border border-white/10 rounded-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none text-left shadow-2xl">
                 <div className="text-xs font-bold text-white mb-1">{badge.name}</div>
@@ -797,7 +797,7 @@ export default function Achievements() {
 
       {/* GRID FOR XP HISTORY & LEVEL HISTORY & ACTIVITY TIMELINE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* SECTION 3: XP History */}
         <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">

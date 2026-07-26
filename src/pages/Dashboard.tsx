@@ -98,7 +98,7 @@ export default function Dashboard() {
     }
     const newValue = Array.from(next).join(',');
     updatePreferencesLocal({ dashboard_hidden_widgets: newValue });
-    
+
     if (user) {
       const syncPref = async () => {
         try {
@@ -435,7 +435,7 @@ export default function Dashboard() {
   // ----------------------------------------------------
   const todayDate = new Date();
   const todayStr = format(todayDate, 'yyyy-MM-dd');
-  
+
   // Resolve today's task occurrences using the shared recurrence helper
   const todayTaskOccurrences = useMemo(() => {
     return getTasksForDate(tasks, todayDate, taskCompletions);
@@ -481,8 +481,8 @@ export default function Dashboard() {
           .map(config => {
             const layout = { id: config.id, x: 0, y: 0, width: config.defaultSize.w, height: config.defaultSize.h, visible: true };
             return (
-              <DashboardWidgetWrapper 
-                key={config.id} 
+              <DashboardWidgetWrapper
+                key={config.id}
                 id={config.id}
                 title={config.title}
                 icon={config.icon}

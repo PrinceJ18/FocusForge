@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import type { AppEvent } from '../lib/events';
+import { type AppEvent, logEvent, checkUnlocksAndMilestones } from '../lib/events';
 import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { formatLocalDate } from '../lib/dateUtils';
 export type Priority = 'low' | 'medium' | 'high';
@@ -88,6 +88,10 @@ export interface UserPreferences {
   notify_monthly_report: boolean;
   notify_recurring_expenses: boolean;
   notify_budget_alerts: boolean;
+  notify_arena_champion: boolean;
+  notify_arena_personal_best: boolean;
+  notify_arena_rank_up: boolean;
+  notify_arena_activity: boolean;
   reminder_time: string;
   notification_sound: string;
   
@@ -155,6 +159,10 @@ export const defaultPreferences: UserPreferences = {
   notify_monthly_report: true,
   notify_recurring_expenses: true,
   notify_budget_alerts: true,
+  notify_arena_champion: true,
+  notify_arena_personal_best: true,
+  notify_arena_rank_up: true,
+  notify_arena_activity: true,
   reminder_time: '09:00',
   notification_sound: 'default',
   currency: '₹',
@@ -297,13 +305,14 @@ export interface Profile {
   badges: Array<{ id: string; name: string; icon: string; unlockedAt: string }>;
   display_name: string;
   avatar_url: string;
+  friend_code?: string;
   daily_challenge_claims?: {
     date: string;
     claimed: string[];
   };
 }
 
-export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'splits' | 'reports' | 'achievements' | 'settings';
+export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'splits' | 'reports' | 'achievements' | 'settings' | 'friends' | 'arena' | 'arena-activity' | 'arena-hall-of-fame';
 
 export type NotificationType = 'xp' | 'level' | 'badge' | 'challenge' | 'achievement' | 'goal' | 'success' | 'error' | 'info';
 
@@ -608,9 +617,7 @@ export const useStore = create<AppState>()(
         });
 
         if (newLevel > oldLevel) {
-          import('../lib/events').then((m) => {
-            m.logEvent('level_up', 'levels', undefined, { level: newLevel });
-          });
+          logEvent('level_up', 'levels', undefined, { level: newLevel });
 
           get().showNotification({
             type: 'level',
@@ -639,15 +646,11 @@ export const useStore = create<AppState>()(
         });
 
         // Log XP event
-        import('../lib/events').then((m) => {
-          m.logEvent('xp_earned', 'xp', undefined, { xpEarned: amount });
-        });
+        logEvent('xp_earned', 'xp', undefined, { xpEarned: amount });
 
         if (newLevel > oldLevel) {
           // Log level up event
-          import('../lib/events').then((m) => {
-            m.logEvent('level_up', 'levels', undefined, { level: newLevel });
-          });
+          logEvent('level_up', 'levels', undefined, { level: newLevel });
 
           get().showNotification({
             type: 'level',
@@ -968,7 +971,7 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
       }
     }
     
-    import('../lib/events').then(m => m.checkUnlocksAndMilestones());
+    checkUnlocksAndMilestones();
     return;
   }
 
@@ -1019,7 +1022,7 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
 
   // 3. Trigger milestones explicitly only if it was a genuine new completion
   if (!result.already_completed) {
-    import('../lib/events').then(m => m.checkUnlocksAndMilestones());
+    checkUnlocksAndMilestones();
   }
 };
 

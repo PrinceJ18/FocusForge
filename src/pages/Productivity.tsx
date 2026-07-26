@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  Plus, 
-  Coffee, 
-  Brain, 
-  Settings as SettingsIcon, 
-  X, 
-  Clock, 
-  Search, 
-  List, 
-  Calendar as CalendarIcon, 
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Plus,
+  Coffee,
+  Brain,
+  Settings as SettingsIcon,
+  X,
+  Clock,
+  Search,
+  List,
+  Calendar as CalendarIcon,
   FolderPlus,
   Flame,
   CheckSquare,
@@ -33,11 +33,11 @@ import TaskDetailsModal from '../components/tasks/TaskDetailsModal';
 import TaskListView from '../components/tasks/TaskListView';
 import TaskCalendarView from '../components/tasks/TaskCalendarView';
 import Modal from '../components/ui/Modal';
-import { 
-  createTask, 
-  updateTask, 
-  deleteTask, 
-  completeTask, 
+import {
+  createTask,
+  updateTask,
+  deleteTask,
+  completeTask,
   uncompleteTask
 } from '../store/useStore';
 import Card from '../components/ui/Card';
@@ -81,11 +81,11 @@ export default function Productivity() {
   const validTotalSeconds = typeof totalSeconds === 'number' && totalSeconds > 0 ? totalSeconds : 25 * 60;
   const clampedTimerSeconds = Math.max(0, Math.min(safeTimerSeconds, validTotalSeconds));
   const progress = ((validTotalSeconds - clampedTimerSeconds) / validTotalSeconds) * 100;
-  
+
   const radius = window.innerWidth < 640 ? 105 : 140;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = Number.isFinite(progress) 
-    ? circumference - (progress / 100) * circumference 
+  const strokeDashoffset = Number.isFinite(progress)
+    ? circumference - (progress / 100) * circumference
     : circumference;
 
   const todayMinutes = calculateTodayFocus(focusSessions);
@@ -96,7 +96,7 @@ export default function Productivity() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<'all' | Priority>('all');
   const [filterSectionId, setFilterSectionId] = useState<string>('all');
-  
+
   const [showAddTask, setShowAddTask] = useState(false);
   const [defaultDateForNewTask, setDefaultDateForNewTask] = useState<string | undefined>(undefined);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -109,17 +109,17 @@ export default function Productivity() {
     const remaining = state.timerSeconds;
     const defaultMins = state.timerMode === 'focus' ? state.pomodoroMinutes : state.timerMode === 'break' ? state.breakMinutes : state.longBreakMinutes;
     const finalSeconds = remaining <= 0 ? defaultMins * 60 : remaining;
-    
+
     // Capture original run duration if not already set (meaning we are starting fresh, not resuming)
     let runDuration = state.timerRunDurationSeconds;
     if (runDuration === null || runDuration === undefined) {
       runDuration = finalSeconds;
     }
-    
+
     const deadline = Date.now() + finalSeconds * 1000;
-    useStore.setState({ 
+    useStore.setState({
       timerDeadline: deadline,
-      timerRunDurationSeconds: runDuration 
+      timerRunDurationSeconds: runDuration
     });
     state.setTimerSeconds(finalSeconds);
     state.setTimerRunning(true);
@@ -141,9 +141,9 @@ export default function Productivity() {
     const state = useStore.getState();
     const defaultMins = state.timerMode === 'focus' ? state.pomodoroMinutes : state.timerMode === 'break' ? state.breakMinutes : state.longBreakMinutes;
     const seconds = defaultMins * 60;
-    useStore.setState({ 
+    useStore.setState({
       timerDeadline: null,
-      timerRunDurationSeconds: null 
+      timerRunDurationSeconds: null
     });
     state.setTimerSeconds(seconds);
     state.setTimerRunning(false);
@@ -153,9 +153,9 @@ export default function Productivity() {
     const state = useStore.getState();
     const targetMins = mode === 'focus' ? state.pomodoroMinutes : mode === 'break' ? state.breakMinutes : state.longBreakMinutes;
     const seconds = targetMins * 60;
-    useStore.setState({ 
+    useStore.setState({
       timerDeadline: null,
-      timerRunDurationSeconds: null 
+      timerRunDurationSeconds: null
     });
     state.setTimerMode(mode as any);
     state.setTimerSeconds(seconds);
@@ -476,7 +476,7 @@ export default function Productivity() {
             >
               <RotateCcw size={22} />
             </button>
-            
+
             <button
               onClick={() => setShowTimerSettings(true)}
               className="flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95"
@@ -940,10 +940,10 @@ export default function Productivity() {
           longBreakMinutes={longBreakMinutes}
           onClose={() => setShowTimerSettings(false)}
           onSave={(pomo, brk, longBrk) => {
-            useStore.setState({ 
+            useStore.setState({
               pomodoroMinutes: pomo,
               breakMinutes: brk,
-              longBreakMinutes: longBrk 
+              longBreakMinutes: longBrk
             });
             const state = useStore.getState();
             if (!state.timerRunning) {

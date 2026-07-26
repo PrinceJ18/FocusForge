@@ -58,14 +58,14 @@ export default function Finance() {
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'expenses' | 'recurring' | 'savings' | 'categories'>('overview');
-  
+
   // Modal states
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
   const [newBudget, setNewBudget] = useState(String(profile.monthly_budget));
-  
+
   // Recurring Modal states
   const [showAddRecurring, setShowAddRecurring] = useState(false);
   const [editingRecurring, setEditingRecurring] = useState<RecurringExpense | null>(null);
@@ -107,7 +107,7 @@ export default function Finance() {
   // ----------------------------------------------------
   const recurringStats = useMemo(() => {
     const activeBills = recurringExpenses.filter(r => r.status === 'active');
-    
+
     // Monthly Projected Recurring Total
     let monthlyTotal = 0;
     let annualTotal = 0;
@@ -129,7 +129,7 @@ export default function Finance() {
     });
 
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    
+
     // Upcoming & Overdue
     const overdueBills: RecurringExpense[] = [];
     const upcomingBills: RecurringExpense[] = [];
@@ -166,13 +166,13 @@ export default function Finance() {
 
     // Detect Subscriptions
     const subKeywords = ['netflix', 'spotify', 'prime', 'disney', 'chatgpt', 'copilot', 'youtube', 'membership', 'gym', 'hulu', 'apple', 'icloud', 'adobe'];
-    const subscriptions = activeBills.filter(b => 
+    const subscriptions = activeBills.filter(b =>
       subKeywords.some(kw => b.name.toLowerCase().includes(kw)) || b.category.toLowerCase() === 'entertainment' || b.category.toLowerCase() === 'subscriptions'
     );
 
     const monthlySubTotal = subscriptions.reduce((sum, s) => {
       let mult = 1;
-      if (s.frequency === 'yearly') mult = 1/12;
+      if (s.frequency === 'yearly') mult = 1 / 12;
       else if (s.frequency === 'weekly') mult = 4.33;
       return sum + s.amount * mult;
     }, 0);
@@ -230,10 +230,10 @@ export default function Finance() {
 
     return days.map(day => {
       const dayStr = format(day, 'yyyy-MM-dd');
-      
+
       // Check bills due today
       const billsDue = recurringExpenses.filter(r => r.status === 'active' && r.payment_date === dayStr);
-      
+
       return {
         date: day,
         dayStr,
@@ -462,7 +462,7 @@ export default function Finance() {
       {
         activeTab === 'recurring' && (
           <div className="space-y-6">
-            
+
             {/* SECTION 1: Summary Cards Dashboard */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <FinStatCard
@@ -511,10 +511,10 @@ export default function Finance() {
 
             {/* TWO COLUMN CONTENT LAYOUT */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
+
               {/* LEFT & CENTER COLUMN: OVERDUE, UPCOMING, CALENDAR */}
               <div className="lg:col-span-2 space-y-6">
-                
+
                 {/* SECTION 6: Overdue/Missed Payments */}
                 {recurringStats.overdue.length > 0 && (
                   <div className="glass-card p-5 border border-red-500/20" style={{ background: 'rgba(239,68,68,0.02)' }}>
@@ -524,8 +524,8 @@ export default function Finance() {
                     </h3>
                     <div className="space-y-3">
                       {recurringStats.overdue.map(bill => (
-                        <div 
-                          key={bill.id} 
+                        <div
+                          key={bill.id}
                           className="p-4 rounded-xl bg-red-950/20 border border-red-900/30 flex items-center justify-between gap-4 cursor-pointer hover:border-red-500/30 transition-all text-left"
                           onClick={() => setSelectedRecurringDetails(bill)}
                         >
@@ -570,7 +570,7 @@ export default function Finance() {
                           Week
                         </button>
                       </div>
-                      
+
                       <div className="flex items-center gap-1.5 ml-2">
                         <button
                           onClick={() => setCalendarDate(prev => calendarView === 'month' ? subMonths(prev, 1) : subWeeks(prev, 1))}
@@ -600,14 +600,13 @@ export default function Finance() {
                       {calendarCells.map((cell, idx) => (
                         <div
                           key={idx}
-                          className={`min-h-[60px] p-1 border rounded-lg flex flex-col justify-between transition-all ${
-                            cell.isCurrentMonth ? 'bg-slate-950/20 border-white/5' : 'bg-slate-900/10 border-white/3 opacity-30'
-                          } ${isToday(cell.date) ? 'border-purple-500/50 bg-purple-500/5' : ''}`}
+                          className={`min-h-[60px] p-1 border rounded-lg flex flex-col justify-between transition-all ${cell.isCurrentMonth ? 'bg-slate-950/20 border-white/5' : 'bg-slate-900/10 border-white/3 opacity-30'
+                            } ${isToday(cell.date) ? 'border-purple-500/50 bg-purple-500/5' : ''}`}
                         >
                           <span className={`text-[10px] font-bold self-end ${isToday(cell.date) ? 'text-purple-400' : 'text-slate-400'}`}>
                             {format(cell.date, 'd')}
                           </span>
-                          
+
                           <div className="flex flex-wrap gap-0.5 justify-center mt-1">
                             {cell.bills.map(b => (
                               <button
@@ -632,15 +631,14 @@ export default function Finance() {
                       {calendarWeekCells.map((cell, idx) => (
                         <div
                           key={idx}
-                          className={`min-h-[100px] p-2 border rounded-xl flex flex-col justify-between ${
-                            isToday(cell.date) ? 'border-purple-500 bg-purple-500/5' : 'border-white/5 bg-slate-950/30'
-                          }`}
+                          className={`min-h-[100px] p-2 border rounded-xl flex flex-col justify-between ${isToday(cell.date) ? 'border-purple-500 bg-purple-500/5' : 'border-white/5 bg-slate-950/30'
+                            }`}
                         >
                           <div className="flex flex-col items-center">
                             <span className="text-[10px] text-slate-500 uppercase">{format(cell.date, 'EEE')}</span>
                             <span className="text-xs font-black text-slate-200 mt-0.5">{format(cell.date, 'd')}</span>
                           </div>
-                          
+
                           <div className="space-y-1 mt-2">
                             {cell.bills.map(b => (
                               <div
@@ -738,7 +736,7 @@ export default function Finance() {
                             onClick={() => setSelectedRecurringDetails(bill)}
                           >
                             <div className="flex items-center gap-3">
-                              <div 
+                              <div
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-base"
                                 style={{ background: `${bill.color}15`, color: bill.color }}
                               >
@@ -749,7 +747,7 @@ export default function Finance() {
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <span className="text-[9px] text-slate-400 capitalize">{bill.frequency}</span>
                                   <span className="text-[9px] text-slate-500">•</span>
-                                  <span 
+                                  <span
                                     className="text-[9px] font-semibold uppercase"
                                     style={{ color: bill.status === 'active' ? '#10b981' : '#f59e0b' }}
                                   >
@@ -773,7 +771,7 @@ export default function Finance() {
 
               {/* RIGHT COLUMN: FINANCIAL PLANNING & SUBSCRIPTIONS */}
               <div className="space-y-6">
-                
+
                 {/* SECTION 8: Financial Planning */}
                 <div className="glass-card p-5">
                   <h3 className="font-semibold text-sm mb-4">Financial Planning Projections</h3>
@@ -1089,7 +1087,7 @@ export default function Finance() {
               ...data,
             };
             addRecurringExpenseLocal(newBill);
-            
+
             // Log Event
             logEvent('recurring_created', 'finance', newBill.id, {
               title: data.name,
@@ -1132,7 +1130,7 @@ export default function Finance() {
           onClose={() => setEditingRecurring(null)}
           onSave={async (data) => {
             updateRecurringExpenseLocal(editingRecurring.id, data);
-            
+
             // Log Event
             logEvent('recurring_updated', 'finance', editingRecurring.id, {
               title: data.name,
@@ -1164,7 +1162,7 @@ export default function Finance() {
           }}
           onDelete={async () => {
             removeRecurringExpenseLocal(editingRecurring.id);
-            
+
             // Log Event
             logEvent('recurring_deleted', 'finance', editingRecurring.id, {
               title: editingRecurring.name,
@@ -1550,17 +1548,17 @@ function AddEditRecurringModal({
       footer={
         <div className="flex gap-3 w-full">
           {initialData && onDelete && (
-            <button 
+            <button
               type="button"
-              onClick={onDelete} 
+              onClick={onDelete}
               className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold"
             >
               Delete
             </button>
           )}
-          <button 
+          <button
             type="button"
-            onClick={onClose} 
+            onClick={onClose}
             className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1"
           >
             Cancel
@@ -1637,9 +1635,9 @@ function AddEditRecurringModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Recurrence Status</label>
-            <select 
-              value={status} 
-              onChange={(e) => setStatus(e.target.value)} 
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
             >
               <option value="active">Active</option>
@@ -1649,11 +1647,11 @@ function AddEditRecurringModal({
           </div>
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">End Date (Optional)</label>
-            <input 
-              type="date" 
-              value={endDate} 
-              onChange={(e) => setEndDate(e.target.value)} 
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" 
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
             />
           </div>
         </div>

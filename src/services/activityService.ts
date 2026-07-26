@@ -32,52 +32,70 @@ function sanitizeActivityMetadata(metadata: ActivityMetadata): ActivityMetadata 
 
 export const activityService = {
   async getPublicActivityFeed(limit: number = 30): Promise<ArenaActivity[]> {
-    const { data, error } = await supabase
-      .from('arena_activity')
-      .select('*, profiles:user_id(display_name, avatar_url)')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    try {
+      const { data, error } = await supabase
+        .from('arena_activity')
+        .select('*, profiles:user_id(display_name, avatar_url)')
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-    if (error) {
-      console.error('Error fetching public arena activity feed:', error);
-      throw error;
+      if (error) {
+        if (import.meta.env.DEV) {
+          console.warn('public.arena_activity table query notice:', error.message);
+        }
+        return [];
+      }
+
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        user_id: item.user_id,
+        activity_type: item.activity_type as ActivityType,
+        metadata: item.metadata || {},
+        created_at: item.created_at,
+        user_profile: item.profiles ? {
+          display_name: item.profiles.display_name,
+          avatar_url: item.profiles.avatar_url,
+        } : undefined,
+      }));
+    } catch (err: any) {
+      if (import.meta.env.DEV) {
+        console.warn('Activity feed query exception caught:', err);
+      }
+      return [];
     }
-
-    return (data || []).map((item: any) => ({
-      id: item.id,
-      user_id: item.user_id,
-      activity_type: item.activity_type as ActivityType,
-      metadata: item.metadata || {},
-      created_at: item.created_at,
-      user_profile: item.profiles ? {
-        display_name: item.profiles.display_name,
-        avatar_url: item.profiles.avatar_url,
-      } : undefined,
-    }));
   },
 
   async logArenaActivity(
     userId: string,
     activityType: ActivityType,
     metadata: ActivityMetadata = {}
-  ): Promise<ArenaActivity> {
+  ): Promise<ArenaActivity | null> {
     const cleanMetadata = sanitizeActivityMetadata(metadata);
 
-    const { data, error } = await supabase
-      .from('arena_activity')
-      .insert({
-        user_id: userId,
-        activity_type: activityType,
-        metadata: cleanMetadata,
-      })
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('arena_activity')
+        .insert({
+          user_id: userId,
+          activity_type: activityType,
+          metadata: cleanMetadata,
+        })
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error logging arena activity:', error);
-      throw error;
+      if (error) {
+        if (import.meta.env.DEV) {
+          console.warn('public.arena_activity insert notice:', error.message);
+        }
+        return null;
+      }
+
+      return data as ArenaActivity;
+    } catch (err: any) {
+      if (import.meta.env.DEV) {
+        console.warn('Failed logging activity exception:', err);
+      }
+      return null;
     }
-
-    return data as ArenaActivity;
   },
 };

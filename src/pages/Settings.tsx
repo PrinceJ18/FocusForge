@@ -109,7 +109,7 @@ export default function Settings() {
   const handleExportCSV = () => {
     let csvContent = 'data:text/csv;charset=utf-8,';
     csvContent += 'Type,Title/Name,Amount/Minutes,Category,Date\n';
-    
+
     // Add expenses
     expenses.forEach(e => {
       csvContent += `expense,"${e.title}",${e.amount},"${e.category}",${e.expense_date}\n`;
@@ -137,7 +137,7 @@ export default function Settings() {
         const data = JSON.parse(event.target?.result as string);
         if (data.preferences) updatePreferencesLocal(data.preferences);
         if (data.profile) updateProfile(data.profile);
-        
+
         alert('Backup data parsed and applied successfully!');
         logEvent('backup_restored', 'system', 'json', { success: true });
       } catch (err) {
@@ -163,18 +163,17 @@ export default function Settings() {
   return (
     <div className="page-enter space-y-6">
       <div className="flex flex-col lg:flex-row gap-6">
-        
+
         {/* TABS SIDEBAR */}
         <div className="lg:w-64 flex lg:flex-col overflow-x-auto no-scrollbar pb-2 lg:pb-0 gap-1.5 lg:gap-1 shrink-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap touch-manipulation min-h-[44px] shrink-0 ${
-                activeTab === tab.id
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap touch-manipulation min-h-[44px] shrink-0 ${activeTab === tab.id
                   ? 'bg-purple-500/10 border-purple-500/30 text-white font-bold'
                   : 'bg-white/2 border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
-              }`}
+                }`}
             >
               {tab.icon}
               {tab.label}
@@ -184,7 +183,7 @@ export default function Settings() {
 
         {/* CONTENT PANEL */}
         <div className="flex-1 glass-card p-5 sm:p-6 space-y-6">
-          
+
           {/* SECTION 1: APPEARANCE */}
           {activeTab === 'appearance' && (
             <div className="space-y-6">
@@ -206,9 +205,8 @@ export default function Settings() {
                       <button
                         key={t.id}
                         onClick={() => handleUpdatePref('theme', t.id)}
-                        className={`flex items-center justify-between p-3 rounded-xl border text-left ${
-                          preferences.theme === t.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
-                        }`}
+                        className={`flex items-center justify-between p-3 rounded-xl border text-left ${preferences.theme === t.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                          }`}
                       >
                         <span className="flex items-center gap-2">{t.icon} {t.name}</span>
                         {preferences.theme === t.id && <Check size={14} className="text-purple-400" />}
@@ -224,9 +222,8 @@ export default function Settings() {
                       <button
                         key={c.id}
                         onClick={() => handleUpdatePref('accent_color', c.id)}
-                        className={`flex items-center gap-2 p-2.5 rounded-xl border ${
-                          preferences.accent_color === c.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
-                        }`}
+                        className={`flex items-center gap-2 p-2.5 rounded-xl border ${preferences.accent_color === c.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                          }`}
                       >
                         <span className="w-3.5 h-3.5 rounded-full" style={{ background: c.color }} />
                         {c.name}
@@ -242,9 +239,8 @@ export default function Settings() {
                       <button
                         key={s}
                         onClick={() => handleUpdatePref('card_style', s)}
-                        className={`py-2 rounded-xl border text-center capitalize ${
-                          preferences.card_style === s ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
-                        }`}
+                        className={`py-2 rounded-xl border text-center capitalize ${preferences.card_style === s ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                          }`}
                       >
                         {s}
                       </button>
@@ -263,9 +259,8 @@ export default function Settings() {
                       <button
                         key={a.id}
                         onClick={() => handleUpdatePref('animation', a.id)}
-                        className={`py-2 rounded-xl border text-center ${
-                          preferences.animation === a.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
-                        }`}
+                        className={`py-2 rounded-xl border text-center ${preferences.animation === a.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                          }`}
                       >
                         {a.label}
                       </button>
@@ -280,9 +275,8 @@ export default function Settings() {
                       <button
                         key={f}
                         onClick={() => handleUpdatePref('font_size', f)}
-                        className={`py-2 rounded-xl border text-center capitalize ${
-                          preferences.font_size === f ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
-                        }`}
+                        className={`py-2 rounded-xl border text-center capitalize ${preferences.font_size === f ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                          }`}
                       >
                         {f}
                       </button>
@@ -297,9 +291,8 @@ export default function Settings() {
                       <button
                         key={d}
                         onClick={() => handleUpdatePref('ui_density', d)}
-                        className={`py-2 rounded-xl border text-center capitalize ${
-                          preferences.ui_density === d ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
-                        }`}
+                        className={`py-2 rounded-xl border text-center capitalize ${preferences.ui_density === d ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                          }`}
                       >
                         {d}
                       </button>
@@ -508,6 +501,10 @@ export default function Settings() {
                   { key: 'notify_achievements', label: 'Achievements Unlocks', desc: 'Congratulatory notification for custom achievements.' },
                   { key: 'notify_badges', label: 'Badges Claimed', desc: 'Notification on unlocking collectible stickers.' },
                   { key: 'notify_recurring_expenses', label: 'Recurring Bills Due', desc: 'Notify upcoming/overdue subscription events.' },
+                  { key: 'notify_arena_champion', label: 'Arena Champion Alerts', desc: 'Celebration modal when achieving #1 Weekly Champion status.' },
+                  { key: 'notify_arena_personal_best', label: 'Arena Personal Best', desc: 'Pop-up celebration when breaking your highest Arena Score record.' },
+                  { key: 'notify_arena_rank_up', label: 'Arena Rank Up Alerts', desc: 'Notification when climbing to higher rank positions.' },
+                  { key: 'notify_arena_activity', label: 'Arena Public Feed', desc: 'Updates on public level-ups and challenge completions.' },
                 ].map(n => (
                   <div key={n.key} className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
                     <div>

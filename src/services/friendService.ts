@@ -149,4 +149,137 @@ export const friendService = {
       throw error;
     }
   },
+
+  async searchUsers(query: string, currentUserId: string): Promise<Array<{
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    friend_code: string | null;
+    level?: number;
+    xp?: number;
+  }>> {
+    const cleanQuery = query.trim();
+    if (!cleanQuery) return [];
+
+    // Check if searching by exact 6-char friend code or display_name
+    const isFriendCodeSearch = /^[a-zA-Z0-9]{6}$/.test(cleanQuery);
+
+    let queryBuilder = supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url, friend_code, xp')
+      .neq('id', currentUserId)
+      .limit(20);
+
+    if (isFriendCodeSearch) {
+      queryBuilder = queryBuilder.ilike('friend_code', cleanQuery);
+    } else {
+      queryBuilder = queryBuilder.or(`display_name.ilike.%${cleanQuery}%,friend_code.ilike.%${cleanQuery}%`);
+    }
+
+    const { data, error } = await queryBuilder;
+
+    if (error) {
+      console.error('Error searching users:', error);
+      throw error;
+    }
+
+    return (data || []).map((p: any) => ({
+      id: p.id,
+      display_name: p.display_name,
+      avatar_url: p.avatar_url,
+      friend_code: p.friend_code,
+      xp: p.xp || 0,
+      level: Math.floor(Math.sqrt((p.xp || 0) / 100)) + 1,
+    }));
+  },
+
+  async getFriendCode(userId: string): Promise<string> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('friend_code')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching friend code:', error);
+      return 'CODE01';
+    }
+
+    return data?.friend_code || 'CODE01';
+  },
+
+  async getFriendProfilePreview(friendUserId: string): Promise<{
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    level: number;
+    xp: number;
+    streak: number;
+    focusMinutesThisWeek: number;
+    tasksCompletedThisWeek: number;
+    arenaScore: number;
+  }> {
+    // 1. Fetch Profile
+    const { data: profile, error: profErr } = await supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url, xp, streak')
+      .eq('id', friendUserId)
+      .maybeSingle();
+
+    if (profErr || !profile) {
+      throw new Error('Profile not found');
+    }
+
+    // Calculate level
+    const xp = profile.xp || 0;
+    const level = Math.floor(Math.sqrt(xp / 100)) + 1;
+    const streak = profile.streak || 0;
+
+    // 2. Fetch Focus Minutes This Week
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+    const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+    const { data: sessions } = await supabase
+      .from('focus_sessions')
+      .select('minutes')
+      .eq('user_id', friendUserId)
+      .gte('session_date', startOfWeekStr);
+
+    const focusMinutesThisWeek = (sessions || []).reduce((sum, s) => sum + (s.minutes || 0), 0);
+
+    // 3. Fetch Tasks Completed This Week
+    const { data: completions } = await supabase
+      .from('task_completions')
+      .select('id')
+      .eq('user_id', friendUserId)
+      .eq('completed', true)
+      .gte('occurrence_date', startOfWeekStr);
+
+    const tasksCompletedThisWeek = (completions || []).length;
+
+    // 4. Fetch Arena Score from arena_scores
+    const { data: arenaScoreData } = await supabase
+      .from('arena_scores')
+      .select('arena_score')
+      .eq('user_id', friendUserId)
+      .order('arena_score', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const arenaScore = arenaScoreData?.arena_score ? Number(arenaScoreData.arena_score) : Math.round(xp * 1.2 + streak * 50);
+
+    return {
+      id: profile.id,
+      display_name: profile.display_name,
+      avatar_url: profile.avatar_url,
+      level,
+      xp,
+      streak,
+      focusMinutesThisWeek,
+      tasksCompletedThisWeek,
+      arenaScore,
+    };
+  },
 };

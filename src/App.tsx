@@ -21,15 +21,20 @@ const Reports = React.lazy(() => import('./pages/Reports'));
 const AuthScreen = React.lazy(() => import('./pages/AuthScreen'));
 const Achievements = React.lazy(() => import('./pages/Achievements'));
 const Settings = React.lazy(() => import('./pages/Settings'));
-
-
+const Friends = React.lazy(() => import('./pages/Friends'));
+const Arena = React.lazy(() => import('./pages/Arena'));
+const ArenaActivity = React.lazy(() => import('./pages/ArenaActivity'));
+const ArenaHallOfFame = React.lazy(() => import('./pages/ArenaHallOfFame'));
 
 const PAGE_TITLES: Record<string, string> = {
   dashboard: 'Dashboard',
   finance: 'Finance & Budget',
   productivity: 'Productivity Center',
   analytics: 'Analytics & Trends',
-
+  friends: 'Friends & Community',
+  arena: 'Productivity Arena',
+  'arena-activity': 'Arena Activity Feed',
+  'arena-hall-of-fame': 'Hall of Fame Archives',
   splits: 'Group Splits',
   reports: 'Performance Reports',
   achievements: 'Achievement Center',
@@ -201,6 +206,10 @@ export default function App() {
             {currentPage === 'reports' && <Reports />}
             {currentPage === 'achievements' && <Achievements />}
             {currentPage === 'settings' && <Settings />}
+            {currentPage === 'friends' && <Friends />}
+            {currentPage === 'arena' && <Arena />}
+            {currentPage === 'arena-activity' && <ArenaActivity />}
+            {currentPage === 'arena-hall-of-fame' && <ArenaHallOfFame />}
           </Suspense>
         </div>
       </main>

@@ -14,6 +14,8 @@ const navItems: Array<{ id: string; label: string; icon: React.ReactNode; badge?
   { id: 'finance', label: 'Finance', icon: <Wallet size={18} /> },
   { id: 'productivity', label: 'Focus', icon: <Timer size={18} /> },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
+  { id: 'arena', label: 'Arena', icon: <Trophy size={18} /> },
+  { id: 'friends', label: 'Friends', icon: <Users size={18} /> },
   { id: 'reports', label: 'Performance Reports', icon: <BookOpen size={18} /> },
   { id: 'achievements', label: 'Achievement Center', icon: <Award size={18} /> },
 ];

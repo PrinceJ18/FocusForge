@@ -36,4 +36,10 @@ export interface ArenaScore {
   daily_challenge_points: number;
   created_at: string;
   updated_at: string;
+  user_profile?: {
+    display_name?: string | null;
+    avatar_url?: string | null;
+    streak?: number;
+    xp?: number;
+  };
 }
