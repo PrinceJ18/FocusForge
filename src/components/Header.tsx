@@ -7,17 +7,21 @@ import ProfileModal from './ProfileModal';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
 import { getLevelInfo } from "../lib/levels";
+import useRouteChangeCleanup from '../hooks/useRouteChangeCleanup';
+
 interface HeaderProps {
   onMenuClick: () => void;
   title: string;
   subtitle?: string;
 }
-
+''
 const PAGE_SUBTITLES: Record<string, string> = {
   dashboard: 'Your productivity & finance overview',
   finance: 'Track expenses & manage budget',
   productivity: 'Focus sessions & task management',
   analytics: 'Insights & data visualization',
+  arena: 'Compete with friends, climb the leaderboard, earn achievements, and celebrate your productivity journey',
+  friends: 'Connect with friends, build your productivity network, and grow together through healthy competition',
   splits: 'Track and settle shared expenses with anyone',
   reports: 'Analyze your productivity, focus sessions, task completion, and financial performance through comprehensive reports.',
   achievements: 'Unlock badges, track milestones, and view your complete journey',
@@ -31,14 +35,25 @@ export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useRouteChangeCleanup(() => setDropdownOpen(false), dropdownOpen);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
     };
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setDropdownOpen(false);
+      }
+    };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    window.addEventListener('keydown', keyHandler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('keydown', keyHandler);
+    };
   }, []);
 
   const handleLogout = async () => {

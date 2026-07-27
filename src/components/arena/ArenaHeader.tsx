@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Trophy, ChevronDown, Shield, Globe, Users } from 'lucide-react';
 import { Arena } from '../../types/arena';
+import useClickOutside from '../../hooks/useClickOutside';
+import useRouteChangeCleanup from '../../hooks/useRouteChangeCleanup';
 
 interface ArenaHeaderProps {
   currentArena: Arena | null;
@@ -10,6 +12,21 @@ interface ArenaHeaderProps {
 
 function ArenaHeader({ currentArena, arenas, onSelectArena }: ArenaHeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(dropdownRef, () => setDropdownOpen(false), dropdownOpen);
+  useRouteChangeCleanup(() => setDropdownOpen(false), dropdownOpen);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setDropdownOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [dropdownOpen]);
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-5 sm:p-6 mb-6 relative z-30 transition-all duration-300">
@@ -22,13 +39,13 @@ function ArenaHeader({ currentArena, arenas, onSelectArena }: ArenaHeaderProps) 
             Productivity Arena
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Compete with friends, climb the leaderboard, and track your productivity achievements.
+            Compete with friends, climb the leaderboard, earn achievements, and celebrate your productivity journey.
           </p>
         </div>
       </div>
 
       {/* Multi-Arena Selector Dropdown */}
-      <div className="relative shrink-0">
+      <div ref={dropdownRef} className="relative shrink-0">
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-purple-500/30 text-slate-200 text-xs font-bold hover:bg-slate-800 transition active:scale-95 touch-target shadow-md shadow-purple-950/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"

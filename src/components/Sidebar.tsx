@@ -3,6 +3,7 @@ import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X, BookO
 import { useStore, type Page } from '../store/useStore';
 import { calculateCurrentLevel, calculateXPProgress } from '../lib/statistics';
 import { formatCurrency } from '../lib/formatCurrency';
+import useRouteChangeCleanup from '../hooks/useRouteChangeCleanup';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const xpLevel = levelInfo.level;
   const xpProgress = calculateXPProgress(profile.xp);
+
+  useRouteChangeCleanup(onClose, isOpen);
 
   const handleNav = (page: Page) => {
     setPage(page);

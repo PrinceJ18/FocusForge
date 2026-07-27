@@ -98,9 +98,14 @@ export const friendService = {
       .eq('status', 'pending')
       .is('deleted_at', null);
 
-    if (inErr || outErr) {
-      console.error('Error fetching friend requests:', inErr || outErr);
-      throw inErr || outErr;
+    const err = inErr || outErr;
+    if (err) {
+      if (err.code === 'PGRST205' || err.code === '42P01') {
+        console.warn('friend_requests table not present in schema cache, returning empty requests.');
+        return { incoming: [], outgoing: [] };
+      }
+      console.error('Error fetching friend requests:', err);
+      throw err;
     }
 
     return {
@@ -117,6 +122,10 @@ export const friendService = {
       .is('deleted_at', null);
 
     if (error) {
+      if (error.code === 'PGRST205' || error.code === '42P01') {
+        console.warn('friends table not present in schema cache, returning empty friends list.');
+        return [];
+      }
       console.error('Error fetching friends:', error);
       throw error;
     }

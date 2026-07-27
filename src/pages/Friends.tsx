@@ -174,7 +174,7 @@ export default function Friends() {
             </div>
             <h2 className="text-xl font-bold text-slate-100">Friends & Community</h2>
           </div>
-          <p className="text-xs text-slate-400">Connect with friends, build your productivity circle, and compete together.</p>
+          <p className="text-xs text-slate-400">Connect with friends, build your productivity network, and grow together through healthy competition.</p>
         </div>
 
         {/* User's Own Friend Code Widget */}

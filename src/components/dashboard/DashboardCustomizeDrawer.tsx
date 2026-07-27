@@ -29,6 +29,9 @@ interface DashboardCustomizeDrawerProps {
   onReset: () => void;
 }
 
+import ReactDOM from 'react-dom';
+import useRouteChangeCleanup from '../../hooks/useRouteChangeCleanup';
+
 export default function DashboardCustomizeDrawer({
   open,
   onClose,
@@ -37,6 +40,8 @@ export default function DashboardCustomizeDrawer({
   onReset,
 }: DashboardCustomizeDrawerProps) {
   const visibleCount = WIDGET_REGISTRY.length - hiddenWidgets.size;
+
+  useRouteChangeCleanup(onClose, open);
 
   React.useEffect(() => {
     if (!open) return;
@@ -60,7 +65,7 @@ export default function DashboardCustomizeDrawer({
 
   if (!open) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -144,6 +149,7 @@ export default function DashboardCustomizeDrawer({
           </button>
         </div>
       </aside>
-    </>
+    </>,
+    document.body
   );
 }
