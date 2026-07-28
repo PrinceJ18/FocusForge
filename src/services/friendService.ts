@@ -170,36 +170,65 @@ export const friendService = {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
-    // Check if searching by exact 6-char friend code or display_name
-    const isFriendCodeSearch = /^[a-zA-Z0-9]{6}$/.test(cleanQuery);
+    try {
+      // 1. Fetch current friends and pending requests to exclude them
+      const [friendsRes, requestsRes] = await Promise.all([
+        supabase.from('friends').select('friend_id').eq('user_id', currentUserId).is('deleted_at', null),
+        supabase.from('friend_requests').select('sender_id, receiver_id').eq('status', 'pending').or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+      ]);
 
-    let queryBuilder = supabase
-      .from('profiles')
-      .select('id, display_name, avatar_url, friend_code, xp')
-      .neq('id', currentUserId)
-      .limit(20);
+      const excludedIds = new Set<string>([currentUserId]);
+      
+      if (friendsRes.data) {
+        friendsRes.data.forEach(f => excludedIds.add(f.friend_id));
+      }
+      
+      if (requestsRes.data) {
+        requestsRes.data.forEach(r => {
+          excludedIds.add(r.sender_id);
+          excludedIds.add(r.receiver_id);
+        });
+      }
 
-    if (isFriendCodeSearch) {
-      queryBuilder = queryBuilder.ilike('friend_code', cleanQuery);
-    } else {
-      queryBuilder = queryBuilder.or(`display_name.ilike.%${cleanQuery}%,friend_code.ilike.%${cleanQuery}%`);
+      // 2. Perform search
+      const isFriendCodeFormat = /^[a-zA-Z0-9]{7}$/.test(cleanQuery);
+
+      let queryBuilder = supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url, friend_code, xp')
+        .limit(30); // Fetch a bit more to account for exclusions
+
+      if (isFriendCodeFormat) {
+        // If it looks like a friend code, search BOTH exact friend_code OR partial display_name
+        queryBuilder = queryBuilder.or(`friend_code.ilike.${cleanQuery},display_name.ilike.%${cleanQuery}%`);
+      } else {
+        // Otherwise, only search display_name
+        queryBuilder = queryBuilder.ilike('display_name', `%${cleanQuery}%`);
+      }
+
+      const { data, error } = await queryBuilder;
+
+      if (error) {
+        console.error('Error searching users:', error);
+        throw new Error('Unable to search right now. Please try again.');
+      }
+
+      // 3. Filter out excluded IDs and map results
+      return (data || [])
+        .filter((p: any) => !excludedIds.has(p.id))
+        .slice(0, 20) // Ensure we only return max 20
+        .map((p: any) => ({
+          id: p.id,
+          display_name: p.display_name,
+          avatar_url: p.avatar_url,
+          friend_code: p.friend_code,
+          xp: p.xp || 0,
+          level: Math.floor(Math.sqrt((p.xp || 0) / 100)) + 1,
+        }));
+    } catch (err) {
+      console.error('Search error:', err);
+      throw new Error('Unable to search right now. Please try again.');
     }
-
-    const { data, error } = await queryBuilder;
-
-    if (error) {
-      console.error('Error searching users:', error);
-      throw error;
-    }
-
-    return (data || []).map((p: any) => ({
-      id: p.id,
-      display_name: p.display_name,
-      avatar_url: p.avatar_url,
-      friend_code: p.friend_code,
-      xp: p.xp || 0,
-      level: Math.floor(Math.sqrt((p.xp || 0) / 100)) + 1,
-    }));
   },
 
   async getFriendCode(userId: string): Promise<string> {
@@ -211,10 +240,10 @@ export const friendService = {
 
     if (error) {
       console.error('Error fetching friend code:', error);
-      return 'CODE01';
+      return '......';
     }
 
-    return data?.friend_code || 'CODE01';
+    return data?.friend_code || '......';
   },
 
   async getFriendProfilePreview(friendUserId: string): Promise<{

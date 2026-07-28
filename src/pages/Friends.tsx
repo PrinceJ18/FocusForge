@@ -78,7 +78,7 @@ export default function Friends() {
       })
       .catch((err) => {
         console.error('Search error:', err);
-        showNotification({ type: 'error', title: 'Search Error', message: 'Failed to search users' });
+        showNotification({ type: 'error', title: 'Search Error', message: 'Unable to search users. Please try again.' });
       })
       .finally(() => {
         setIsSearching(false);
@@ -267,17 +267,17 @@ export default function Friends() {
                 <Users size={24} />
               </div>
               <h3 className="text-sm font-bold text-slate-200">
-                {searchQuery ? 'No matching friends found' : 'No friends yet'}
+                {searchQuery ? 'No matching friends found' : "You haven't added any friends yet."}
               </h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                {searchQuery ? 'Try adjusting your search filter.' : 'Search for friends using their username or unique 6-character Friend Code in the Discover tab.'}
+                {searchQuery ? 'Try adjusting your search filter.' : 'Search for friends using their username or unique 7-character Friend Code in the Discover tab.'}
               </p>
               {!searchQuery && (
                 <button
                   onClick={() => setActiveTab('discover')}
                   className="btn-neon px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5 mt-2"
                 >
-                  <UserPlus size={14} /> Find Friends
+                  <UserPlus size={14} /> Add Friend
                 </button>
               )}
             </div>
@@ -351,7 +351,7 @@ export default function Friends() {
 
                 {incomingRequests.length === 0 ? (
                   <div className="p-6 bg-slate-900/40 rounded-xl border border-slate-800/80 text-center text-xs text-slate-500">
-                    No incoming friend requests.
+                    No pending friend requests.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -397,7 +397,7 @@ export default function Friends() {
 
                 {outgoingRequests.length === 0 ? (
                   <div className="p-6 bg-slate-900/40 rounded-xl border border-slate-800/80 text-center text-xs text-slate-500">
-                    No pending sent requests.
+                    No pending friend requests.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -438,7 +438,7 @@ export default function Friends() {
               <Search size={28} className="mx-auto text-purple-400 opacity-60 mb-2" />
               <h3 className="text-sm font-bold text-slate-200">Search for Friends</h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Enter a display name or an exact 6-character Friend Code (e.g. <span className="font-mono text-purple-300 font-bold">AB7KQ2</span>) in the search box above.
+                Enter a display name or an exact 7-character Friend Code (e.g. <span className="font-mono text-purple-300 font-bold">PJ7X4Q9</span>) in the search box above.
               </p>
             </div>
           ) : isSearching ? (
@@ -446,7 +446,7 @@ export default function Friends() {
           ) : searchResults.length === 0 ? (
             <div className="glass-card p-8 text-center text-xs text-slate-400 space-y-2">
               <UserX size={28} className="mx-auto text-slate-500 mb-2" />
-              <p className="font-bold text-slate-300">No users found matching "{debouncedQuery}"</p>
+              <p className="font-bold text-slate-300">No users found.</p>
               <p className="text-slate-500">Double-check the Friend Code spelling or display name.</p>
             </div>
           ) : (

@@ -825,6 +825,7 @@ export const loadUserData = async (userId: string) => {
       badges: profileRes.data.badges || [],
       display_name: profileRes.data.display_name,
       avatar_url: profileRes.data.avatar_url,
+      friend_code: profileRes.data.friend_code,
       daily_challenge_claims:
         profileRes.data.daily_challenge_claims || {
           date: '',

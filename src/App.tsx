@@ -84,25 +84,11 @@ export default function App() {
           await loadUserData(session.user.id);
           await processAutoAddRecurringExpenses();
 
-          // Create profile only if it doesn't already exist
           const { data: existingProfile } = await supabase
             .from('profiles')
             .select('id')
             .eq('id', session.user.id)
             .maybeSingle();
-
-          if (!existingProfile) {
-            await supabase.from('profiles').insert({
-              id: session.user.id,
-              display_name:
-                session.user.user_metadata?.full_name ||
-                session.user.email?.split('@')[0] ||
-                '',
-              avatar_url:
-                session.user.user_metadata?.avatar_url || '',
-              updated_at: new Date().toISOString(),
-            });
-          }
         } else {
           setUser(null);
 
@@ -116,6 +102,18 @@ export default function App() {
             taskSections: [],
             taskCompletions: [],
             dataLoaded: false,
+            profile: {
+              xp: 0,
+              streak: 0,
+              last_active_date: '',
+              monthly_budget: 0,
+              total_savings: 0,
+              badges: [],
+              display_name: 'User',
+              avatar_url: '',
+              friend_code: '',
+              daily_challenge_claims: { date: '', claimed: [] },
+            },
           });
           checkAndUpdateGuestStreak();
         }
