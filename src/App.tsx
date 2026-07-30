@@ -23,7 +23,6 @@ const Achievements = React.lazy(() => import('./pages/Achievements'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const Friends = React.lazy(() => import('./pages/Friends'));
 const Arena = React.lazy(() => import('./pages/Arena'));
-const ArenaActivity = React.lazy(() => import('./pages/ArenaActivity'));
 const ArenaHallOfFame = React.lazy(() => import('./pages/ArenaHallOfFame'));
 
 const PAGE_TITLES: Record<string, string> = {
@@ -33,7 +32,6 @@ const PAGE_TITLES: Record<string, string> = {
   analytics: 'Analytics & Trends',
   friends: 'Friends & Community',
   arena: 'Productivity Arena',
-  'arena-activity': 'Arena Activity Feed',
   'arena-hall-of-fame': 'Hall of Fame Archives',
   splits: 'Group Splits',
   reports: 'Performance Reports',
@@ -206,7 +204,6 @@ export default function App() {
             {currentPage === 'settings' && <Settings />}
             {currentPage === 'friends' && <Friends />}
             {currentPage === 'arena' && <Arena />}
-            {currentPage === 'arena-activity' && <ArenaActivity />}
             {currentPage === 'arena-hall-of-fame' && <ArenaHallOfFame />}
           </Suspense>
         </div>

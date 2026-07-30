@@ -57,11 +57,23 @@ export const friendService = {
 
     if (status === 'accepted') {
       const now = new Date().toISOString();
-      // Create or un-soft-delete bi-directional mutual friendship records
-      await supabase.from('friends').upsert([
-        { user_id: request.sender_id, friend_id: request.receiver_id, created_at: now, deleted_at: null },
-        { user_id: request.receiver_id, friend_id: request.sender_id, created_at: now, deleted_at: null },
-      ], { onConflict: 'user_id,friend_id' });
+      
+      // Try updating first (un-delete)
+      const { data: updatedFriends } = await supabase
+        .from('friends')
+        .update({ deleted_at: null, created_at: now })
+        .or(`and(user_id.eq.${request.sender_id},friend_id.eq.${request.receiver_id}),and(user_id.eq.${request.receiver_id},friend_id.eq.${request.sender_id})`)
+        .select();
+
+      if (!updatedFriends || updatedFriends.length === 0) {
+        // If not updated, insert ONE directional record
+        await supabase.from('friends').insert({
+          user_id: request.sender_id,
+          friend_id: request.receiver_id,
+          created_at: now,
+          deleted_at: null
+        });
+      }
     }
 
     return updatedRequest as FriendRequest;
@@ -117,8 +129,12 @@ export const friendService = {
   async getFriends(userId: string): Promise<FriendWithProfile[]> {
     const { data, error } = await supabase
       .from('friends')
-      .select('*, profiles:friend_id(display_name, avatar_url, level, xp)')
-      .eq('user_id', userId)
+      .select(`
+        id, user_id, friend_id, created_at, deleted_at,
+        user_profile:profiles!friends_user_id_fkey(display_name, avatar_url, level, xp),
+        friend_profile:profiles!friends_friend_id_fkey(display_name, avatar_url, level, xp)
+      `)
+      .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
       .is('deleted_at', null);
 
     if (error) {
@@ -130,19 +146,24 @@ export const friendService = {
       throw error;
     }
 
-    return (data || []).map((f: any) => ({
-      id: f.id,
-      user_id: f.user_id,
-      friend_id: f.friend_id,
-      created_at: f.created_at,
-      deleted_at: f.deleted_at,
-      profile: f.profiles ? {
-        display_name: f.profiles.display_name,
-        avatar_url: f.profiles.avatar_url,
-        level: f.profiles.level,
-        xp: f.profiles.xp,
-      } : undefined,
-    }));
+    return (data || []).map((f: any) => {
+      const isUser1 = f.user_id === userId;
+      const profile = isUser1 ? f.friend_profile : f.user_profile;
+      
+      return {
+        id: f.id,
+        user_id: f.user_id,
+        friend_id: f.friend_id,
+        created_at: f.created_at,
+        deleted_at: f.deleted_at,
+        profile: profile ? {
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url,
+          level: profile.level,
+          xp: profile.xp,
+        } : undefined,
+      };
+    });
   },
 
   async removeFriend(userId: string, friendId: string): Promise<void> {
@@ -173,14 +194,17 @@ export const friendService = {
     try {
       // 1. Fetch current friends and pending requests to exclude them
       const [friendsRes, requestsRes] = await Promise.all([
-        supabase.from('friends').select('friend_id').eq('user_id', currentUserId).is('deleted_at', null),
+        supabase.from('friends').select('user_id, friend_id').or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`).is('deleted_at', null),
         supabase.from('friend_requests').select('sender_id, receiver_id').eq('status', 'pending').or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
       ]);
 
       const excludedIds = new Set<string>([currentUserId]);
       
       if (friendsRes.data) {
-        friendsRes.data.forEach(f => excludedIds.add(f.friend_id));
+        friendsRes.data.forEach(f => {
+          excludedIds.add(f.user_id);
+          excludedIds.add(f.friend_id);
+        });
       }
       
       if (requestsRes.data) {
@@ -195,7 +219,7 @@ export const friendService = {
 
       let queryBuilder = supabase
         .from('profiles')
-        .select('id, display_name, avatar_url, friend_code, xp')
+        .select('id, display_name, avatar_url, friend_code, level, xp')
         .limit(30); // Fetch a bit more to account for exclusions
 
       if (isFriendCodeFormat) {
@@ -223,7 +247,7 @@ export const friendService = {
           avatar_url: p.avatar_url,
           friend_code: p.friend_code,
           xp: p.xp || 0,
-          level: Math.floor(Math.sqrt((p.xp || 0) / 100)) + 1,
+          level: p.level || 1,
         }));
     } catch (err) {
       console.error('Search error:', err);
@@ -260,7 +284,7 @@ export const friendService = {
     // 1. Fetch Profile
     const { data: profile, error: profErr } = await supabase
       .from('profiles')
-      .select('id, display_name, avatar_url, xp, streak')
+      .select('id, display_name, avatar_url, level, xp, streak')
       .eq('id', friendUserId)
       .maybeSingle();
 
@@ -268,9 +292,9 @@ export const friendService = {
       throw new Error('Profile not found');
     }
 
-    // Calculate level
+    // Use DB level
     const xp = profile.xp || 0;
-    const level = Math.floor(Math.sqrt(xp / 100)) + 1;
+    const level = profile.level || 1;
     const streak = profile.streak || 0;
 
     // 2. Fetch Focus Minutes This Week

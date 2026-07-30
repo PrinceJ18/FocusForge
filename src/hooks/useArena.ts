@@ -16,14 +16,14 @@ export function useArena() {
       setLoading(true);
       setError(null);
 
-      const arena = await arenaService.getDefaultArena();
-      setDefaultArena(arena);
+      // const arena = await arenaService.getDefaultArena();
+      // setDefaultArena(arena);
 
-      if (user && arena) {
-        const userJoinedArenas = await arenaService.getUserArenas(user.id);
-        setUserArenas(userJoinedArenas);
-        setIsMemberOfDefault(userJoinedArenas.some((a) => a.id === arena.id));
-      }
+      // if (user && arena) {
+      //   const userJoinedArenas = await arenaService.getUserArenas(user.id);
+      //   setUserArenas(userJoinedArenas);
+      //   setIsMemberOfDefault(userJoinedArenas.some((a) => a.id === arena.id));
+      // }
     } catch (err: any) {
       console.error('useArena error:', err);
       setError(err.message || 'Failed to load arena details');
