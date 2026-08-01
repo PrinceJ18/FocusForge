@@ -459,7 +459,7 @@ export default function Settings() {
                   <input
                     type="number"
                     value={preferences.default_budget_goal}
-                    onChange={(e) => handleUpdatePref('default_budget_goal', parseFloat(e.target.value) || 5000)}
+                    onChange={(e) => handleUpdatePref('default_budget_goal', parseFloat(e.target.value) || 10000)}
                     className="input-glass w-full px-3 py-2 text-white"
                   />
                 </div>
@@ -650,12 +650,12 @@ export default function Settings() {
                   <h4 className="font-bold text-white mb-1">Export Data</h4>
                   <p className="text-[10px] text-slate-500 mb-3">Download complete JSON state parameters or CSV files.</p>
                   <div className="flex gap-2 justify-center">
-                    <button onClick={handleExportJSON} className="px-3 py-1.5 bg-purple-500/20 text-purple-400 font-semibold rounded-lg border border-purple-500/30 hover:bg-purple-500/30">
+                    <Button variant="secondary" onClick={handleExportJSON} className="px-3 py-1.5 font-semibold text-xs">
                       JSON
-                    </button>
-                    <button onClick={handleExportCSV} className="px-3 py-1.5 bg-slate-900 text-slate-400 font-semibold rounded-lg border border-white/5 hover:bg-slate-800 hover:text-white">
+                    </Button>
+                    <Button variant="outline" onClick={handleExportCSV} className="px-3 py-1.5 font-semibold text-xs text-slate-400 border-white/5">
                       CSV
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -670,12 +670,13 @@ export default function Settings() {
                     onChange={handleImportJSON}
                     className="hidden"
                   />
-                  <button
+                  <Button
+                    variant="neon"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-1.5 bg-cyan-500/20 text-cyan-400 font-semibold rounded-lg border border-cyan-500/30 hover:bg-cyan-500/30"
+                    className="px-4 py-1.5 text-xs font-semibold bg-cyan-500/20 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/30"
                   >
                     Upload JSON
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -729,18 +730,20 @@ export default function Settings() {
                 <div>
                   <h4 className="font-bold text-white mb-2">Actions</h4>
                   <div className="flex flex-wrap gap-3">
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={handleSignOut}
-                      className="px-4 py-2 bg-slate-900 text-slate-300 font-semibold rounded-xl border border-white/5 hover:bg-slate-800 hover:text-white flex items-center gap-1.5"
+                      className="px-4 py-2 font-semibold text-slate-300 border-white/5 hover:text-white flex items-center gap-1.5"
                     >
                       <LogOut size={14} /> Sign Out
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
                       onClick={handleDeleteAccount}
-                      className="px-4 py-2 bg-red-500/20 text-red-400 font-semibold rounded-xl border border-red-500/30 hover:bg-red-500/30 flex items-center gap-1.5"
+                      className="px-4 py-2 font-semibold flex items-center gap-1.5"
                     >
                       <Trash2 size={14} /> Delete Account
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>

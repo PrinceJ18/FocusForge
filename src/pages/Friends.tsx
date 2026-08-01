@@ -11,6 +11,8 @@ import FriendProfileModal from '../components/friends/FriendProfileModal';
 import RemoveFriendModal from '../components/friends/RemoveFriendModal';
 import { format, parseISO } from 'date-fns';
 import { LoadingState } from '../components/ui/Loading';
+import Button from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
 
 export default function Friends() {
   const { user, profile, showNotification } = useStore();
@@ -183,14 +185,15 @@ export default function Friends() {
             <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Your Friend Code</div>
             <div className="text-base font-black text-purple-300 tracking-widest font-mono mt-0.5">{myFriendCode || '......'}</div>
           </div>
-          <button
+          <Button
+            variant="ghost"
             onClick={handleCopyCode}
-            className="px-3 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-semibold text-xs transition flex items-center gap-1.5 border border-purple-500/40 active:scale-95 touch-target"
+            className="py-2 text-xs font-semibold"
             title="Copy Friend Code"
+            icon={copiedCode ? Check : Copy}
           >
-            {copiedCode ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
             <span>{copiedCode ? 'Copied!' : 'Copy Code'}</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -243,7 +246,7 @@ export default function Friends() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={activeTab === 'discover' ? "Search by Username or Friend Code (e.g. AB7KQ2)..." : "Filter friends..."}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-xs text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            className="input-glass w-full pl-10 pr-4 py-2.5"
           />
         </div>
       </div>
@@ -262,31 +265,26 @@ export default function Friends() {
               </button>
             </div>
           ) : filteredFriends.length === 0 ? (
-            <div className="glass-card p-10 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center mx-auto text-xl font-bold">
-                <Users size={24} />
-              </div>
-              <h3 className="text-sm font-bold text-slate-200">
-                {searchQuery ? 'No matching friends found' : "You haven't added any friends yet."}
-              </h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                {searchQuery ? 'Try adjusting your search filter.' : 'Search for friends using their username or unique 7-character Friend Code in the Discover tab.'}
-              </p>
-              {!searchQuery && (
-                <button
-                  onClick={() => setActiveTab('discover')}
-                  className="btn-neon px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5 mt-2"
-                >
-                  <UserPlus size={14} /> Add Friend
-                </button>
-              )}
-            </div>
+            <EmptyState
+              icon={Users}
+              title={searchQuery ? 'No matching friends found' : "You haven't added any friends yet."}
+              description={searchQuery ? 'Try adjusting your search filter.' : 'Search for friends using their username or unique 7-character Friend Code in the Discover tab.'}
+              action={!searchQuery ? {
+                label: "Add Friend",
+                onClick: () => setActiveTab('discover'),
+                icon: UserPlus,
+                variant: 'neon'
+              } : undefined}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredFriends.map((f) => {
                 const displayName = f.profile?.display_name || 'Friend';
+                const friendCode = f.profile?.friend_code || '......';
                 const level = f.profile?.level || Math.floor(Math.sqrt((f.profile?.xp || 0) / 100)) + 1;
                 const xp = f.profile?.xp || 0;
+                const streak = f.profile?.streak || 0;
+                const arenaScore = Math.round(xp * 1.2 + streak * 50);
                 const friendSince = f.created_at ? format(parseISO(f.created_at), 'MMM d, yyyy') : 'Recently';
 
                 return (
@@ -297,6 +295,9 @@ export default function Friends() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-bold text-slate-100 truncate">{displayName}</h4>
+                        <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+                          {friendCode}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full">
                             Level {level}
@@ -306,27 +307,40 @@ export default function Friends() {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-300 border-t border-slate-800/80 pt-2">
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-800/40">
+                        <Trophy size={12} className="text-purple-400" /> 
+                        <span className="font-bold">{arenaScore}</span> Score
+                      </div>
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-800/40">
+                        <Flame size={12} className="text-amber-400" /> 
+                        <span className="font-bold">{streak}</span> Streak
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
                       <span>Friend since {friendSince}</span>
                       <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active This Week
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2 pt-1">
-                      <button
+                      <Button
+                        variant="secondary"
                         onClick={() => setSelectedFriendIdForPreview(f.friend_id)}
-                        className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition border border-slate-700/60"
+                        className="flex-1 py-2 text-xs font-semibold"
                       >
                         View Profile
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="danger"
                         onClick={() => setSelectedFriendForRemoval({ id: f.friend_id, name: displayName })}
-                        className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold text-xs transition border border-red-500/20"
+                        className="px-3 py-2 text-xs font-semibold"
                         title="Remove Friend"
                       >
                         Remove
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 );
@@ -355,36 +369,68 @@ export default function Friends() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {incomingRequests.map((req) => (
-                      <div key={req.id} className="glass-card p-4 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm shrink-0">
-                            U
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-200 truncate">Friend Request</h4>
-                            <p className="text-[10px] text-slate-400">Received {format(parseISO(req.created_at), 'MMM d')}</p>
-                          </div>
-                        </div>
+                    {incomingRequests.map((req) => {
+                      const displayName = req.sender?.display_name || 'User';
+                      const friendCode = req.sender?.friend_code || '......';
+                      const level = req.sender?.level || 1;
+                      const xp = req.sender?.xp || 0;
+                      const streak = req.sender?.streak || 0;
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => handleRespondRequest(req.id, 'accepted')}
-                            disabled={actionUserId === req.id}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-md shadow-emerald-600/20 disabled:opacity-50"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleRespondRequest(req.id, 'rejected')}
-                            disabled={actionUserId === req.id}
-                            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition border border-slate-700"
-                          >
-                            Decline
-                          </button>
+                      return (
+                        <div key={req.id} className="glass-card p-4 flex flex-col justify-between space-y-4 hover:border-purple-500/30 transition">
+                          <div className="flex items-start gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+                              {displayName[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-slate-100 truncate">{displayName}</h4>
+                              <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+                                {friendCode}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full">
+                                  Level {level}
+                                </span>
+                                <span className="text-[11px] text-slate-400 font-semibold">{xp} XP</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+                            <span>Sent {format(parseISO(req.created_at), 'MMM d, yyyy')}</span>
+                            <span className="flex items-center gap-1 font-bold text-amber-400">
+                              <Flame size={12} /> {streak} Streak
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              variant="secondary"
+                              onClick={() => setSelectedFriendIdForPreview(req.sender_id)}
+                              className="px-2 py-2 text-xs font-semibold"
+                              title="View Profile"
+                            >
+                              Profile
+                            </Button>
+                            <Button
+                              onClick={() => handleRespondRequest(req.id, 'accepted')}
+                              disabled={actionUserId === req.id}
+                              className="flex-1 py-2 text-xs font-semibold"
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => handleRespondRequest(req.id, 'rejected')}
+                              disabled={actionUserId === req.id}
+                              className="px-2 py-2 text-xs font-semibold"
+                            >
+                              Decline
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -396,32 +442,58 @@ export default function Friends() {
                 </h3>
 
                 {outgoingRequests.length === 0 ? (
-                  <div className="p-6 bg-slate-900/40 rounded-xl border border-slate-800/80 text-center text-xs text-slate-500">
-                    No pending friend requests.
-                  </div>
+                  <EmptyState
+                    icon={Clock}
+                    title="No outgoing requests"
+                    description="You haven't sent any friend requests."
+                    className="p-6"
+                  />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {outgoingRequests.map((req) => (
-                      <div key={req.id} className="glass-card p-4 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-sm shrink-0">
-                            U
+                    {outgoingRequests.map((req) => {
+                      const displayName = req.receiver?.display_name || 'User';
+                      const friendCode = req.receiver?.friend_code || '......';
+                      const level = req.receiver?.level || 1;
+
+                      return (
+                        <div key={req.id} className="glass-card p-4 flex flex-col justify-between space-y-4 hover:border-slate-700/50 transition">
+                          <div className="flex items-start gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-base shadow-md shrink-0">
+                              {displayName[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-slate-100 truncate">{displayName}</h4>
+                              <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+                                {friendCode}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-full">
+                                  Level {level}
+                                </span>
+                                <span className="text-[10px] text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-full animate-pulse">
+                                  Pending Approval
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-200 truncate">Outgoing Request</h4>
-                            <p className="text-[10px] text-amber-400 font-semibold">Pending Approval</p>
+
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+                            <span>Sent {format(parseISO(req.created_at), 'MMM d, yyyy')}</span>
+                          </div>
+
+                          <div className="flex items-center pt-1">
+                            <Button
+                              variant="secondary"
+                              onClick={() => handleCancelRequest(req.id)}
+                              disabled={actionUserId === req.id}
+                              className="w-full py-2 text-xs font-semibold"
+                            >
+                              Cancel Request
+                            </Button>
                           </div>
                         </div>
-
-                        <button
-                          onClick={() => handleCancelRequest(req.id)}
-                          disabled={actionUserId === req.id}
-                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-red-400 font-semibold text-xs transition border border-slate-700"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -434,21 +506,19 @@ export default function Friends() {
       {activeTab === 'discover' && (
         <div className="space-y-4">
           {!debouncedQuery ? (
-            <div className="glass-card p-8 text-center space-y-3">
-              <Search size={28} className="mx-auto text-purple-400 opacity-60 mb-2" />
-              <h3 className="text-sm font-bold text-slate-200">Search for Friends</h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Enter a display name or an exact 7-character Friend Code (e.g. <span className="font-mono text-purple-300 font-bold">PJ7X4Q9</span>) in the search box above.
-              </p>
-            </div>
+            <EmptyState
+              icon={Search}
+              title="Search for Friends"
+              description="Enter a display name or an exact 7-character Friend Code in the search box above."
+            />
           ) : isSearching ? (
             <div className="py-12"><LoadingState message="Searching users..." /></div>
           ) : searchResults.length === 0 ? (
-            <div className="glass-card p-8 text-center text-xs text-slate-400 space-y-2">
-              <UserX size={28} className="mx-auto text-slate-500 mb-2" />
-              <p className="font-bold text-slate-300">No users found.</p>
-              <p className="text-slate-500">Double-check the Friend Code spelling or display name.</p>
-            </div>
+            <EmptyState
+              icon={UserX}
+              title="No users found"
+              description="Double-check the Friend Code spelling or display name."
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {searchResults.map((userItem) => {
@@ -480,13 +550,15 @@ export default function Friends() {
                           <Clock size={14} /> Sent
                         </span>
                       ) : (
-                        <button
+                        <Button
+                          variant="neon"
                           onClick={() => handleSendRequest(userItem.id)}
                           disabled={actionUserId === userItem.id}
-                          className="btn-neon px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                          className="px-3.5 py-1.5 text-xs font-semibold"
+                          icon={UserPlus}
                         >
-                          <UserPlus size={14} /> Send Request
-                        </button>
+                          Send Request
+                        </Button>
                       )}
                     </div>
                   </div>

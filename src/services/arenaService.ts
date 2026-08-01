@@ -160,16 +160,35 @@ export const arenaService = {
   },
 
   calculateArenaScore(metrics: {
+    productivityScore: number;
     focusMinutes: number;
+    focusGoal: number;
     tasksCompleted: number;
+    totalTasks: number;
     dailyChallengesCompleted: number;
-    streak: number;
   }) {
+    // 45% Productivity Score (max 4500)
+    const streak_bonus = Math.round((metrics.productivityScore / 100) * 4500);
+
+    // 25% Focus (max 2500)
+    const focusGoal = Math.max(1, metrics.focusGoal);
+    const focusRatio = Math.min(1, metrics.focusMinutes / focusGoal);
+    const focus_points = Math.round(focusRatio * 2500);
+
+    // 20% Tasks (max 2000)
+    const totalTasks = Math.max(1, metrics.totalTasks);
+    const taskRatio = Math.min(1, metrics.tasksCompleted / totalTasks);
+    const task_points = Math.round(taskRatio * 2000);
+
+    // 10% Daily Challenge (max 1000, assuming 7 per week)
+    const challengeRatio = Math.min(1, metrics.dailyChallengesCompleted / 7);
+    const challenge_points = Math.round(challengeRatio * 1000);
+
     return {
-      focus_points: metrics.focusMinutes * 1,
-      task_points: metrics.tasksCompleted * 25,
-      challenge_points: metrics.dailyChallengesCompleted * 40,
-      streak_bonus: metrics.streak * 5,
+      streak_bonus,
+      focus_points,
+      task_points,
+      challenge_points,
     };
   },
 
@@ -186,10 +205,12 @@ export const arenaService = {
     // For foundation demonstration, upserting initial values for both periods
     members.forEach(m => {
       const points = this.calculateArenaScore({
+        productivityScore: 0,
         focusMinutes: 0,
+        focusGoal: 120,
         tasksCompleted: 0,
+        totalTasks: 1,
         dailyChallengesCompleted: 0,
-        streak: 0,
       });
 
       const baseScore = {

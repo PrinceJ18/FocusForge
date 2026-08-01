@@ -248,7 +248,7 @@ export function getTasksForDate(
   tasks: Task[],
   date: Date,
   completions: TaskCompletion[]
-): { task: Task; completed: boolean; occurrenceDate: string }[] {
+): { task: Task; status: 'pending' | 'completed' | 'wont_do'; occurrenceDate: string }[] {
   const dateStr = format(date, 'yyyy-MM-dd');
   const isTodayCheck = isToday(date);
 
@@ -261,24 +261,27 @@ export function getTasksForDate(
       // Backward compatibility for old tasks without scheduled_date:
       // Show in Today's list if it's currently pending, or if it was completed today.
       if (isTodayCheck) {
-        return !t.completed || (t.completed_at && t.completed_at.startsWith(dateStr));
+        return t.status === 'pending' || (t.completed_at && t.completed_at.startsWith(dateStr));
       }
       
       // If querying other dates, show completed on their completion date, or pending on their creation date
-      if (t.completed && t.completed_at) {
+      if (t.status !== 'pending' && t.completed_at) {
         return t.completed_at.startsWith(dateStr);
       }
       return t.created_at.startsWith(dateStr);
     })
     .map((t) => {
-      let completed = false;
+      let status: 'pending' | 'completed' | 'wont_do' = 'pending';
       if (t.recurrence_type && t.recurrence_type !== 'none') {
-        completed = completions.some(
+        const matchingCompletion = completions.find(
           (c) => c.task_id === t.id && c.occurrence_date === dateStr
         );
+        if (matchingCompletion) {
+          status = matchingCompletion.status;
+        }
       } else {
-        completed = t.completed;
+        status = t.status;
       }
-      return { task: t, completed, occurrenceDate: dateStr };
+      return { task: t, status, occurrenceDate: dateStr };
     });
 }

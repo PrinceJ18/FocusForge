@@ -3,6 +3,7 @@ import {
   Trophy, Zap, Flame, Award, Star, Activity, Map, Sparkles,
   Search, Filter, Calendar, DollarSign, ArrowRight, Target
 } from 'lucide-react';
+import Button from '../components/ui/Button';
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import { useDailyProductivityScore } from '../hooks/useDailyProductivityScore';
@@ -103,7 +104,7 @@ export default function Achievements() {
   const totalFocusSessions = useMemo(() => focusSessions.reduce((sum, s) => sum + (s.sessions_count || 1), 0), [focusSessions]);
   const totalFocusMinutes = useMemo(() => focusSessions.reduce((sum, s) => sum + s.minutes, 0), [focusSessions]);
   const totalFocusHours = useMemo(() => +(totalFocusMinutes / 60).toFixed(1), [totalFocusMinutes]);
-  const completedTasks = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
+  const completedTasks = useMemo(() => tasks.filter(t => t.status === 'completed').length, [tasks]);
   const totalExpensesCount = useMemo(() => expenses.length, [expenses]);
   const totalSavings = useMemo(() => savingsGoals.reduce((sum, g) => sum + g.current_amount, 0), [savingsGoals]);
 
@@ -175,7 +176,7 @@ export default function Achievements() {
     });
 
     // First task
-    const completedTasksList = [...tasks].filter(t => t.completed && t.completed_at).sort((a, b) => (a.completed_at || '').localeCompare(b.completed_at || ''));
+    const completedTasksList = [...tasks].filter(t => t.status === 'completed' && t.completed_at).sort((a, b) => (a.completed_at || '').localeCompare(b.completed_at || ''));
     if (completedTasksList.length > 0) {
       list.push({
         title: 'First Task Completed',
@@ -427,12 +428,13 @@ export default function Achievements() {
                         Claimed
                       </div>
                     ) : (
-                      <button
+                      <Button
+                        variant="neon"
                         onClick={() => claimChallenge(challenge.id, challenge.reward)}
-                        className="btn-neon px-3 py-1 text-xs"
+                        className="px-3 py-1 text-xs"
                       >
                         Claim
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -455,7 +457,7 @@ export default function Achievements() {
           <input
             type="text"
             placeholder="Search Achievements, Badges, XP..."
-            className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-purple-500 focus:bg-white/10 text-white placeholder-slate-500"
+            className="input-glass w-full pl-10 pr-4 py-2"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -465,7 +467,8 @@ export default function Achievements() {
             <Filter size={14} /> Filters:
           </div>
           <select
-            className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500"
+            className="input-glass px-3 py-1.5 text-xs text-slate-300"
+            style={{ colorScheme: 'dark' }}
             value={categoryFilter}
             onChange={(e: any) => setCategoryFilter(e.target.value)}
           >
@@ -478,7 +481,8 @@ export default function Achievements() {
             <option value="reports">Reports</option>
           </select>
           <select
-            className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500"
+            className="input-glass px-3 py-1.5 text-xs text-slate-300"
+            style={{ colorScheme: 'dark' }}
             value={timeFilter}
             onChange={(e: any) => setTimeFilter(e.target.value)}
           >

@@ -285,7 +285,7 @@ export async function checkUnlocksAndMilestones() {
   // Gather stats for evaluation
   const totalFocusSessions = store.focusSessions.reduce((sum, s) => sum + (s.sessions_count || 1), 0);
   const totalFocusMinutes = store.focusSessions.reduce((sum, s) => sum + s.minutes, 0);
-  const completedTasks = store.tasks.filter(t => t.completed).length;
+  const completedTasks = store.tasks.filter(t => t.status === 'completed').length;
   const totalExpensesCount = store.expenses.length;
   const totalSavings = store.profile.total_savings || store.savingsGoals.reduce((sum, g) => sum + g.current_amount, 0);
 

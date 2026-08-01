@@ -7,22 +7,24 @@ import Modal from '../ui/Modal';
 
 interface TaskDetailsModalProps {
   task: Task;
-  completed: boolean;
+  status: 'pending' | 'completed' | 'wont_do';
   occurrenceDate: string; // YYYY-MM-DD
   onClose: () => void;
   onEdit: () => void;
   onToggle: () => Promise<void>;
   onDelete: () => Promise<void>;
+  onWontDo?: () => Promise<void>;
 }
 
 export default function TaskDetailsModal({
   task,
-  completed,
+  status,
   occurrenceDate,
   onClose,
   onEdit,
   onToggle,
   onDelete,
+  onWontDo,
 }: TaskDetailsModalProps) {
   const { taskSections } = useStore();
   const [busy, setBusy] = useState(false);
@@ -32,11 +34,24 @@ export default function TaskDetailsModal({
   const SectionIcon = section ? ICON_MAP[section.icon] || Calendar : Calendar;
 
   const handleToggle = async () => {
+    if (status === 'wont_do') return;
     setBusy(true);
     try {
       await onToggle();
     } catch (err: any) {
       alert(err.message || 'Failed to toggle task completion.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleWontDo = async () => {
+    if (!onWontDo) return;
+    setBusy(true);
+    try {
+      await onWontDo();
+    } catch (err: any) {
+      alert(err.message || "Failed to mark as Won't Do.");
     } finally {
       setBusy(false);
     }
@@ -96,7 +111,7 @@ export default function TaskDetailsModal({
 
   // Check if overdue
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const isOverdue = !completed && task.deadline && task.deadline < todayStr;
+  const isOverdue = status === 'pending' && task.deadline && task.deadline < todayStr;
 
   return (
     <Modal
@@ -136,15 +151,15 @@ export default function TaskDetailsModal({
         <div className="flex gap-2.5 w-full">
           <button
             onClick={handleToggle}
-            disabled={busy}
-            className="flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 rounded-xl transition-all"
+            disabled={busy || status === 'wont_do'}
+            className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 rounded-xl transition-all ${status === 'wont_do' ? 'opacity-50 cursor-not-allowed' : ''}`}
             style={{
-              background: completed ? 'rgba(239,68,68,0.1)' : 'linear-gradient(135deg, #a855f7, #ec4899)',
-              color: completed ? '#ef4444' : 'white',
-              border: completed ? '1px solid rgba(239,68,68,0.2)' : 'none'
+              background: status === 'completed' ? 'rgba(239,68,68,0.1)' : 'linear-gradient(135deg, #a855f7, #ec4899)',
+              color: status === 'completed' ? '#ef4444' : 'white',
+              border: status === 'completed' ? '1px solid rgba(239,68,68,0.2)' : 'none'
             }}
           >
-            {completed ? (
+            {status === 'completed' ? (
               <>
                 <Circle size={15} /> Mark Incomplete
               </>
@@ -154,6 +169,17 @@ export default function TaskDetailsModal({
               </>
             )}
           </button>
+
+          {onWontDo && status === 'pending' && (
+            <button
+              onClick={handleWontDo}
+              disabled={busy}
+              className="px-4 py-2.5 text-orange-400 hover:text-white bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/80 rounded-xl transition-all font-bold text-xs"
+              title="Mark as Won't Do"
+            >
+              Won't Do
+            </button>
+          )}
 
           <button
             onClick={onEdit}
@@ -200,8 +226,10 @@ export default function TaskDetailsModal({
           {/* Status */}
           <div>
             <span className="text-slate-400 block mb-0.5">Status</span>
-            {completed ? (
+            {status === 'completed' ? (
               <span className="text-green-400 font-bold flex items-center gap-1">✓ Completed</span>
+            ) : status === 'wont_do' ? (
+              <span className="text-orange-400 font-bold flex items-center gap-1">✗ Won't Do</span>
             ) : isOverdue ? (
               <span className="text-red-400 font-bold flex items-center gap-1">⚠️ Overdue</span>
             ) : (

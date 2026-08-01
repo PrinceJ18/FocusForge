@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '../ui/Modal';
 import { friendService } from '../../services/friendService';
-import { Trophy, Flame, Clock, CheckCircle, Zap, ShieldAlert, Award } from 'lucide-react';
+import { Trophy, Flame, Clock, CheckCircle, Zap, ShieldAlert, Award, Calendar } from 'lucide-react';
 import { LoadingState } from '../ui/Loading';
+import { format, parseISO } from 'date-fns';
 
 interface FriendProfileModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
     id: string;
     display_name: string | null;
     avatar_url: string | null;
+    friend_code: string | null;
     level: number;
     xp: number;
     streak: number;
@@ -35,8 +37,10 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
           setProfileData(data);
         })
         .catch((err) => {
-          console.error('Failed to load friend profile preview:', err);
-          setError('Could not load profile preview');
+          if (import.meta.env.DEV) {
+            console.error('Failed to load friend profile preview:', err);
+          }
+          setError('Unable to load profile at this time. Please try again.');
         })
         .finally(() => {
           setLoading(false);
@@ -83,7 +87,10 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
               <h3 className="text-base font-bold text-slate-100 truncate">
                 {profileData.display_name || 'User'}
               </h3>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+                {profileData.friend_code || '......'}
+              </div>
+              <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold text-[10px]">
                   Level {profileData.level}
                 </span>

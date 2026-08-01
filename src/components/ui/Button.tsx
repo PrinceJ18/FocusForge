@@ -2,7 +2,7 @@ import React, { ButtonHTMLAttributes } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger' | 'icon';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger' | 'icon' | 'neon';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   icon?: LucideIcon;
   isLoading?: boolean;
@@ -22,8 +22,9 @@ export default function Button({
   
   const variantClasses = {
     primary: 'bg-primary text-white hover:bg-primary-secondary shadow-glow',
+    neon: 'btn-neon',
     secondary: 'bg-background-card hover:bg-background-card-hover text-text-primary border border-border',
-    ghost: 'bg-transparent text-text-secondary hover:text-text-primary hover:bg-background-card',
+    ghost: 'btn-ghost',
     outline: 'bg-transparent text-text-primary border border-border hover:border-primary hover:bg-primary/10',
     danger: 'bg-transparent text-semantic-danger border border-semantic-danger/30 hover:bg-semantic-danger/10 hover:border-semantic-danger',
     icon: 'p-2 bg-transparent text-text-secondary hover:text-text-primary hover:bg-background-card rounded-md',
@@ -36,7 +37,7 @@ export default function Button({
     icon: 'p-2', // Override padding for icon-only buttons
   };
 
-  const classes = `${baseClasses} ${variantClasses[variant]} ${variant === 'icon' ? sizeClasses.icon : sizeClasses[size]} ${className}`;
+  const classes = `${variant !== 'neon' && variant !== 'ghost' ? baseClasses : ''} ${variantClasses[variant]} ${variant === 'icon' ? sizeClasses.icon : sizeClasses[size]} ${className}`.trim();
 
   return (
     <button 

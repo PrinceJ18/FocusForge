@@ -7,6 +7,7 @@ import {
   Brain, CheckSquare, Wallet, Target, Trophy, Flame, TrendingUp,
   Clock, ArrowLeft, ArrowUpRight, Award, Zap, BookOpen, Share2, Download
 } from 'lucide-react';
+import Button from '../components/ui/Button';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
@@ -184,19 +185,22 @@ export default function Reports() {
           </button>
 
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="outline"
               onClick={handleShare}
-              className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+              className="py-2 text-xs font-semibold"
+              icon={Share2}
             >
-              <Share2 size={14} /> Share Card
-            </button>
-            <button
+              Share Card
+            </Button>
+            <Button
+              variant="neon"
               onClick={handleExportPDF}
-              className="btn-neon px-4 py-2 text-xs font-semibold flex items-center gap-2"
+              className="py-2 text-xs font-semibold"
+              icon={Download}
             >
-              <Download size={14} /> Export PDF
-            </button>
+              Export PDF
+            </Button>
           </div>
         </div>
 

@@ -21,8 +21,9 @@ interface TaskCalendarViewProps {
   searchQuery: string;
   filterPriority: 'all' | 'low' | 'medium' | 'high';
   filterSectionId: string;
-  onOpenDetails: (task: Task, completed: boolean, date: string) => void;
-  onToggleTask: (task: Task, completed: boolean, date: string) => Promise<void>;
+  onOpenDetails: (task: Task, status: 'pending' | 'completed' | 'wont_do', date: string) => void;
+  onToggleTask: (task: Task, currentlyCompleted: boolean, date: string) => Promise<void>;
+  onWontDoTask?: (task: Task, date: string) => Promise<void>;
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => Promise<void>;
   onAddTaskForDate: (date: string) => void;
@@ -34,6 +35,7 @@ export default function TaskCalendarView({
   filterSectionId,
   onOpenDetails,
   onToggleTask,
+  onWontDoTask,
   onEditTask,
   onDeleteTask,
   onAddTaskForDate,
@@ -169,8 +171,8 @@ export default function TaskCalendarView({
             
             // Get filtered tasks/occurrences for this cell
             const occurrences = getFilteredTasksForDate(day);
-            const pendingOccs = occurrences.filter((o) => !o.completed);
-            const completedCount = occurrences.filter((o) => o.completed).length;
+            const pendingOccs = occurrences.filter((o) => o.status === 'pending');
+            const completedCount = occurrences.filter((o) => o.status === 'completed').length;
 
             return (
               <div
@@ -262,12 +264,13 @@ export default function TaskCalendarView({
               <TaskItem
                 key={`${occ.task.id}_${occ.occurrenceDate}`}
                 task={occ.task}
-                completed={occ.completed}
+                status={occ.status}
                 occurrenceDate={occ.occurrenceDate}
-                onToggle={() => onToggleTask(occ.task, occ.completed, occ.occurrenceDate)}
+                onToggle={() => onToggleTask(occ.task, occ.status === 'completed', occ.occurrenceDate)}
                 onEdit={() => onEditTask(occ.task)}
                 onDelete={() => onDeleteTask(occ.task)}
-                onClick={() => onOpenDetails(occ.task, occ.completed, occ.occurrenceDate)}
+                onWontDo={onWontDoTask ? () => onWontDoTask(occ.task, occ.occurrenceDate) : undefined}
+                onClick={() => onOpenDetails(occ.task, occ.status, occ.occurrenceDate)}
               />
             ))}
           </div>

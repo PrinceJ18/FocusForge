@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Sparkles, Award, Timer, CheckSquare, Zap, Calendar, BarChart3,
   TrendingUp, Lightbulb, Activity, PiggyBank, Flame, Brain, Shield,
-  Wallet, Target, Plus, Play
+  Wallet, Target, Plus, Play, XCircle
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '../../lib/formatCurrency';
@@ -380,19 +380,19 @@ const TodaysTasksWidget: React.FC<WidgetProps> = ({ context }) => {
               </button>
             </div>
           ) : (
-            todayTaskOccurrences.map(({ task, completed, occurrenceDate }) => {
+            todayTaskOccurrences.map(({ task, status, occurrenceDate }) => {
               const section = taskSections.find((s) => s.id === task.section_id);
               const isHigh = task.priority === 'high';
               const isMed = task.priority === 'medium';
               const priorityColor = isHigh ? '#ef4444' : isMed ? '#f59e0b' : '#10b981';
 
               return (
-                <div key={`${task.id}_${occurrenceDate}`} onClick={() => setSelectedTaskDetails({ task, completed, date: occurrenceDate })} className="p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs">
-                  <button onClick={(e) => { e.stopPropagation(); handleToggleTask(task, completed, occurrenceDate); }} className="text-gray-400 hover:text-white transition-colors" style={{ color: completed ? '#10b981' : 'var(--text-muted)' }}>
-                    {completed ? <CheckSquare size={16} className="text-green-500" /> : <div className="w-4 h-4 rounded border border-white/20 hover:border-purple-400 transition-colors" />}
+                <div key={`${task.id}_${occurrenceDate}`} onClick={() => setSelectedTaskDetails({ task, status, date: occurrenceDate })} className="p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs">
+                  <button onClick={(e) => { e.stopPropagation(); if (status !== 'wont_do') handleToggleTask(task, status === 'completed', occurrenceDate); }} disabled={status === 'wont_do'} className={`transition-colors ${status === 'wont_do' ? 'opacity-50 cursor-not-allowed' : 'text-gray-400 hover:text-white'}`} style={{ color: status === 'completed' ? '#10b981' : status === 'wont_do' ? '#f97316' : 'var(--text-muted)' }}>
+                    {status === 'completed' ? <CheckSquare size={16} className="text-green-500" /> : status === 'wont_do' ? <XCircle size={16} className="text-orange-500" /> : <div className="w-4 h-4 rounded border border-white/20 hover:border-purple-400 transition-colors" />}
                   </button>
                   <div className="flex-1 min-w-0 text-left">
-                    <span className="font-semibold text-white block truncate" style={{ textDecoration: completed ? 'line-through' : 'none', color: completed ? 'rgba(255,255,255,0.4)' : 'white' }}>{task.title}</span>
+                    <span className="font-semibold text-white block truncate" style={{ textDecoration: (status === 'completed' || status === 'wont_do') ? 'line-through' : 'none', color: (status === 'completed' || status === 'wont_do') ? 'rgba(255,255,255,0.4)' : 'white' }}>{task.title}</span>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ backgroundColor: `${priorityColor}15`, color: priorityColor }}>{task.priority}</span>
                       {section && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${section.color}15`, color: section.color }}>{section.name}</span>}

@@ -9,11 +9,29 @@ export function useDailyProductivityScore() {
 
   return useMemo(() => {
     const todayCompleted = getTodayCompletedTasks(tasks);
-    const todayTotal = tasks.filter(t => 
-      // Count tasks that are not completed, OR completed today
-      (!t.completed && (!t.recurrence_type || t.recurrence_type === 'none')) || 
-      (t.completed && t.completed_at && isToday(parseISO(t.completed_at)))
-    ).length;
+    const todayTotal = tasks.filter(t => {
+       // Completed or Won't Do tasks logged today
+       if (t.status === 'completed' || t.status === 'wont_do') {
+         return t.completed_at && isToday(parseISO(t.completed_at));
+       }
+       
+       // Pending tasks
+       // Ignore recurring pending tasks in this calculation (they are calculated dynamically elsewhere)
+       if (t.recurrence_type && t.recurrence_type !== 'none') return false; 
+       
+       // For non-recurring pending tasks, only count them if their deadline has passed
+       if (t.deadline) {
+         return new Date(t.deadline) < new Date();
+       }
+       
+       // If no deadline, it counts towards the total if it was scheduled for today or earlier
+       if (t.scheduled_date) {
+         const sched = parseISO(t.scheduled_date);
+         return sched < new Date();
+       }
+       
+       return false;
+    }).length;
 
     const todayFocus = getTodayFocusMinutes(focusSessions);
     const focusGoal = preferences.default_daily_focus_goal || 120;

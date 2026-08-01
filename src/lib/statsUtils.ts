@@ -51,12 +51,12 @@ export function getAllTimeFocusMinutes(focusSessions: FocusSession[]): number {
 /** Tasks completed today */
 export function getTodayCompletedTasks(tasks: Task[]): number {
   const nonRecurring = tasks.filter(
-    (t) => (!t.recurrence_type || t.recurrence_type === 'none') && t.completed && t.completed_at && isToday(parseISO(t.completed_at))
+    (t) => (!t.recurrence_type || t.recurrence_type === 'none') && t.status === 'completed' && t.completed_at && isToday(parseISO(t.completed_at))
   ).length;
 
   const comps = useStore.getState().taskCompletions || [];
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const recurring = comps.filter((c) => c.occurrence_date === todayStr).length;
+  const recurring = comps.filter((c) => c.occurrence_date === todayStr && c.status === 'completed').length;
 
   return nonRecurring + recurring;
 }
@@ -64,13 +64,13 @@ export function getTodayCompletedTasks(tasks: Task[]): number {
 /** Tasks completed this month */
 export function getMonthlyCompletedTasks(tasks: Task[]): number {
   const nonRecurring = tasks.filter(
-    (t) => (!t.recurrence_type || t.recurrence_type === 'none') && t.completed && t.completed_at && isThisMonth(parseISO(t.completed_at))
+    (t) => (!t.recurrence_type || t.recurrence_type === 'none') && t.status === 'completed' && t.completed_at && isThisMonth(parseISO(t.completed_at))
   ).length;
 
   const comps = useStore.getState().taskCompletions || [];
   const recurring = comps.filter((c) => {
     try {
-      return isThisMonth(parseISO(c.occurrence_date));
+      return c.status === 'completed' && isThisMonth(parseISO(c.occurrence_date));
     } catch {
       return false;
     }
@@ -81,14 +81,14 @@ export function getMonthlyCompletedTasks(tasks: Task[]): number {
 
 /** All pending (incomplete) tasks */
 export function getPendingTasksCount(tasks: Task[]): number {
-  return tasks.filter((t) => !t.completed).length;
+  return tasks.filter((t) => t.status === 'pending').length;
 }
 
 /** All completed tasks (all time) */
 export function getCompletedTasksCount(tasks: Task[]): number {
-  const nonRecurring = tasks.filter((t) => (!t.recurrence_type || t.recurrence_type === 'none') && t.completed).length;
+  const nonRecurring = tasks.filter((t) => (!t.recurrence_type || t.recurrence_type === 'none') && t.status === 'completed').length;
   const comps = useStore.getState().taskCompletions || [];
-  return nonRecurring + comps.length;
+  return nonRecurring + comps.filter(c => c.status === 'completed').length;
 }
 
 // ============================================================

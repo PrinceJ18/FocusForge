@@ -38,7 +38,8 @@ import {
   updateTask,
   deleteTask,
   completeTask,
-  uncompleteTask
+  uncompleteTask,
+  markTaskWontDo
 } from '../store/useStore';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -100,7 +101,7 @@ export default function Productivity() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [defaultDateForNewTask, setDefaultDateForNewTask] = useState<string | undefined>(undefined);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [selectedTaskDetails, setSelectedTaskDetails] = useState<{ task: Task; completed: boolean; date: string } | null>(null);
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<{ task: Task; status: 'pending' | 'completed' | 'wont_do'; date: string } | null>(null);
   const [showSectionManager, setShowSectionManager] = useState(false);
   const [showTimerSettings, setShowTimerSettings] = useState(false);
 
@@ -243,10 +244,21 @@ export default function Productivity() {
     }
   };
 
+  const handleWontDoTask = async (task: Task, dateStr: string) => {
+    const date = parseISO(dateStr);
+    try {
+      await markTaskWontDo(task, date, user?.id || 'local');
+      showNotification({ type: 'info', title: 'Task Marked', message: "Task marked as Won't Do" });
+    } catch (err: any) {
+      console.error('Failed to mark task as wont do:', err);
+      showNotification({ type: 'error', title: 'Error', message: err.message || 'Failed to update task status' });
+    }
+  };
+
   // Pending count for today's summary
   const todayOccurrences = getTasksForDate(tasks, new Date(), taskCompletions);
-  const todayPendingCount = todayOccurrences.filter((o) => !o.completed).length;
-  const todayCompletedCount = todayOccurrences.filter((o) => o.completed).length;
+  const todayPendingCount = todayOccurrences.filter((o) => o.status === 'pending').length;
+  const todayCompletedCount = todayOccurrences.filter((o) => o.status === 'completed').length;
   const todayTotalCount = todayOccurrences.length;
   const completionPct = todayTotalCount > 0 ? Math.round((todayCompletedCount / todayTotalCount) * 100) : 0;
 
@@ -261,7 +273,7 @@ export default function Productivity() {
       const occs = getTasksForDate(tasks, d, taskCompletions);
       for (const occ of occs) {
         const key = `${occ.task.id}_${occ.occurrenceDate}`;
-        if (!seen.has(key) && !occ.completed && occ.occurrenceDate < todayStr) {
+        if (!seen.has(key) && occ.status === 'pending' && occ.occurrenceDate < todayStr) {
           seen.add(key);
           count++;
         }
@@ -274,7 +286,7 @@ export default function Productivity() {
   // Next pending task: highest priority among today's pending
   const priorityRank = (p: string) => p === 'high' ? 3 : p === 'medium' ? 2 : 1;
   const todayPending = todayOccurrences
-    .filter((o) => !o.completed)
+    .filter((o) => o.status === 'pending')
     .sort((a, b) => priorityRank(b.task.priority) - priorityRank(a.task.priority));
   const nextPendingTask = todayPending.length > 0 ? todayPending[0].task : null;
 
@@ -718,8 +730,9 @@ export default function Productivity() {
                 searchQuery={searchQuery}
                 filterPriority={filterPriority}
                 filterSectionId={filterSectionId}
-                onOpenDetails={(task, completed, date) => setSelectedTaskDetails({ task, completed, date })}
+                onOpenDetails={(task, status, date) => setSelectedTaskDetails({ task, status, date })}
                 onToggleTask={handleToggleTask}
+                onWontDoTask={handleWontDoTask}
                 onEditTask={(task) => setEditingTask(task)}
                 onDeleteTask={handleDeleteTask}
               />
@@ -728,8 +741,9 @@ export default function Productivity() {
                 searchQuery={searchQuery}
                 filterPriority={filterPriority}
                 filterSectionId={filterSectionId}
-                onOpenDetails={(task, completed, date) => setSelectedTaskDetails({ task, completed, date })}
+                onOpenDetails={(task, status, date) => setSelectedTaskDetails({ task, status, date })}
                 onToggleTask={handleToggleTask}
+                onWontDoTask={handleWontDoTask}
                 onEditTask={(task) => setEditingTask(task)}
                 onDeleteTask={handleDeleteTask}
                 onAddTaskForDate={(date) => {
@@ -903,7 +917,7 @@ export default function Productivity() {
       {selectedTaskDetails && (
         <TaskDetailsModal
           task={selectedTaskDetails.task}
-          completed={selectedTaskDetails.completed}
+          status={selectedTaskDetails.status}
           occurrenceDate={selectedTaskDetails.date}
           onClose={() => setSelectedTaskDetails(null)}
           onEdit={() => {
@@ -914,12 +928,17 @@ export default function Productivity() {
           onToggle={async () => {
             await handleToggleTask(
               selectedTaskDetails.task,
-              selectedTaskDetails.completed,
+              selectedTaskDetails.status === 'completed',
               selectedTaskDetails.date
             );
-            // Toggle completed state inside selectedTaskDetails to keep details modal state updated
             setSelectedTaskDetails((prev) =>
-              prev ? { ...prev, completed: !prev.completed } : null
+              prev ? { ...prev, status: prev.status === 'completed' ? 'pending' : 'completed' } : null
+            );
+          }}
+          onWontDo={async () => {
+            await handleWontDoTask(selectedTaskDetails.task, selectedTaskDetails.date);
+            setSelectedTaskDetails((prev) =>
+              prev ? { ...prev, status: 'wont_do' } : null
             );
           }}
           onDelete={async () => {
@@ -984,10 +1003,11 @@ function TimerSettingsModal({
       maxWidth="md"
       footer={
         <div className="flex gap-3 w-full">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">
+          <Button variant="ghost" onClick={onClose} className="flex-1 py-2.5 text-xs font-semibold">
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="neon"
             onClick={() => {
               const pVal = parseInt(pomo), bVal = parseInt(brk), lbVal = parseInt(longBrk);
               const p = isNaN(pVal) ? 25 : Math.max(1, Math.min(120, pVal));
@@ -995,10 +1015,10 @@ function TimerSettingsModal({
               const lb = isNaN(lbVal) ? 15 : Math.max(1, Math.min(120, lbVal));
               onSave(p, b, lb);
             }}
-            className="btn-neon flex-1 py-2.5 text-xs font-semibold"
+            className="flex-1 py-2.5 text-xs font-semibold"
           >
             Save Settings
-          </button>
+          </Button>
         </div>
       }
     >
@@ -1016,7 +1036,7 @@ function TimerSettingsModal({
               type="number"
               value={value}
               onChange={(e) => set(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+              className="input-glass w-full px-3.5 py-2.5"
               min="1"
               max="120"
             />

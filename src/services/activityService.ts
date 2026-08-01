@@ -35,6 +35,19 @@ export const activityService = {
     description: string | null = null,
     metadata: Record<string, any> = {}
   ): Promise<void> {
+    if (metadata?.dedupe_key) {
+      const { data: existing } = await supabase
+        .from('arena_activity')
+        .select('id')
+        .eq('arena_id', arenaId)
+        .eq('user_id', userId)
+        .eq('activity_type', type)
+        .contains('metadata', { dedupe_key: metadata.dedupe_key })
+        .maybeSingle();
+
+      if (existing) return;
+    }
+
     const { error } = await supabase
       .from('arena_activity')
       .insert({

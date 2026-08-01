@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase';
 import { useStore, loadUserData, checkAndUpdateGuestStreak, applyPreferencesToDOM } from './store/useStore';
 import { useTimerEngine } from './hooks/useTimerEngine';
 import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
+import { useArenaEngine } from './hooks/useArenaEngine';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import MobileNav from './components/MobileNav';
@@ -53,6 +54,7 @@ export default function App() {
   // so it persists across all page navigations.
   useTimerEngine();
   useDailyGoalWatcher();
+  useArenaEngine('global-arena');
 
   useEffect(() => {
     // Check initial session

@@ -98,14 +98,14 @@ export const friendService = {
   async getFriendRequests(userId: string): Promise<{ incoming: FriendRequest[]; outgoing: FriendRequest[] }> {
     const { data: incoming, error: inErr } = await supabase
       .from('friend_requests')
-      .select('*')
+      .select('*, sender:profiles!friend_requests_sender_id_fkey(display_name, avatar_url, friend_code, level, xp, streak)')
       .eq('receiver_id', userId)
       .eq('status', 'pending')
       .is('deleted_at', null);
 
     const { data: outgoing, error: outErr } = await supabase
       .from('friend_requests')
-      .select('*')
+      .select('*, receiver:profiles!friend_requests_receiver_id_fkey(display_name, avatar_url, friend_code, level, xp, streak)')
       .eq('sender_id', userId)
       .eq('status', 'pending')
       .is('deleted_at', null);
@@ -131,8 +131,8 @@ export const friendService = {
       .from('friends')
       .select(`
         id, user_id, friend_id, created_at, deleted_at,
-        user_profile:profiles!friends_user_id_fkey(display_name, avatar_url, level, xp),
-        friend_profile:profiles!friends_friend_id_fkey(display_name, avatar_url, level, xp)
+        user_profile:profiles!friends_user_id_fkey(display_name, avatar_url, friend_code, level, xp, streak),
+        friend_profile:profiles!friends_friend_id_fkey(display_name, avatar_url, friend_code, level, xp, streak)
       `)
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
       .is('deleted_at', null);
@@ -159,8 +159,10 @@ export const friendService = {
         profile: profile ? {
           display_name: profile.display_name,
           avatar_url: profile.avatar_url,
+          friend_code: profile.friend_code,
           level: profile.level,
           xp: profile.xp,
+          streak: profile.streak,
         } : undefined,
       };
     });
@@ -274,6 +276,7 @@ export const friendService = {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
+    friend_code: string | null;
     level: number;
     xp: number;
     streak: number;
@@ -284,7 +287,7 @@ export const friendService = {
     // 1. Fetch Profile
     const { data: profile, error: profErr } = await supabase
       .from('profiles')
-      .select('id, display_name, avatar_url, level, xp, streak')
+      .select('id, display_name, avatar_url, friend_code, level, xp, streak')
       .eq('id', friendUserId)
       .maybeSingle();
 
@@ -336,6 +339,7 @@ export const friendService = {
       id: profile.id,
       display_name: profile.display_name,
       avatar_url: profile.avatar_url,
+      friend_code: profile.friend_code,
       level,
       xp,
       streak,

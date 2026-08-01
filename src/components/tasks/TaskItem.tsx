@@ -1,26 +1,28 @@
 import React from 'react';
-import { Circle, CheckCircle2, Trash2, Edit2, Calendar, Bell, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Circle, CheckCircle2, Trash2, Edit2, Calendar, Bell, RotateCcw, AlertTriangle, XCircle, X } from 'lucide-react';
 import { useStore, Task } from '../../store/useStore';
 import { format } from 'date-fns';
 import { ICON_MAP } from './TaskSectionManager';
 
 interface TaskItemProps {
   task: Task;
-  completed: boolean;
+  status: 'pending' | 'completed' | 'wont_do';
   occurrenceDate: string; // YYYY-MM-DD
   onToggle: (e: React.MouseEvent) => void;
   onEdit: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
+  onWontDo?: (e: React.MouseEvent) => void;
   onClick: () => void;
 }
 
 export default function TaskItem({
   task,
-  completed,
+  status,
   occurrenceDate,
   onToggle,
   onEdit,
   onDelete,
+  onWontDo,
   onClick,
 }: TaskItemProps) {
   const { taskSections } = useStore();
@@ -35,12 +37,16 @@ export default function TaskItem({
   };
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const isOverdue = !completed && task.deadline && task.deadline < todayStr;
+  const isPending = status === 'pending';
+  const isCompleted = status === 'completed';
+  const isWontDo = status === 'wont_do';
+  
+  const isOverdue = isPending && task.deadline && task.deadline < todayStr;
   const isToday = task.scheduled_date === todayStr;
   const isRecurring = task.recurrence_type && task.recurrence_type !== 'none';
 
   // Determine if there's any metadata to show (Row 2)
-  const hasMetadata = !completed && (
+  const hasMetadata = isPending && (
     section ||
     task.deadline ||
     task.description
@@ -50,10 +56,11 @@ export default function TaskItem({
   const hasBadges = (
     task.priority ||
     isOverdue ||
-    (!completed && isToday) ||
+    (isPending && isToday) ||
     isRecurring ||
     task.reminder_enabled ||
-    completed
+    isCompleted ||
+    isWontDo
   );
 
   return (
@@ -81,17 +88,20 @@ export default function TaskItem({
             ROW 1 — Checkbox + Title + Quick Actions
             ═══════════════════════════════════════════════ */}
         <div className="flex items-center gap-2.5">
-          {/* Checkbox */}
+          {/* Checkbox / Status Icon */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onToggle(e);
+              if (!isWontDo) onToggle(e); // Can't toggle complete if wont_do, they must use menu
             }}
-            className="flex-shrink-0 transition-colors"
-            style={{ color: completed ? '#10b981' : 'var(--text-muted)' }}
+            disabled={isWontDo}
+            className={`flex-shrink-0 transition-colors ${isWontDo ? 'opacity-50 cursor-not-allowed' : ''}`}
+            style={{ color: isCompleted ? '#10b981' : isWontDo ? '#f97316' : 'var(--text-muted)' }}
           >
-            {completed ? (
+            {isCompleted ? (
               <CheckCircle2 size={18} className="text-green-500 filter drop-shadow-[0_0_4px_rgba(16,185,129,0.4)]" />
+            ) : isWontDo ? (
+              <XCircle size={18} className="text-orange-500 filter drop-shadow-[0_0_4px_rgba(249,115,22,0.4)]" />
             ) : (
               <Circle size={18} className="hover:text-white hover:scale-105 active:scale-95 transition-all" />
             )}
@@ -101,8 +111,8 @@ export default function TaskItem({
           <span
             className="flex-1 min-w-0 text-sm font-semibold tracking-tight truncate"
             style={{
-              textDecoration: completed ? 'line-through' : 'none',
-              color: completed ? 'rgba(255,255,255,0.35)' : '#ffffff',
+              textDecoration: (isCompleted || isWontDo) ? 'line-through' : 'none',
+              color: (isCompleted || isWontDo) ? 'rgba(255,255,255,0.35)' : '#ffffff',
             }}
           >
             {task.title}
@@ -110,6 +120,18 @@ export default function TaskItem({
 
           {/* Quick Actions — visible on hover */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+            {onWontDo && isPending && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onWontDo(e);
+                }}
+                title="Mark as Won't Do"
+                className="p-1 text-orange-400/70 hover:text-orange-300 bg-orange-500/5 hover:bg-orange-500/15 rounded-md border border-orange-500/10 hover:border-orange-500/20 transition-all duration-200"
+              >
+                <X size={12} />
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -186,7 +208,7 @@ export default function TaskItem({
             )}
 
             {/* Today */}
-            {!completed && isToday && (
+            {isPending && isToday && (
               <span className="text-[9px] font-bold px-1.5 py-[1px] rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 leading-relaxed">
                 Today
               </span>
@@ -211,9 +233,16 @@ export default function TaskItem({
             )}
 
             {/* Completed */}
-            {completed && (
+            {isCompleted && (
               <span className="text-[9px] font-bold px-1.5 py-[1px] rounded bg-green-500/10 border border-green-500/20 text-green-400 leading-relaxed">
                 Completed
+              </span>
+            )}
+            
+            {/* Won't Do */}
+            {isWontDo && (
+              <span className="text-[9px] font-bold px-1.5 py-[1px] rounded bg-orange-500/10 border border-orange-500/20 text-orange-400 leading-relaxed">
+                Won't Do
               </span>
             )}
           </div>

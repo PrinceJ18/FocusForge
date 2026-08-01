@@ -18,6 +18,8 @@ export default function ProfileModal({
   const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [error, setError] = useState('');
+
   useEffect(() => {
     if (profile?.display_name) {
       setDisplayName(profile.display_name);
@@ -26,20 +28,31 @@ export default function ProfileModal({
 
   const handleSave = async () => {
     if (!user) return;
+    
+    if (!displayName.trim()) {
+      setError('Username cannot be empty');
+      return;
+    }
+    
+    if (displayName.length > 30) {
+      setError('Username must be 30 characters or less');
+      return;
+    }
 
     setSaving(true);
+    setError('');
 
     try {
       // Update local store
       updateProfile({
-        display_name: displayName,
+        display_name: displayName.trim(),
       });
 
       // Update Supabase profile
       await supabase
         .from('profiles')
         .update({
-          display_name: displayName,
+          display_name: displayName.trim(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -61,6 +74,7 @@ export default function ProfileModal({
       maxWidth="md"
     >
       <div className="space-y-4 text-left">
+        {error && <div className="text-red-400 bg-red-400/10 p-2 rounded-lg text-sm">{error}</div>}
         <div>
           <label className="text-xs font-semibold text-slate-300 block mb-1.5">
             Username

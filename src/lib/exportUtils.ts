@@ -10,7 +10,6 @@ export interface ReportData {
 }
 
 export async function exportReport(format: ExportFormat, data: ReportData): Promise<boolean> {
-  console.log(`Starting export for ${data.title} in format ${format}`);
   
   try {
     switch (format) {
@@ -31,7 +30,6 @@ export async function exportReport(format: ExportFormat, data: ReportData): Prom
 
 async function generatePDF(data: ReportData): Promise<boolean> {
   // Architecture stub for future PDF generation library (e.g., jspdf, react-pdf)
-  console.log('Generating PDF stub...', data);
   // Simulate delay
   await new Promise(resolve => setTimeout(resolve, 500));
   return true;
@@ -39,7 +37,6 @@ async function generatePDF(data: ReportData): Promise<boolean> {
 
 async function generateCSV(data: ReportData): Promise<boolean> {
   // Architecture stub for future CSV generation
-  console.log('Generating CSV stub...', data);
   
   let csvContent = 'data:text/csv;charset=utf-8,\n';
   csvContent += `${data.title} - ${data.dateRange}\n\n`;
@@ -66,7 +63,6 @@ async function generateCSV(data: ReportData): Promise<boolean> {
 
 async function generatePNG(data: ReportData): Promise<boolean> {
   // Architecture stub for future PNG generation library (e.g., html2canvas)
-  console.log('Generating PNG stub...', data);
   await new Promise(resolve => setTimeout(resolve, 500));
   return true;
 }

@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Trophy, Star, Zap, Flame, Target, Award, Lock, CheckCircle2, TrendingUp } from 'lucide-react';
+import Button from '../components/ui/Button';
 import { useStore } from '../store/useStore';
 import { formatCurrency } from '../lib/formatCurrency';
 import { supabase } from '../lib/supabase';
@@ -426,17 +427,18 @@ export default function Rewards() {
                       Claimed
                     </div>
                   ) : (
-                    <button
+                    <Button
+                      variant="neon"
                       onClick={() =>
                         claimChallenge(
                           challenge.id,
                           challenge.reward
                         )
                       }
-                      className="btn-neon px-3 py-1 text-xs"
+                      className="px-3 py-1 text-xs"
                     >
                       Claim
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

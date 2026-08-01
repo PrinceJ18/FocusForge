@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useStore, type Expense, type SavingsGoal, type CustomCategory, type RecurringExpense } from '../store/useStore';
 import { supabase } from '../lib/supabase';
+import { saveProfile } from '../store/storeUtils';
 import {
   format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday,
   addDays, subDays, startOfWeek, endOfWeek, differenceInDays, isBefore, isAfter, isSameMonth,
@@ -28,6 +29,7 @@ import { payRecurringExpense, skipRecurringExpense } from '../lib/recurringUtils
 import RecurringDetailsModal from '../components/finance/RecurringDetailsModal';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import EmptyState from '../components/ui/EmptyState';
 
 const DEFAULT_CATEGORIES = [
   { id: 'food', name: 'Food', icon: '🍔', color: '#f59e0b' },
@@ -96,11 +98,20 @@ export default function Finance() {
     if (!isNaN(val) && val > 0) {
       updateProfile({ monthly_budget: val });
       if (user) {
-        await supabase.from('profiles').upsert({ id: user.id, monthly_budget: val, updated_at: new Date().toISOString() });
+        await saveProfile(user.id, { monthly_budget: val });
       }
       setShowBudgetEdit(false);
     }
   };
+
+  const handleDeleteExpense = React.useCallback(async (id: string) => {
+    removeExpenseLocal(id);
+    if (user) await supabase.from('expenses').delete().eq('id', id);
+  }, [removeExpenseLocal, user]);
+
+  const handleSelectRecurring = React.useCallback((bill: RecurringExpense) => {
+    setSelectedRecurringDetails(bill);
+  }, []);
 
   // ----------------------------------------------------
   // RECURRING CALCULATIONS & STATISTICS
@@ -381,7 +392,7 @@ export default function Finance() {
                   </div>
                 </div>
               ) : (
-                <EmptyState icon={<TrendingDown size={32} />} text="No expenses this month" />
+                <EmptyState icon={TrendingDown} title="No expenses this month" description="You haven't logged any expenses yet." />
               )}
             </div>
 
@@ -405,7 +416,7 @@ export default function Finance() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <EmptyState icon={<BarChart2 size={32} />} text="No data yet" />
+                <EmptyState icon={BarChart2} title="No data yet" description="Your spending history will appear here." />
               )}
             </div>
           </div>
@@ -436,23 +447,21 @@ export default function Finance() {
                     key={exp.id}
                     expense={exp}
                     categories={allCategories}
-                    onDelete={async () => {
-                      removeExpenseLocal(exp.id);
-                      if (user) await supabase.from('expenses').delete().eq('id', exp.id);
-                    }}
+                    onDelete={handleDeleteExpense}
                   />
                 ))}
               </div>
             ) : (
-              <EmptyState icon={<TrendingDown size={32} />} text="No expenses this month">
-                <button
-                  onClick={() => setShowAddExpense(true)}
-                  className="btn-neon px-4 py-2 text-sm mt-3"
-                  style={{ borderRadius: 10 }}
-                >
-                  Add First Expense
-                </button>
-              </EmptyState>
+              <EmptyState 
+                icon={TrendingDown} 
+                title="No expenses this month" 
+                description="Add your first expense to track your budget."
+                action={{
+                  label: "Add First Expense",
+                  onClick: () => setShowAddExpense(true),
+                  icon: Plus
+                }}
+              />
             )}
           </div>
         )
@@ -671,7 +680,7 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-2">Today</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingToday.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={handleSelectRecurring} />
                           ))}
                         </div>
                       </div>
@@ -682,7 +691,7 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-pink-400 uppercase tracking-widest mb-2">Tomorrow</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingTomorrow.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={handleSelectRecurring} />
                           ))}
                         </div>
                       </div>
@@ -693,7 +702,7 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-2">This Week</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingThisWeek.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={handleSelectRecurring} />
                           ))}
                         </div>
                       </div>
@@ -704,7 +713,7 @@ export default function Finance() {
                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 font-medium">Later Next Month</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingNextMonth.map(bill => (
-                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={() => setSelectedRecurringDetails(bill)} />
+                            <UpcomingBillCard key={bill.id} bill={bill} onSelect={handleSelectRecurring} />
                           ))}
                         </div>
                       </div>
@@ -895,15 +904,16 @@ export default function Finance() {
                 ))}
               </div>
             ) : (
-              <EmptyState icon={<PiggyBank size={32} />} text="No savings goals created yet">
-                <button
-                  onClick={() => setShowAddGoal(true)}
-                  className="btn-neon px-4 py-2 text-sm mt-3"
-                  style={{ borderRadius: 10 }}
-                >
-                  Create Savings Goal
-                </button>
-              </EmptyState>
+              <EmptyState 
+                icon={PiggyBank} 
+                title="No savings goals" 
+                description="Create a savings goal to start tracking your progress." 
+                action={{
+                  label: "Create Savings Goal",
+                  onClick: () => setShowAddGoal(true),
+                  icon: Plus
+                }}
+              />
             )}
           </div>
         )
@@ -1062,7 +1072,7 @@ export default function Finance() {
               value={newBudget}
               onChange={(e) => setNewBudget(e.target.value)}
               className="input-glass w-full px-4 py-3 text-lg mb-4"
-              placeholder="5000"
+              placeholder="10000"
             />
             <div className="flex gap-3">
               <button onClick={() => setShowBudgetEdit(false)} className="btn-ghost flex-1 px-4 py-2.5 text-sm">Cancel</button>
@@ -1226,8 +1236,8 @@ function FinStatCard({ label, value, sub, color, icon, action }: {
   );
 }
 
-function ExpenseItem({ expense, categories, onDelete }: {
-  expense: any; categories: any[]; onDelete: () => void;
+const ExpenseItem = React.memo(function ExpenseItem({ expense, categories, onDelete }: {
+  expense: any; categories: any[]; onDelete: (id: string) => void;
 }) {
   const cat = categories.find((c) => c.id === expense.category);
   return (
@@ -1247,7 +1257,7 @@ function ExpenseItem({ expense, categories, onDelete }: {
       <div className="flex items-center gap-3">
         <span className="text-sm font-bold" style={{ color: '#ef4444' }}>-{formatCurrency(expense.amount)}</span>
         <button
-          onClick={onDelete}
+          onClick={() => onDelete(expense.id)}
           className="p-1.5 rounded-lg transition-all"
           style={{ color: 'var(--text-muted)' }}
           onMouseEnter={(e) => {
@@ -1264,7 +1274,7 @@ function ExpenseItem({ expense, categories, onDelete }: {
       </div>
     </div>
   );
-}
+});
 
 function SavingsGoalCard({ goal, onDelete, onAddFunds }: {
   goal: any; onDelete: () => void; onAddFunds: (amount: number) => void;
@@ -1322,12 +1332,12 @@ function SavingsGoalCard({ goal, onDelete, onAddFunds }: {
   );
 }
 
-function UpcomingBillCard({ bill, onSelect }: { bill: RecurringExpense; onSelect: () => void }) {
+const UpcomingBillCard = React.memo(function UpcomingBillCard({ bill, onSelect }: { bill: RecurringExpense; onSelect: (bill: RecurringExpense) => void }) {
   const daysLeft = differenceInDays(parseISO(bill.payment_date), new Date());
   return (
     <div
       className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer text-left"
-      onClick={onSelect}
+      onClick={() => onSelect(bill)}
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center text-xl">
@@ -1346,18 +1356,42 @@ function UpcomingBillCard({ bill, onSelect }: { bill: RecurringExpense; onSelect
       </div>
     </div>
   );
-}
+});
 
 function AddExpenseModal({ categories, onClose, onAdd }: {
   categories: any[];
   onClose: () => void;
-  onAdd: (data: any) => void;
+  onAdd: (data: any) => Promise<void>;
 }) {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('food');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAdd = async () => {
+    if (!title.trim()) {
+      setError('Title is required');
+      return;
+    }
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setError('Amount must be greater than 0');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await onAdd({ title: title.trim(), amount: numAmount, category, note: note.trim(), expense_date: date });
+    } catch (err: any) {
+      setError(err.message || 'Failed to add expense');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Modal
@@ -1367,16 +1401,13 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
       maxWidth="md"
       footer={
         <div className="flex gap-3 w-full">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">
+          <button onClick={onClose} disabled={isSubmitting} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1 disabled:opacity-50">
             Cancel
           </button>
           <Button
-            onClick={() => {
-              if (title && amount) {
-                onAdd({ title, amount: parseFloat(amount), category, note, expense_date: date });
-              }
-            }}
+            onClick={handleAdd}
             className="flex-1 py-2.5 text-xs font-semibold"
+            isLoading={isSubmitting}
           >
             Add Expense
           </Button>
@@ -1384,13 +1415,14 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
       }
     >
       <div className="space-y-4 text-xs text-left">
+        {error && <div className="text-red-400 bg-red-400/10 p-2 rounded-lg">{error}</div>}
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Title</label>
+          <label className="font-semibold text-slate-300 mb-1 block">Title *</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            className="input-glass w-full px-3.5 py-2.5"
             placeholder="Coffee, Groceries..."
             autoFocus
           />
@@ -1403,7 +1435,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
               min="1"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+              className="input-glass w-full px-3.5 py-2.5"
               placeholder="0.00"
             />
           </div>
@@ -1413,7 +1445,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
+              className="input-glass w-full px-3.5 py-2.5"
             />
           </div>
         </div>
@@ -1422,7 +1454,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
+            className="input-glass w-full px-3.5 py-2.5"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
@@ -1435,7 +1467,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            className="input-glass w-full px-3.5 py-2.5"
             placeholder="Optional note..."
           />
         </div>
@@ -1576,17 +1608,17 @@ function AddEditRecurringModal({
       <div className="space-y-4 text-xs text-left">
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Expense Name</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Netflix, Gym membership, Rent..." />
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Netflix, Gym membership, Rent..." />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Amount ($)</label>
-            <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="0.00" />
+            <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="0.00" />
           </div>
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition">
+            <select value={category} onChange={(e) => setCategory(e.target.value)} className="input-glass w-full px-3.5 py-2.5">
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
               ))}
@@ -1596,24 +1628,24 @@ function AddEditRecurringModal({
 
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Description (Optional)</label>
-          <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Additional details..." />
+          <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Additional details..." />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Start Date</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
           </div>
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">First Billing Date</label>
-            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+            <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Frequency</label>
-            <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition">
+            <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="input-glass w-full px-3.5 py-2.5">
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="bi-weekly">Bi-weekly</option>
@@ -1627,7 +1659,7 @@ function AddEditRecurringModal({
           {frequency === 'custom' && (
             <div>
               <label className="font-semibold text-slate-300 mb-1 block">Custom Interval (Days)</label>
-              <input type="number" min="1" value={customInterval} onChange={(e) => setCustomInterval(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+              <input type="number" min="1" value={customInterval} onChange={(e) => setCustomInterval(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
             </div>
           )}
         </div>
@@ -1638,7 +1670,7 @@ function AddEditRecurringModal({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
+              className="input-glass w-full px-3.5 py-2.5"
             >
               <option value="active">Active</option>
               <option value="paused">Paused</option>
@@ -1651,7 +1683,7 @@ function AddEditRecurringModal({
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition"
+              className="input-glass w-full px-3.5 py-2.5"
             />
           </div>
         </div>
@@ -1659,7 +1691,7 @@ function AddEditRecurringModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Reminder Preferences</label>
-            <select value={reminder} onChange={(e) => setReminder(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition">
+            <select value={reminder} onChange={(e) => setReminder(e.target.value)} className="input-glass w-full px-3.5 py-2.5">
               <option value="same-day">Same Day</option>
               <option value="1-day">1 Day Before</option>
               <option value="2-days">2 Days Before</option>
@@ -1671,7 +1703,7 @@ function AddEditRecurringModal({
           {reminder === 'custom' && (
             <div>
               <label className="font-semibold text-slate-300 mb-1 block">Custom Reminder (Days)</label>
-              <input type="number" min="0" value={reminderCustomDays} onChange={(e) => setReminderCustomDays(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+              <input type="number" min="0" value={reminderCustomDays} onChange={(e) => setReminderCustomDays(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
             </div>
           )}
         </div>
@@ -1690,7 +1722,7 @@ function AddEditRecurringModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Visual Icon</label>
-            <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 text-center outline-none focus:border-purple-500 transition" />
+            <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} className="input-glass w-full px-3.5 py-2.5 text-center" />
           </div>
           <div>
             <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
@@ -1750,15 +1782,15 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (data: a
       <div className="space-y-4 text-xs text-left">
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Goal Title</label>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Goal title (e.g. MacBook Pro)" autoFocus />
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Goal title (e.g. MacBook Pro)" autoFocus />
         </div>
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Target Amount ($)</label>
-          <input type="number" min="1" value={target} onChange={(e) => setTarget(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="0.00" />
+          <input type="number" min="1" value={target} onChange={(e) => setTarget(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="0.00" />
         </div>
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Target Date (Optional)</label>
-          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 outline-none focus:border-purple-500 transition" />
+          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
         </div>
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
@@ -1807,7 +1839,7 @@ function AddCategoryModal({ onClose, onAdd }: { onClose: () => void; onAdd: (dat
       <div className="space-y-4 text-xs text-left">
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Category Name</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition" placeholder="Category name" autoFocus />
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Category name" autoFocus />
         </div>
         <div>
           <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
@@ -1857,12 +1889,4 @@ function TabNav({ tabs, active, onChange }: {
   );
 }
 
-function EmptyState({ icon, text, children }: { icon: React.ReactNode; text: string; children?: React.ReactNode }) {
-  return (
-    <div className="text-center py-10" style={{ color: 'var(--text-muted)' }}>
-      <div className="mb-3 opacity-30 flex justify-center">{icon}</div>
-      <p className="text-sm">{text}</p>
-      {children}
-    </div>
-  );
-}
+

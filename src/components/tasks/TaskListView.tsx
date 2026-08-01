@@ -114,8 +114,9 @@ interface TaskListViewProps {
   searchQuery: string;
   filterPriority: 'all' | 'low' | 'medium' | 'high';
   filterSectionId: string;
-  onOpenDetails: (task: Task, completed: boolean, date: string) => void;
-  onToggleTask: (task: Task, completed: boolean, date: string) => Promise<void>;
+  onOpenDetails: (task: Task, status: 'pending' | 'completed' | 'wont_do', date: string) => void;
+  onToggleTask: (task: Task, currentlyCompleted: boolean, date: string) => Promise<void>;
+  onWontDoTask?: (task: Task, date: string) => Promise<void>;
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => Promise<void>;
 }
@@ -126,13 +127,18 @@ export default function TaskListView({
   filterSectionId,
   onOpenDetails,
   onToggleTask,
+  onWontDoTask,
   onEditTask,
   onDeleteTask,
 }: TaskListViewProps) {
   const { tasks, taskCompletions, taskSections } = useStore();
 
-  // Collapse state for each section (default: all expanded)
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // Collapse state for each section (default: all expanded except specific ones)
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
+    upcoming: true,
+    completed: true,
+    wontDo: true,
+  });
   const baseId = useId();
 
   const toggleSection = (key: string) => {
@@ -149,7 +155,7 @@ export default function TaskListView({
   const endDate = addDays(today, 14);
 
   // Generate all task occurrences across this range
-  const allOccurrences: Array<{ task: Task; completed: boolean; occurrenceDate: string }> = [];
+  const allOccurrences: Array<{ task: Task; status: 'pending' | 'completed' | 'wont_do'; occurrenceDate: string }> = [];
   
   // To avoid duplicate one-time tasks across multiple dates (if any date bugs exist),
   // we scan date by date. For recurring tasks, occurrences are generated per date.
@@ -197,6 +203,7 @@ export default function TaskListView({
   const todayList: typeof filtered = [];
   const upcoming: typeof filtered = [];
   const completed: typeof filtered = [];
+  const wontDo: typeof filtered = [];
 
   // Deduplicate occurrences to avoid listing the same recurring completed occurrence multiple times
   const seenKeys = new Set<string>();
@@ -206,8 +213,10 @@ export default function TaskListView({
     if (seenKeys.has(key)) return;
     seenKeys.add(key);
 
-    if (occ.completed) {
+    if (occ.status === 'completed') {
       completed.push(occ);
+    } else if (occ.status === 'wont_do') {
+      wontDo.push(occ);
     } else if (occ.occurrenceDate < todayStr) {
       overdue.push(occ);
     } else if (occ.occurrenceDate === todayStr) {
@@ -237,10 +246,11 @@ export default function TaskListView({
   todayList.sort(sortOccurrences);
   upcoming.sort(sortOccurrences);
   
-  // Sort completed occurrences showing the most recently completed first
+  // Sort completed and wontDo occurrences showing the most recently completed first
   completed.sort((a, b) => b.occurrenceDate.localeCompare(a.occurrenceDate));
+  wontDo.sort((a, b) => b.occurrenceDate.localeCompare(a.occurrenceDate));
 
-  const hasTasks = overdue.length > 0 || todayList.length > 0 || upcoming.length > 0 || completed.length > 0;
+  const hasTasks = overdue.length > 0 || todayList.length > 0 || upcoming.length > 0 || completed.length > 0 || wontDo.length > 0;
 
   if (!hasTasks) {
     return (
@@ -272,12 +282,13 @@ export default function TaskListView({
         <TaskItem
           key={`${occ.task.id}_${occ.occurrenceDate}`}
           task={occ.task}
-          completed={occ.completed}
+          status={occ.status}
           occurrenceDate={occ.occurrenceDate}
-          onToggle={() => onToggleTask(occ.task, occ.completed, occ.occurrenceDate)}
+          onToggle={() => onToggleTask(occ.task, occ.status === 'completed', occ.occurrenceDate)}
           onEdit={() => onEditTask(occ.task)}
           onDelete={() => onDeleteTask(occ.task)}
-          onClick={() => onOpenDetails(occ.task, occ.completed, occ.occurrenceDate)}
+          onWontDo={onWontDoTask ? () => onWontDoTask(occ.task, occ.occurrenceDate) : undefined}
+          onClick={() => onOpenDetails(occ.task, occ.status, occ.occurrenceDate)}
         />
       ))}
     </div>
@@ -353,6 +364,24 @@ export default function TaskListView({
           />
           <CollapsibleContent expanded={isExpanded('completed')} id={`${baseId}-completed-content`}>
             {renderTasks(completed, 'opacity-70')}
+          </CollapsibleContent>
+        </div>
+      )}
+
+      {/* 5. WONT DO */}
+      {wontDo.length > 0 && (
+        <div className="pt-1.5 border-t border-white/5">
+          <SectionHeader
+            icon={CheckCircle2}
+            title="Won't Do"
+            count={wontDo.length}
+            color="#f97316"
+            expanded={isExpanded('wontDo')}
+            onToggle={() => toggleSection('wontDo')}
+            id={`${baseId}-wontDo`}
+          />
+          <CollapsibleContent expanded={isExpanded('wontDo')} id={`${baseId}-wontDo-content`}>
+            {renderTasks(wontDo, 'opacity-60')}
           </CollapsibleContent>
         </div>
       )}

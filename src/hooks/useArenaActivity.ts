@@ -37,42 +37,65 @@ export function useArenaActivity(arenaId: string | null) {
     fetchInitial();
   }, [fetchInitial]);
 
-  // Realtime subscription
+  // Realtime subscription with exponential backoff
   useEffect(() => {
     if (!arenaId) return;
 
-    const channel = supabase
-      .channel(`arena_activity_${arenaId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'arena_activity', filter: `arena_id=eq.${arenaId}` },
-        async (payload) => {
-          // Fetch the full enriched record for the new activity (with profile join)
-          const { data, error } = await supabase
-            .from('arena_activity')
-            .select('*, profile:profiles(display_name, avatar_url)')
-            .eq('id', payload.new.id)
-            .single();
+    let retryTimeout: ReturnType<typeof setTimeout>;
+    let retryCount = 0;
+    const maxRetries = 5;
+    const baseDelay = 1000;
+    
+    let channel: any = null;
 
-          if (!error && data) {
-            const newActivity = data as ArenaActivity;
-            
-            // Add to feed
-            setActivities(prev => {
-              // Prevent duplicates
-              if (prev.some(a => a.id === newActivity.id)) return prev;
-              return [newActivity, ...prev];
-            });
+    const setupSubscription = () => {
+      channel = supabase
+        .channel(`arena_activity_${arenaId}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'arena_activity', filter: `arena_id=eq.${arenaId}` },
+          async (payload) => {
+            const { data, error } = await supabase
+              .from('arena_activity')
+              .select('*, profile:profiles(display_name, avatar_url)')
+              .eq('id', payload.new.id)
+              .single();
 
-            // Process for notifications/celebrations
-            notificationService.processIncomingActivities([newActivity]);
+            if (!error && data) {
+              const newActivity = data as ArenaActivity;
+              setActivities(prev => {
+                if (prev.some(a => a.id === newActivity.id)) return prev;
+                return [newActivity, ...prev];
+              });
+              notificationService.processIncomingActivities([newActivity]);
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe((status, err) => {
+          if (status === 'SUBSCRIBED') {
+            retryCount = 0; // Reset on success
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            if (retryCount < maxRetries) {
+              const delay = baseDelay * Math.pow(2, retryCount);
+              console.warn(`Realtime disconnected. Retrying in ${delay}ms (Attempt ${retryCount + 1}/${maxRetries})`);
+              retryTimeout = setTimeout(() => {
+                retryCount++;
+                setupSubscription();
+              }, delay);
+            } else {
+              console.error('Realtime subscription failed after maximum retries.');
+            }
+          }
+        });
+    };
+
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      clearTimeout(retryTimeout);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [arenaId]);
 

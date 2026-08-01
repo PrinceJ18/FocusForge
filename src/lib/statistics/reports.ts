@@ -157,8 +157,9 @@ export function calculateMonthlyReportData(params: {
   });
 
   // Tasks calculations
-  const completed = monthTasks.length + monthCompletions.length;
-  const pending = tasks.filter(t => !t.completed).length; // all-time pending
+  const completed = monthTasks.filter(t => t.status === 'completed').length + monthCompletions.filter(c => c.status === 'completed').length;
+  const pending = tasks.filter(t => t.status === 'pending').length; // all-time pending
+  const wontDo = monthTasks.filter(t => t.status === 'wont_do').length + monthCompletions.filter(c => c.status === 'wont_do').length;
   const completionRate = completed + pending > 0 ? Math.round((completed / (completed + pending)) * 100) : 100;
   const avgDailyTasks = parseFloat((completed / daysInMonth).toFixed(1));
 

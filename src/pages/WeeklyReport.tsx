@@ -41,8 +41,8 @@ export default function WeeklyReport() {
       d.setDate(d.getDate() + i);
       const dayTasks = getTasksForDate(tasks, d, taskCompletions);
       dayTasks.forEach(t => {
-        if (t.completed) completedTasks++;
-        else pendingTasks++;
+        if (t.status === 'completed') completedTasks++;
+        else if (t.status === 'pending') pendingTasks++;
       });
     }
 

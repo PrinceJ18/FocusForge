@@ -4,6 +4,7 @@ import { useArenaLeaderboard } from '../hooks/useArenaLeaderboard';
 import { arenaService, Arena } from '../services/arenaService';
 import { LoadingState } from '../components/ui/Loading';
 import EmptyState from '../components/ui/EmptyState';
+import Button from '../components/ui/Button';
 import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity } from 'lucide-react';
 import { useHallOfFame } from '../hooks/useHallOfFame';
 import { useArenaActivity } from '../hooks/useArenaActivity';
@@ -425,9 +426,11 @@ export default function ArenaPage() {
         </div>
         
         {history.length === 0 ? (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center text-gray-400">
-            No past champions archived yet for this period type.
-          </div>
+          <EmptyState
+            icon={History}
+            title="No History Yet"
+            description="No past champions archived yet for this period type."
+          />
         ) : (
           <div className="relative w-full overflow-x-auto pb-4 custom-scrollbar">
             <div className="flex space-x-4 min-w-max px-2">
@@ -468,13 +471,14 @@ export default function ArenaPage() {
               
               {hasMore && (
                 <div className="w-48 flex items-center justify-center">
-                  <button 
+                  <Button 
+                    variant="outline"
                     onClick={loadMore}
                     disabled={loadingMore}
-                    className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
+                    className="px-6 py-3 font-medium"
                   >
                     {loadingMore ? 'Loading...' : 'Load Older'}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -490,9 +494,11 @@ export default function ArenaPage() {
         </div>
         
         {activities.length === 0 ? (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center text-gray-400">
-            No recent activity to show.
-          </div>
+          <EmptyState
+            icon={Activity}
+            title="No Activity"
+            description="No recent activity to show."
+          />
         ) : (
           <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden shadow-xl">
             <div className="divide-y divide-white/5">
@@ -532,13 +538,14 @@ export default function ArenaPage() {
             
             {hasMoreActivity && (
               <div className="p-4 border-t border-white/10 flex justify-center bg-white/[0.02]">
-                <button 
+                <Button 
+                  variant="outline"
                   onClick={loadMoreActivity}
                   disabled={loadingMoreActivity}
-                  className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white font-medium transition-colors text-sm disabled:opacity-50"
+                  className="px-6 py-2 text-sm font-medium"
                 >
                   {loadingMoreActivity ? 'Loading...' : 'Load More'}
-                </button>
+                </Button>
               </div>
             )}
           </div>

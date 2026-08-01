@@ -5,7 +5,7 @@ import {
   Award, Play, Pause, RotateCcw, Plus, Calendar, Bell, ChevronUp, ChevronDown, Eye, EyeOff, Pin, X, List,
   PiggyBank, BarChart3, Lightbulb, Activity, Flame, Heart, Shield, SlidersHorizontal
 } from 'lucide-react';
-import { useStore, type Page, type Task, completeTask, uncompleteTask, deleteTask, updateTask } from '../store/useStore';
+import { useStore, type Page, type Task, completeTask, uncompleteTask, deleteTask, updateTask, markTaskWontDo } from '../store/useStore';
 import { format, parseISO, isToday, differenceInDays } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
 import { getLevelInfo } from '../lib/levels';
@@ -76,7 +76,7 @@ export default function Dashboard() {
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
 
   // Modals state
-  const [selectedTaskDetails, setSelectedTaskDetails] = useState<{ task: Task; completed: boolean; date: string } | null>(null);
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<{ task: Task; status: 'pending' | 'completed' | 'wont_do'; date: string } | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedRecurringDetails, setSelectedRecurringDetails] = useState<RecurringExpense | null>(null);
 
@@ -199,7 +199,7 @@ export default function Dashboard() {
   // Recommendations Engine
   const recommendations = useMemo(() => {
     const list: string[] = [];
-    const pending = tasks.filter(t => !t.completed).length;
+    const pending = tasks.filter(t => t.status === 'pending').length;
     const todayMinutes = getTodayFocusMinutes(focusSessions);
 
     if (pending > 0) {
@@ -351,7 +351,7 @@ export default function Dashboard() {
           recurrence_interval: null,
           recurrence_weekdays: null,
           recurrence_end_date: null,
-          completed: false,
+          status: 'pending' as const,
           subject: 'Other',
           created_at: now,
           completed_at: null,
@@ -375,7 +375,7 @@ export default function Dashboard() {
             recurrence_interval: newT.recurrence_interval,
             recurrence_weekdays: newT.recurrence_weekdays,
             recurrence_end_date: newT.recurrence_end_date,
-            completed: newT.completed,
+            status: newT.status,
             subject: newT.subject,
             created_at: newT.created_at,
             completed_at: newT.completed_at,
@@ -519,7 +519,7 @@ export default function Dashboard() {
               placeholder="e.g. Coffee, Books"
               value={quickExpenseName}
               onChange={(e) => setQuickExpenseName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+              className="input-glass w-full px-3.5 py-2.5"
             />
           </div>
           <div>
@@ -529,7 +529,7 @@ export default function Dashboard() {
               placeholder="0.00"
               value={quickExpenseAmount}
               onChange={(e) => setQuickExpenseAmount(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+              className="input-glass w-full px-3.5 py-2.5"
             />
           </div>
         </div>
@@ -554,7 +554,7 @@ export default function Dashboard() {
               placeholder="Enter task title..."
               value={quickTaskTitle}
               onChange={(e) => setQuickTaskTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+              className="input-glass w-full px-3.5 py-2.5"
             />
           </div>
         </div>
@@ -564,7 +564,7 @@ export default function Dashboard() {
       {selectedTaskDetails && (
         <TaskDetailsModal
           task={selectedTaskDetails.task}
-          completed={selectedTaskDetails.completed}
+          status={selectedTaskDetails.status}
           occurrenceDate={selectedTaskDetails.date}
           onClose={() => setSelectedTaskDetails(null)}
           onEdit={() => {
@@ -575,11 +575,17 @@ export default function Dashboard() {
           onToggle={async () => {
             await handleToggleTask(
               selectedTaskDetails.task,
-              selectedTaskDetails.completed,
+              selectedTaskDetails.status === 'completed',
               selectedTaskDetails.date
             );
             setSelectedTaskDetails((prev) =>
-              prev ? { ...prev, completed: !prev.completed } : null
+              prev ? { ...prev, status: prev.status === 'completed' ? 'pending' : 'completed' } : null
+            );
+          }}
+          onWontDo={async () => {
+            await markTaskWontDo(selectedTaskDetails.task, parseISO(selectedTaskDetails.date), user?.id || 'local');
+            setSelectedTaskDetails((prev) =>
+              prev ? { ...prev, status: 'wont_do' } : null
             );
           }}
           onDelete={async () => {
