@@ -159,6 +159,74 @@ export const arenaService = {
     }
   },
 
+  async inviteFriends(arenaId: string, userIds: string[]): Promise<number> {
+    if (!userIds.length) return 0;
+
+    // 1. Get existing members to prevent duplicates
+    const existingMembers = await this.getArenaMembers(arenaId);
+    const existingSet = new Set(existingMembers.map(m => m.user_id));
+
+    const newUserIds = userIds.filter(id => !existingSet.has(id));
+    if (!newUserIds.length) return 0;
+
+    // 2. Insert new arena_members
+    const membersToInsert = newUserIds.map(id => ({
+      arena_id: arenaId,
+      user_id: id,
+    }));
+
+    const { error: membersErr } = await supabase
+      .from('arena_members')
+      .insert(membersToInsert);
+
+    if (membersErr) {
+      console.error('Error inviting friends to arena:', membersErr);
+      throw membersErr;
+    }
+
+    // 3. Initialize arena_scores for new members (weekly + monthly)
+    const today = new Date();
+    const weeklyStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const monthlyStart = format(startOfMonth(today), 'yyyy-MM-dd');
+
+    const scoresToInsert = newUserIds.flatMap(userId => [
+      {
+        arena_id: arenaId,
+        user_id: userId,
+        focus_points: 0,
+        task_points: 0,
+        challenge_points: 0,
+        streak_bonus: 0,
+        last_calculated_at: new Date().toISOString(),
+        period_type: 'weekly' as const,
+        period_start: weeklyStart,
+      },
+      {
+        arena_id: arenaId,
+        user_id: userId,
+        focus_points: 0,
+        task_points: 0,
+        challenge_points: 0,
+        streak_bonus: 0,
+        last_calculated_at: new Date().toISOString(),
+        period_type: 'monthly' as const,
+        period_start: monthlyStart,
+      },
+    ]);
+
+    const { error: scoresErr } = await supabase
+      .from('arena_scores')
+      .upsert(scoresToInsert, { onConflict: 'arena_id,user_id,period_type,period_start' });
+
+    if (scoresErr) {
+      console.error('Error initializing scores for invited friends:', scoresErr);
+      // Non-fatal — members are already added
+    }
+
+    return newUserIds.length;
+  },
+
+
   calculateArenaScore(metrics: {
     productivityScore: number;
     focusMinutes: number;

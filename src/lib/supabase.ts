@@ -53,6 +53,7 @@ export type Database = {
           recurrence_weekdays: string[] | null;
           recurrence_end_date: string | null;
           completed: boolean;
+          status: 'pending' | 'completed' | 'wont_do';
           subject: string;
           created_at: string;
           completed_at: string | null;
@@ -111,6 +112,7 @@ export type Database = {
           task_id: string;
           occurrence_date: string;
           completed: boolean;
+          status: 'pending' | 'completed' | 'wont_do';
           completed_at: string;
           created_at: string;
           updated_at: string;

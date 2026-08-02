@@ -180,6 +180,7 @@ export default function Productivity() {
           id: crypto.randomUUID(),
           user_id: 'local',
           ...taskData,
+          status: 'pending' as const,
           completed: false,
           created_at: new Date().toISOString(),
           completed_at: null,

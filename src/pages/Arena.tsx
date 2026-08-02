@@ -1,44 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 import { useArenaLeaderboard } from '../hooks/useArenaLeaderboard';
 import { arenaService, Arena } from '../services/arenaService';
 import { LoadingState } from '../components/ui/Loading';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
-import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity } from 'lucide-react';
+import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, ArrowRight, Sparkles } from 'lucide-react';
 import { useHallOfFame } from '../hooks/useHallOfFame';
 import { useArenaActivity } from '../hooks/useArenaActivity';
 import { formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
+import CreateArenaModal from '../components/arena/CreateArenaModal';
+import InviteFriendsModal from '../components/arena/InviteFriendsModal';
 
 export default function ArenaPage() {
   const { user } = useStore();
   const [periodType, setPeriodType] = useState<'weekly' | 'monthly'>('weekly');
   const [activeArena, setActiveArena] = useState<Arena | null>(null);
   const [loadingArena, setLoadingArena] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
-  // For this foundation, we just fetch the user's first arena (or allow them to see their arenas).
-  useEffect(() => {
-    async function initArena() {
-      if (!user) return;
-      try {
-        setLoadingArena(true);
-        // Find any arena the user is a member of
-        const members = await arenaService.getArenaMembers('00000000-0000-0000-0000-000000000000'); // Hack to bypass, we need to fetch user's arenas properly.
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingArena(false);
-      }
-    }
-    initArena();
-  }, [user]);
-
-  // Actually, wait, let's just use supabase directly to get the user's arena.
-  useEffect(() => {
-    async function loadArena() {
-      if (!user) return;
-      setLoadingArena(true);
+  const loadArena = useCallback(async () => {
+    if (!user) return;
+    setLoadingArena(true);
+    try {
       const { supabase } = await import('../lib/supabase');
       const { data } = await supabase
         .from('arena_members')
@@ -47,14 +33,23 @@ export default function ArenaPage() {
         .is('left_at', null)
         .limit(1)
         .maybeSingle();
-      
+
       if (data && data.arenas) {
         setActiveArena(data.arenas as any);
+      } else {
+        setActiveArena(null);
       }
+    } catch (err) {
+      console.error('Failed to load arena:', err);
+      setActiveArena(null);
+    } finally {
       setLoadingArena(false);
     }
-    loadArena();
   }, [user]);
+
+  useEffect(() => {
+    loadArena();
+  }, [loadArena]);
 
   const { leaderboard, currentUserRank, loading: loadingLeaderboard } = useArenaLeaderboard(
     activeArena?.id || null, 
@@ -92,12 +87,71 @@ export default function ArenaPage() {
 
   if (!activeArena) {
     return (
-      <div className="page-enter">
-        <EmptyState
-          icon={Trophy}
-          title="Welcome to the Arena"
-          description="You are not part of any Arena yet. Have a friend invite you, or create one to start competing!"
-        />
+      <div className="page-enter max-w-2xl mx-auto space-y-8 pb-24">
+        {/* Hero Onboarding Card */}
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 p-8 md:p-10 shadow-2xl">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 text-center space-y-5">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-accent/20 to-purple-500/20 border border-accent/30 shadow-lg shadow-accent/10">
+              <Trophy className="w-10 h-10 text-accent" />
+            </div>
+
+            <div className="space-y-2">
+              <h1 className="text-3xl font-black text-white tracking-tight">Productivity Arena</h1>
+              <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
+                Compete with friends on focus time, tasks completed, and daily challenges. Create an arena and start climbing the leaderboard.
+              </p>
+            </div>
+
+            <Button
+              variant="primary"
+              size="lg"
+              icon={Swords}
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 shadow-lg shadow-accent/20"
+            >
+              Create Arena
+            </Button>
+          </div>
+        </div>
+
+        {/* How It Works */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-white px-1">How It Works</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: Swords, title: 'Create', desc: 'Start your own arena with a name and privacy setting.' },
+              { icon: UserPlus, title: 'Invite', desc: 'Your friends are auto-added. Invite more anytime.' },
+              { icon: Trophy, title: 'Compete', desc: 'Earn points from focus, tasks, and challenges.' },
+            ].map((step, i) => (
+              <div
+                key={step.title}
+                className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 space-y-3 hover:bg-white/[0.07] transition-colors group"
+              >
+                <div className="absolute top-3 right-3 text-xs font-bold text-slate-600">{i + 1}</div>
+                <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
+                  <step.icon size={20} />
+                </div>
+                <h3 className="font-semibold text-white text-sm">{step.title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Create Arena Modal */}
+        {user && (
+          <CreateArenaModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            userId={user.id}
+            onCreated={(arena) => {
+              setActiveArena(arena);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -154,28 +208,39 @@ export default function ArenaPage() {
       {/* Header & Tabs */}
       <div className="text-center space-y-6">
         <h1 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-          {activeArena.name} Leaderboard
+          {activeArena.name}
         </h1>
-        
-        <div className="flex justify-center space-x-2 p-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl w-fit mx-auto">
-          <button
-            onClick={() => setPeriodType('weekly')}
-            className={clsx(
-              "px-6 py-2 rounded-lg font-medium transition-all duration-300",
-              periodType === 'weekly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
-            )}
+
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div className="flex space-x-2 p-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl">
+            <button
+              onClick={() => setPeriodType('weekly')}
+              className={clsx(
+                "px-6 py-2 rounded-lg font-medium transition-all duration-300",
+                periodType === 'weekly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
+              )}
+            >
+              Weekly
+            </button>
+            <button
+              onClick={() => setPeriodType('monthly')}
+              className={clsx(
+                "px-6 py-2 rounded-lg font-medium transition-all duration-300",
+                periodType === 'monthly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
+              )}
+            >
+              Monthly
+            </button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            icon={UserPlus}
+            onClick={() => setShowInviteModal(true)}
           >
-            Weekly
-          </button>
-          <button
-            onClick={() => setPeriodType('monthly')}
-            className={clsx(
-              "px-6 py-2 rounded-lg font-medium transition-all duration-300",
-              periodType === 'monthly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
-            )}
-          >
-            Monthly
-          </button>
+            Invite Friends
+          </Button>
         </div>
       </div>
 
@@ -567,6 +632,17 @@ export default function ArenaPage() {
             <Trophy className="w-6 h-6 text-yellow-200" />
           </div>
         </div>
+      )}
+
+      {/* Invite Friends Modal */}
+      {user && activeArena && (
+        <InviteFriendsModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          arenaId={activeArena.id}
+          userId={user.id}
+          onInvited={() => loadArena()}
+        />
       )}
 
     </div>

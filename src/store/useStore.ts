@@ -63,7 +63,7 @@ export const loadUserData = async (userId: string) => {
     expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes,
     sectionsRes, completionsRes, streakRes
   ] = await Promise.all([
-    supabase.from('expenses').select('id, title, amount, category, note, expense_date, created_at, recurring_expense_id, recurring_occurrence_date').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('focus_sessions').select('*').eq('user_id', userId).order('session_date', { ascending: false }),
     supabase.from('savings_goals').select('*').eq('user_id', userId),
@@ -74,7 +74,7 @@ export const loadUserData = async (userId: string) => {
     supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('task_sections').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
     supabase.from('task_completions').select('*').eq('user_id', userId),
-    supabase.rpc('get_current_streak', { p_today: todayLocal }),
+    (async () => { try { return await supabase.rpc('get_current_streak', { p_today: todayLocal }); } catch { return { data: null, error: { message: 'RPC not available' } }; } })(),
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);

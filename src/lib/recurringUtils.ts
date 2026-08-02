@@ -128,8 +128,6 @@ export async function payRecurringExpense(recurringId: string, customDate?: stri
         category: newExpense.category,
         note: newExpense.note,
         expense_date: newExpense.expense_date,
-        recurring_expense_id: newExpense.recurring_expense_id,
-        recurring_occurrence_date: newExpense.recurring_occurrence_date,
       });
     } catch (err) {
       console.warn('Failed to sync payment expense to database, local fallback active:', err);

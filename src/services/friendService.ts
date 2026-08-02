@@ -319,7 +319,7 @@ export const friendService = {
       .from('task_completions')
       .select('id')
       .eq('user_id', friendUserId)
-      .eq('completed', true)
+      .eq('status', 'completed')
       .gte('occurrence_date', startOfWeekStr);
 
     const tasksCompletedThisWeek = (completions || []).length;

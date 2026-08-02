@@ -7,76 +7,39 @@ import { checkUnlocksAndMilestones } from '../lib/events';
 import { logEvent } from '../lib/events';
 
 export const saveProfile = async (userId: string, data: Partial<Profile>) => {
-  const { monthly_budget, total_savings, ...profileData } = data;
+  const profileUpdate: any = {
+    id: userId,
+    updated_at: new Date().toISOString(),
+  };
 
-  const promises = [];
-
-  if (Object.keys(profileData).length > 0) {
-    promises.push(
-      supabase.from('profiles').upsert({
-        id: userId,
-        ...profileData,
-        updated_at: new Date().toISOString(),
-      })
-    );
+  // Include all profile fields including financial ones
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) {
+      profileUpdate[key] = value;
+    }
   }
 
-  if (monthly_budget !== undefined || total_savings !== undefined) {
-    const financialUpdate: any = { user_id: userId, updated_at: new Date().toISOString() };
-    if (monthly_budget !== undefined) financialUpdate.monthly_budget = monthly_budget;
-    if (total_savings !== undefined) financialUpdate.total_savings = total_savings;
-    
-    promises.push(
-      supabase.from('user_financial_settings').upsert(financialUpdate)
-    );
+  const { error } = await supabase.from('profiles').upsert(profileUpdate);
+  if (error) {
+    console.error('saveProfile error:', error);
   }
-
-  const results = await Promise.all(promises);
-  results.forEach(res => {
-    if (res.error) console.error('saveProfile error:', res.error);
-  });
 };
 
 export const loadUserData = async (userId: string) => {
   try {
     const { supabase } = await import('../lib/supabase');
     
-    // Fetch profile and preferences
-    const [profileData, prefsData, financialData] = await Promise.all([
+    // Fetch profile and preferences — budget lives in profiles
+    const [profileData, prefsData] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),
       supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
-      supabase.from('user_financial_settings').select('*').eq('user_id', userId).maybeSingle()
     ]);
-
-    let finalFinancialData = financialData.data;
-
-    // STEP 5: New user initialization logic. If no financial settings exist, create them ONCE.
-    if (!finalFinancialData) {
-      const defaultSettings = {
-        user_id: userId,
-        monthly_budget: 10000,
-        total_savings: 0,
-      };
-      
-      const { data: newSettings, error: insertErr } = await supabase
-        .from('user_financial_settings')
-        .insert(defaultSettings)
-        .select()
-        .single();
-        
-      if (!insertErr && newSettings) {
-        finalFinancialData = newSettings;
-      } else {
-        // Fallback for current session if insert fails
-        finalFinancialData = defaultSettings;
-      }
-    }
 
     if (profileData.data) {
       useStore.getState().updateProfile({
         ...profileData.data,
-        monthly_budget: finalFinancialData?.monthly_budget ?? 10000,
-        total_savings: finalFinancialData?.total_savings ?? 0,
+        monthly_budget: profileData.data.monthly_budget ?? 10000,
+        total_savings: profileData.data.total_savings ?? 0,
       });
     }
 
@@ -95,7 +58,7 @@ export const fetchTasks = async (userId: string) => {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  if (data) useStore.getState().setTasks(data.map(t => ({ ...t, status: t.completed ? 'completed' : 'pending' })));
+  if (data) useStore.getState().setTasks(data);
 };
 
 export const createTask = async (task: Omit<Task, 'user_id' | 'created_at' | 'updated_at'>, userId: string) => {
