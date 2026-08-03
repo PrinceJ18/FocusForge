@@ -2,7 +2,6 @@ import React from 'react';
 import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X, BookOpen, Award, Settings } from 'lucide-react';
 import { useStore, type Page } from '../store/useStore';
 import { calculateCurrentLevel, calculateXPProgress } from '../lib/statistics';
-import { formatCurrency } from '../lib/formatCurrency';
 import useRouteChangeCleanup from '../hooks/useRouteChangeCleanup';
 
 interface SidebarProps {
@@ -150,14 +149,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </button>
           </div>
         </div>
-
-        {/* Streak display */}
-        {profile.streak > 0 && (
-          <div className="m-4 p-3 rounded-12 text-center" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 12 }}>
-            <div className="text-2xl font-bold" style={{ color: '#f59e0b' }}>{profile.streak}</div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Day Streak</div>
-          </div>
-        )}
       </aside>
     </>
   );
