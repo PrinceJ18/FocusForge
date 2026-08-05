@@ -9,7 +9,7 @@
 
 ## 1. Overview & Business Intent
 
-The **Productivity Arena** is a gamified, social competition hub built into FocusForge. It turns daily focus sessions, completed tasks, and streak consistency into a normalized competitive score (0–100 pts) that allows users to compete in weekly and monthly leagues with friends and global peers.
+The **Productivity Arena** is a gamified, social competition hub built into FocusForge. It turns daily focus sessions, completed tasks, and streak consistency into a normalized competitive score (0–100 pts) that allows users to compete in weekly and monthly leagues with friends & global peers.
 
 ---
 
