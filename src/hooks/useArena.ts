@@ -16,14 +16,26 @@ export function useArena() {
       setLoading(true);
       setError(null);
 
-      // const arena = await arenaService.getDefaultArena();
-      // setDefaultArena(arena);
+      if (user) {
+        const { supabase } = await import('../lib/supabase');
+        const { data } = await supabase
+          .from('arena_members')
+          .select('arena_id, arenas(*)')
+          .eq('user_id', user.id)
+          .is('left_at', null)
+          .limit(1)
+          .maybeSingle();
 
-      // if (user && arena) {
-      //   const userJoinedArenas = await arenaService.getUserArenas(user.id);
-      //   setUserArenas(userJoinedArenas);
-      //   setIsMemberOfDefault(userJoinedArenas.some((a) => a.id === arena.id));
-      // }
+        if (data && data.arenas) {
+          setDefaultArena(data.arenas as any);
+          setIsMemberOfDefault(true);
+          setUserArenas([data.arenas as any]);
+        } else {
+          setDefaultArena(null);
+          setIsMemberOfDefault(false);
+          setUserArenas([]);
+        }
+      }
     } catch (err: any) {
       console.error('useArena error:', err);
       setError(err.message || 'Failed to load arena details');

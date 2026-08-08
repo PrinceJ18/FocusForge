@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { startOfWeek, startOfMonth, format } from 'date-fns';
+import { friendService } from './friendService';
 
 export interface Arena {
   id: string;
@@ -65,18 +66,16 @@ export const arenaService = {
       throw new Error('Failed to create arena');
     }
 
-    // 2. Fetch friends to auto-join
-    const { data: friends, error: friendsErr } = await supabase
-      .from('friends')
-      .select('user_id, friend_id')
-      .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
-
-    const memberIds = new Set<string>([userId]);
-    if (!friendsErr && friends) {
-      friends.forEach((f: any) => {
-        memberIds.add(f.user_id);
-        memberIds.add(f.friend_id);
+    // 2. Fetch accepted friends to auto-join
+    let memberIds = new Set<string>([userId]);
+    try {
+      const friends = await friendService.getFriends(userId);
+      friends.forEach(f => {
+        if (f.user_id !== userId) memberIds.add(f.user_id);
+        if (f.friend_id !== userId) memberIds.add(f.friend_id);
       });
+    } catch (err) {
+      console.error('Error fetching friends for arena auto-join:', err);
     }
 
     // 3. Insert members
@@ -91,6 +90,44 @@ export const arenaService = {
 
     if (membersErr) {
       console.error('Error auto-adding friends to arena:', membersErr);
+    }
+
+    // 4. Initialize arena_scores for all members (weekly + monthly)
+    const today = new Date();
+    const weeklyStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const monthlyStart = format(startOfMonth(today), 'yyyy-MM-dd');
+
+    const scoresToInsert = Array.from(memberIds).flatMap(id => [
+      {
+        arena_id: arena.id,
+        user_id: id,
+        focus_points: 0,
+        task_points: 0,
+        challenge_points: 0,
+        streak_bonus: 0,
+        last_calculated_at: new Date().toISOString(),
+        period_type: 'weekly' as const,
+        period_start: weeklyStart,
+      },
+      {
+        arena_id: arena.id,
+        user_id: id,
+        focus_points: 0,
+        task_points: 0,
+        challenge_points: 0,
+        streak_bonus: 0,
+        last_calculated_at: new Date().toISOString(),
+        period_type: 'monthly' as const,
+        period_start: monthlyStart,
+      },
+    ]);
+
+    const { error: scoresErr } = await supabase
+      .from('arena_scores')
+      .insert(scoresToInsert);
+
+    if (scoresErr) {
+      console.error('Error initializing scores for arena members:', scoresErr);
     }
 
     return arena as Arena;

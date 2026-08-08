@@ -156,38 +156,7 @@ export default function ArenaPage() {
     );
   }
 
-  if (leaderboard.length === 0) {
-    return (
-      <div className="page-enter space-y-6">
-        <div className="flex justify-center space-x-2 p-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl w-fit mx-auto">
-          <button
-            onClick={() => setPeriodType('weekly')}
-            className={clsx(
-              "px-6 py-2 rounded-lg font-medium transition-all duration-300",
-              periodType === 'weekly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
-            )}
-          >
-            Weekly
-          </button>
-          <button
-            onClick={() => setPeriodType('monthly')}
-            className={clsx(
-              "px-6 py-2 rounded-lg font-medium transition-all duration-300",
-              periodType === 'monthly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
-            )}
-          >
-            Monthly
-          </button>
-        </div>
-
-        <EmptyState
-          icon={UserPlus}
-          title="No Arena Members Yet"
-          description="Invite friends by accepting friend requests."
-        />
-      </div>
-    );
-  }
+  // Empty state handling is now inline below the header.
 
   const top3 = leaderboard.slice(0, 3);
   const others = leaderboard.slice(3);
@@ -244,7 +213,15 @@ export default function ArenaPage() {
         </div>
       </div>
 
-      {/* TOP 3 PODIUM */}
+      {leaderboard.length === 0 ? (
+        <EmptyState
+          icon={UserPlus}
+          title="No Leaderboard Data Yet"
+          description="Invite friends and start focusing to earn points!"
+        />
+      ) : (
+        <>
+          {/* TOP 3 PODIUM */}
       <div className="flex justify-center items-end space-x-4 md:space-x-8 mt-12 mb-16">
         {/* Silver (Rank 2) */}
         {top3[1] && (
@@ -439,6 +416,8 @@ export default function ArenaPage() {
           </table>
         </div>
       </div>
+      </>
+      )}
 
       {/* CURRENT CHAMPION CARD */}
       {latestChampion && (
