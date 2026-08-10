@@ -51,7 +51,7 @@ export default function CreateArenaModal({ isOpen, onClose, userId, onCreated }:
       await activityService.logActivity(
         arena.id,
         userId,
-        'friend_joined',
+        'arena_created',
         'Created this Arena',
         `${trimmedName} is now live!`,
         { dedupe_key: `arena_created_${arena.id}` }

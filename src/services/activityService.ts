@@ -5,6 +5,7 @@ export type ActivityType =
   | 'task_completed'
   | 'daily_challenge_completed'
   | 'level_up'
+  | 'arena_created'
   | 'friend_joined'
   | 'arena_score_updated'
   | 'weekly_champion'

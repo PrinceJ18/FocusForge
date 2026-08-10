@@ -40,6 +40,19 @@ const PAGE_TITLES: Record<string, string> = {
   settings: 'Personalization & Settings',
 };
 
+const TAB_TITLES: Record<string, string> = {
+  dashboard: 'FocusForge Dashboard',
+  finance: 'FocusForge Finance',
+  productivity: 'FocusForge Focus',
+  analytics: 'FocusForge Analytics',
+  friends: 'FocusForge Friends',
+  arena: 'FocusForge Arena',
+  splits: 'FocusForge Splits',
+  reports: 'FocusForge Reports',
+  achievements: 'FocusForge Achievements',
+  settings: 'FocusForge Settings',
+};
+
 export default function App() {
   const { currentPage, setUser, user, dataLoaded, setDataLoaded, preferences } = useStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -55,6 +68,11 @@ export default function App() {
   useTimerEngine();
   useDailyGoalWatcher();
   useArenaEngine('global-arena');
+
+  // Dynamically update the browser tab title
+  useEffect(() => {
+    document.title = TAB_TITLES[currentPage] || 'FocusForge Focus Finance Tracker';
+  }, [currentPage]);
 
   useEffect(() => {
     // Check initial session

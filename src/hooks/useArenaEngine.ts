@@ -125,41 +125,55 @@ export function useArenaEngine(arenaId: string | null) {
         });
 
         // Sync to Supabase
-        const scoresToUpsert = [
-          {
-            arena_id: arenaId,
-            user_id: user.id,
-            period_type: 'weekly' as const,
-            period_start: weeklyStartStr,
-            focus_points: weeklyPoints.focus_points,
-            task_points: weeklyPoints.task_points,
-            challenge_points: weeklyPoints.challenge_points,
-            streak_bonus: weeklyPoints.streak_bonus,
-            last_calculated_at: new Date().toISOString()
-          },
-          {
-            arena_id: arenaId,
-            user_id: user.id,
-            period_type: 'monthly' as const,
-            period_start: monthlyStartStr,
-            focus_points: monthlyPoints.focus_points,
-            task_points: monthlyPoints.task_points,
-            challenge_points: monthlyPoints.challenge_points,
-            streak_bonus: monthlyPoints.streak_bonus,
-            last_calculated_at: new Date().toISOString()
-          }
-        ];
+        const { supabase } = await import('../lib/supabase');
+        
+        // Fetch all arenas user is in
+        const { data: memberData } = await supabase
+          .from('arena_members')
+          .select('arena_id')
+          .eq('user_id', user.id)
+          .is('left_at', null);
 
-        // Deduplicate requests, only save if it's been more than 10 seconds or actual values changed
-        // In a real app we'd compare previous DB snapshot. For now, upsert safely.
-        if (Date.now() - lastSyncRef.current > 10000) {
-          const { supabase } = await import('../lib/supabase');
+        const arenaIdsToSync = memberData ? memberData.map(m => m.arena_id) : [];
+        if (arenaId && !arenaIdsToSync.includes(arenaId)) {
+          arenaIdsToSync.push(arenaId);
+        }
+
+        const scoresToUpsert = [];
+        for (const aId of arenaIdsToSync) {
+          scoresToUpsert.push(
+            {
+              arena_id: aId,
+              user_id: user.id,
+              period_type: 'weekly' as const,
+              period_start: weeklyStartStr,
+              focus_points: weeklyPoints.focus_points,
+              task_points: weeklyPoints.task_points,
+              challenge_points: weeklyPoints.challenge_points,
+              streak_bonus: weeklyPoints.streak_bonus,
+              last_calculated_at: new Date().toISOString()
+            },
+            {
+              arena_id: aId,
+              user_id: user.id,
+              period_type: 'monthly' as const,
+              period_start: monthlyStartStr,
+              focus_points: monthlyPoints.focus_points,
+              task_points: monthlyPoints.task_points,
+              challenge_points: monthlyPoints.challenge_points,
+              streak_bonus: monthlyPoints.streak_bonus,
+              last_calculated_at: new Date().toISOString()
+            }
+          );
+        }
+
+        if (scoresToUpsert.length > 0) {
           const { error } = await supabase
             .from('arena_scores')
             .upsert(scoresToUpsert, { onConflict: 'arena_id,user_id,period_type,period_start' });
             
-          if (!error) {
-            lastSyncRef.current = Date.now();
+          if (error) {
+            console.error('Arena Engine Sync Error:', error);
           }
         }
       } catch (err) {
