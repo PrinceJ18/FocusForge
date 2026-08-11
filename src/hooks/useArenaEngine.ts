@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { arenaService } from '../services/arenaService';
 import { activityService } from '../services/activityService';
@@ -6,26 +6,58 @@ import { championService } from '../services/championService';
 import { calculateProductivityScore } from '../lib/scoreUtils';
 import { isSameWeek, isSameMonth, parseISO, startOfWeek, startOfMonth, format } from 'date-fns';
 
-export function useArenaEngine(arenaId: string | null) {
+/**
+ * Background engine that syncs the current user's productivity data
+ * to their active arena's scores. Self-discovers the arena from
+ * arena_members — no hardcoded arena ID needed.
+ */
+export function useArenaEngine() {
   const { user, profile, tasks, focusSessions, expenses, preferences, events } = useStore();
-  const lastSyncRef = useRef<number>(0);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [activeArenaId, setActiveArenaId] = useState<string | null>(null);
 
   const currentLevel = Math.floor((profile.xp || 0) / 100) + 1;
   const prevLevel = useRef(currentLevel);
   const prevStreak = useRef(profile.streak);
 
+  // Discover the user's active arena on mount and when user changes
   useEffect(() => {
-    if (!user?.id || !arenaId) return;
+    if (!user?.id) {
+      setActiveArenaId(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const { supabase } = await import('../lib/supabase');
+        const { data } = await supabase
+          .from('arena_members')
+          .select('arena_id')
+          .eq('user_id', user.id)
+          .is('left_at', null)
+          .limit(1)
+          .maybeSingle();
+
+        setActiveArenaId(data?.arena_id ?? null);
+      } catch (err) {
+        console.error('Arena discovery error:', err);
+        setActiveArenaId(null);
+      }
+    })();
+  }, [user?.id]);
+
+  // Activity logging for level-ups, streaks, daily challenges
+  useEffect(() => {
+    if (!user?.id || !activeArenaId) return;
 
     if (currentLevel > prevLevel.current) {
-      activityService.logActivity(arenaId, user.id, 'level_up', `Reached Level ${currentLevel}!`, null, { dedupe_key: `level_${currentLevel}` }).catch(console.error);
+      activityService.logActivity(activeArenaId, user.id, 'level_up', `Reached Level ${currentLevel}!`, null, { dedupe_key: `level_${currentLevel}` }).catch(console.error);
       prevLevel.current = currentLevel;
     }
 
     if (profile.streak && profile.streak > prevStreak.current) {
       if (profile.streak % 5 === 0) {
-        activityService.logActivity(arenaId, user.id, 'streak_milestone', `Hit a ${profile.streak} day streak!`, null, { dedupe_key: `streak_${profile.streak}` }).catch(console.error);
+        activityService.logActivity(activeArenaId, user.id, 'streak_milestone', `Hit a ${profile.streak} day streak!`, null, { dedupe_key: `streak_${profile.streak}` }).catch(console.error);
       }
       prevStreak.current = profile.streak;
     }
@@ -33,27 +65,26 @@ export function useArenaEngine(arenaId: string | null) {
     const todayStr = new Date().toISOString().split('T')[0];
     const todayChallenge = events.some(e => e.type === 'challenge_completed' && e.timestamp.startsWith(todayStr));
     if (todayChallenge) {
-      activityService.logActivity(arenaId, user.id, 'daily_challenge_completed', 'Completed the Daily Challenge!', null, { dedupe_key: `challenge_${todayStr}` }).catch(console.error);
+      activityService.logActivity(activeArenaId, user.id, 'daily_challenge_completed', 'Completed the Daily Challenge!', null, { dedupe_key: `challenge_${todayStr}` }).catch(console.error);
     }
-  }, [currentLevel, profile.streak, events, arenaId, user?.id]);
+  }, [currentLevel, profile.streak, events, activeArenaId, user?.id]);
 
+  // Champion archiving (runs on login / page load)
   useEffect(() => {
-    if (!user?.id) return;
-    
-    // Always run periodic archive on startup for global arena
-    if (arenaId === 'global-arena') {
-      const now = new Date();
-      if (now.getDay() === 1) {
-        championService.calculateWeeklyChampion(arenaId).catch(console.error);
-      }
-      if (now.getDate() === 1) {
-        championService.calculateMonthlyChampion(arenaId).catch(console.error);
-      }
+    if (!user?.id || !activeArenaId) return;
+
+    const now = new Date();
+    if (now.getDay() === 1) {
+      championService.calculateWeeklyChampion(activeArenaId).catch(console.error);
     }
-  }, [user?.id, arenaId]);
+    if (now.getDate() === 1) {
+      championService.calculateMonthlyChampion(activeArenaId).catch(console.error);
+    }
+  }, [user?.id, activeArenaId]);
 
+  // Score sync — debounced, syncs to all active arenas
   useEffect(() => {
-    if (!user?.id || !arenaId) return;
+    if (!user?.id || !activeArenaId) return;
 
     // We use a debounce to prevent excessive Supabase writes when local state changes rapidly
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -124,10 +155,9 @@ export function useArenaEngine(arenaId: string | null) {
           dailyChallengesCompleted: monthlyChallenges
         });
 
-        // Sync to Supabase
+        // Sync to Supabase — only sync to real arenas from arena_members
         const { supabase } = await import('../lib/supabase');
         
-        // Fetch all arenas user is in
         const { data: memberData } = await supabase
           .from('arena_members')
           .select('arena_id')
@@ -135,9 +165,8 @@ export function useArenaEngine(arenaId: string | null) {
           .is('left_at', null);
 
         const arenaIdsToSync = memberData ? memberData.map(m => m.arena_id) : [];
-        if (arenaId && !arenaIdsToSync.includes(arenaId)) {
-          arenaIdsToSync.push(arenaId);
-        }
+
+        if (arenaIdsToSync.length === 0) return; // No active arenas — nothing to sync
 
         const scoresToUpsert = [];
         for (const aId of arenaIdsToSync) {
@@ -184,5 +213,5 @@ export function useArenaEngine(arenaId: string | null) {
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
-  }, [profile, tasks, focusSessions, expenses, preferences, events, arenaId, user?.id]);
+  }, [profile, tasks, focusSessions, expenses, preferences, events, activeArenaId, user?.id]);
 }

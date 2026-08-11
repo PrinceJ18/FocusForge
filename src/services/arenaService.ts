@@ -42,6 +42,22 @@ export interface LeaderboardEntry extends ArenaScore {
   };
 }
 
+/**
+ * Helper: Check if user is already in an active arena.
+ * Returns the arena_id if so, null otherwise.
+ */
+async function getActiveArenaId(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('arena_members')
+    .select('arena_id')
+    .eq('user_id', userId)
+    .is('left_at', null)
+    .limit(1)
+    .maybeSingle();
+
+  return data?.arena_id ?? null;
+}
+
 export const arenaService = {
   async createArena(
     userId: string,
@@ -49,6 +65,12 @@ export const arenaService = {
     description: string | null,
     visibility: 'private' | 'friends_only' = 'friends_only'
   ): Promise<Arena> {
+    // One Arena enforcement
+    const existingArenaId = await getActiveArenaId(userId);
+    if (existingArenaId) {
+      throw new Error('You already belong to an active arena. Leave your current arena first.');
+    }
+
     // 1. Create Arena
     const { data: arena, error: arenaErr } = await supabase
       .from('arenas')
@@ -63,17 +85,20 @@ export const arenaService = {
 
     if (arenaErr || !arena) {
       console.error('Error creating arena:', arenaErr);
-      throw new Error('Failed to create arena');
+      throw new Error('Unable to create arena. Please try again.');
     }
 
-    // 2. Fetch accepted friends to auto-join
+    // 2. Fetch accepted friends to auto-join (skip those already in an arena)
     let memberIds = new Set<string>([userId]);
     try {
       const friends = await friendService.getFriends(userId);
-      friends.forEach(f => {
-        if (f.user_id !== userId) memberIds.add(f.user_id);
-        if (f.friend_id !== userId) memberIds.add(f.friend_id);
-      });
+      for (const f of friends) {
+        const friendId = f.user_id !== userId ? f.user_id : f.friend_id;
+        const friendArena = await getActiveArenaId(friendId);
+        if (!friendArena) {
+          memberIds.add(friendId);
+        }
+      }
     } catch (err) {
       console.error('Error fetching friends for arena auto-join:', err);
     }
@@ -142,7 +167,7 @@ export const arenaService = {
 
     if (error) {
       console.error('Error fetching arena:', error);
-      throw error;
+      throw new Error('Unable to load arena details. Please try again.');
     }
     return data as Arena | null;
   },
@@ -156,12 +181,18 @@ export const arenaService = {
 
     if (error) {
       console.error('Error fetching arena members:', error);
-      throw error;
+      throw new Error('Unable to load arena members. Please try again.');
     }
     return (data || []) as ArenaMember[];
   },
 
   async joinArena(arenaId: string, userId: string): Promise<ArenaMember> {
+    // One Arena enforcement
+    const existingArenaId = await getActiveArenaId(userId);
+    if (existingArenaId && existingArenaId !== arenaId) {
+      throw new Error('You already belong to an active arena. Leave your current arena first.');
+    }
+
     const { data, error } = await supabase
       .from('arena_members')
       .upsert(
@@ -178,12 +209,18 @@ export const arenaService = {
 
     if (error) {
       console.error('Error joining arena:', error);
-      throw error;
+      throw new Error('Unable to join arena. Please try again.');
     }
     return data as ArenaMember;
   },
 
   async leaveArena(arenaId: string, userId: string): Promise<void> {
+    // Prevent the owner from leaving without transferring ownership
+    const arena = await this.getArena(arenaId);
+    if (arena && arena.owner_id === userId) {
+      throw new Error('Transfer ownership before leaving your arena.');
+    }
+
     const { error } = await supabase
       .from('arena_members')
       .update({ left_at: new Date().toISOString() })
@@ -192,7 +229,72 @@ export const arenaService = {
 
     if (error) {
       console.error('Error leaving arena:', error);
-      throw error;
+      throw new Error('Unable to leave arena. Please try again.');
+    }
+  },
+
+  async removeMember(arenaId: string, ownerId: string, targetUserId: string): Promise<void> {
+    // Validate caller is owner
+    const arena = await this.getArena(arenaId);
+    if (!arena || arena.owner_id !== ownerId) {
+      throw new Error('Only the arena owner can remove members.');
+    }
+    if (targetUserId === ownerId) {
+      throw new Error('You cannot remove yourself. Use "Leave Arena" instead.');
+    }
+
+    const { error } = await supabase
+      .from('arena_members')
+      .update({ left_at: new Date().toISOString() })
+      .eq('arena_id', arenaId)
+      .eq('user_id', targetUserId);
+
+    if (error) {
+      console.error('Error removing member:', error);
+      throw new Error('Unable to remove member. Please try again.');
+    }
+  },
+
+  async transferOwnership(arenaId: string, currentOwnerId: string, newOwnerId: string): Promise<void> {
+    // Validate current owner
+    const arena = await this.getArena(arenaId);
+    if (!arena || arena.owner_id !== currentOwnerId) {
+      throw new Error('Only the current owner can transfer ownership.');
+    }
+
+    // Validate new owner is an active member
+    const members = await this.getArenaMembers(arenaId);
+    const isActiveMember = members.some(m => m.user_id === newOwnerId);
+    if (!isActiveMember) {
+      throw new Error('The new owner must be an active member of this arena.');
+    }
+
+    const { error } = await supabase
+      .from('arenas')
+      .update({ owner_id: newOwnerId })
+      .eq('id', arenaId);
+
+    if (error) {
+      console.error('Error transferring ownership:', error);
+      throw new Error('Unable to transfer ownership. Please try again.');
+    }
+  },
+
+  async deleteArena(arenaId: string, ownerId: string): Promise<void> {
+    // Validate caller is owner
+    const arena = await this.getArena(arenaId);
+    if (!arena || arena.owner_id !== ownerId) {
+      throw new Error('Only the arena owner can delete this arena.');
+    }
+
+    const { error } = await supabase
+      .from('arenas')
+      .delete()
+      .eq('id', arenaId);
+
+    if (error) {
+      console.error('Error deleting arena:', error);
+      throw new Error('Unable to delete arena. Please try again.');
     }
   },
 
@@ -203,11 +305,19 @@ export const arenaService = {
     const existingMembers = await this.getArenaMembers(arenaId);
     const existingSet = new Set(existingMembers.map(m => m.user_id));
 
-    const newUserIds = userIds.filter(id => !existingSet.has(id));
-    if (!newUserIds.length) return 0;
+    // 2. Filter out users already in this arena AND users already in another arena
+    const eligibleIds: string[] = [];
+    for (const id of userIds) {
+      if (existingSet.has(id)) continue;
+      const otherArena = await getActiveArenaId(id);
+      if (!otherArena) {
+        eligibleIds.push(id);
+      }
+    }
+    if (!eligibleIds.length) return 0;
 
-    // 2. Insert new arena_members
-    const membersToInsert = newUserIds.map(id => ({
+    // 3. Insert new arena_members
+    const membersToInsert = eligibleIds.map(id => ({
       arena_id: arenaId,
       user_id: id,
     }));
@@ -218,15 +328,15 @@ export const arenaService = {
 
     if (membersErr) {
       console.error('Error inviting friends to arena:', membersErr);
-      throw membersErr;
+      throw new Error('Unable to invite friends. Please try again.');
     }
 
-    // 3. Initialize arena_scores for new members (weekly + monthly)
+    // 4. Initialize arena_scores for new members (weekly + monthly)
     const today = new Date();
     const weeklyStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const monthlyStart = format(startOfMonth(today), 'yyyy-MM-dd');
 
-    const scoresToInsert = newUserIds.flatMap(userId => [
+    const scoresToInsert = eligibleIds.flatMap(userId => [
       {
         arena_id: arenaId,
         user_id: userId,
@@ -260,7 +370,7 @@ export const arenaService = {
       // Non-fatal — members are already added
     }
 
-    return newUserIds.length;
+    return eligibleIds.length;
   },
 
 
@@ -307,7 +417,6 @@ export const arenaService = {
 
     const scoresToUpsert: Partial<ArenaScore>[] = [];
 
-    // For foundation demonstration, upserting initial values for both periods
     members.forEach(m => {
       const points = this.calculateArenaScore({
         productivityScore: 0,
@@ -338,7 +447,7 @@ export const arenaService = {
 
     if (error) {
       console.error('Error refreshing arena scores:', error);
-      throw error;
+      throw new Error('Unable to refresh scores. Please try again.');
     }
   },
 
@@ -370,11 +479,10 @@ export const arenaService = {
 
     if (error) {
       console.error('Error fetching leaderboard:', error);
-      throw error;
+      throw new Error('Unable to load leaderboard. Please try again.');
     }
 
-    // Tie-breaker 3: joined_at ASC. We fetch members to perform this final tie-break
-    // PostgREST doesn't support complex JOIN ordering natively without RPC, so we do minor sort in memory
+    // Tie-breaker 3: joined_at ASC via in-memory sort
     const members = await this.getArenaMembers(arenaId);
     const joinMap = new Map(members.map(m => [m.user_id, new Date(m.joined_at).getTime()]));
 

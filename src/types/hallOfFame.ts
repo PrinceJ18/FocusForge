@@ -1,4 +1,4 @@
-import { PeriodType } from './arena';
+export type PeriodType = 'weekly' | 'monthly';
 
 export interface HallOfFameEntry {
   id: string;

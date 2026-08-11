@@ -67,7 +67,7 @@ export default function App() {
   // so it persists across all page navigations.
   useTimerEngine();
   useDailyGoalWatcher();
-  useArenaEngine('global-arena');
+  useArenaEngine();
 
   // Dynamically update the browser tab title
   useEffect(() => {

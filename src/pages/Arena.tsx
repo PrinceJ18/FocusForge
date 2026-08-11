@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 import { useArenaLeaderboard } from '../hooks/useArenaLeaderboard';
-import { arenaService, Arena } from '../services/arenaService';
+import { arenaService, Arena, ArenaMember } from '../services/arenaService';
+import { activityService } from '../services/activityService';
 import { LoadingState } from '../components/ui/Loading';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
-import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, ArrowRight, Sparkles } from 'lucide-react';
+import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, ArrowRight, Sparkles, LogOut, Trash2, Settings, ShieldAlert, UserMinus } from 'lucide-react';
 import { useHallOfFame } from '../hooks/useHallOfFame';
 import { useArenaActivity } from '../hooks/useArenaActivity';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,6 +21,11 @@ export default function ArenaPage() {
   const [loadingArena, setLoadingArena] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [members, setMembers] = useState<ArenaMember[]>([]);
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, { display_name: string | null; avatar_url: string | null }>>({});
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
 
   const loadArena = useCallback(async () => {
     if (!user) return;
@@ -50,6 +56,99 @@ export default function ArenaPage() {
   useEffect(() => {
     loadArena();
   }, [loadArena]);
+
+  // Load members when settings panel is open
+  useEffect(() => {
+    if (!showSettings || !activeArena) return;
+    (async () => {
+      try {
+        const m = await arenaService.getArenaMembers(activeArena.id);
+        setMembers(m);
+        // Fetch profile info for each member
+        const { supabase } = await import('../lib/supabase');
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', m.map(x => x.user_id));
+        if (profiles) {
+          const map: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+          profiles.forEach((p: any) => { map[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url }; });
+          setMemberProfiles(map);
+        }
+      } catch {
+        // Non-fatal
+      }
+    })();
+  }, [showSettings, activeArena]);
+
+  const isOwner = activeArena && user ? activeArena.owner_id === user.id : false;
+
+  const handleRemoveMember = async (targetUserId: string) => {
+    if (!activeArena || !user) return;
+    setActionLoading(targetUserId);
+    setActionError('');
+    try {
+      await arenaService.removeMember(activeArena.id, user.id, targetUserId);
+      await activityService.logActivity(activeArena.id, user.id, 'member_removed', 'Removed a member', null, { dedupe_key: `remove_${targetUserId}` }).catch(() => {});
+      setMembers(prev => prev.filter(m => m.user_id !== targetUserId));
+    } catch (err: any) {
+      setActionError(err?.message || 'Unable to remove member.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleTransferOwnership = async (newOwnerId: string) => {
+    if (!activeArena || !user) return;
+    const confirmed = window.confirm('Are you sure you want to transfer ownership? This cannot be undone.');
+    if (!confirmed) return;
+    setActionLoading('transfer');
+    setActionError('');
+    try {
+      await arenaService.transferOwnership(activeArena.id, user.id, newOwnerId);
+      await activityService.logActivity(activeArena.id, user.id, 'owner_transferred', 'Transferred arena ownership', null, { dedupe_key: `transfer_${activeArena.id}` }).catch(() => {});
+      await loadArena();
+    } catch (err: any) {
+      setActionError(err?.message || 'Unable to transfer ownership.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteArena = async () => {
+    if (!activeArena || !user) return;
+    const confirmed = window.confirm('Are you sure you want to delete this arena? All members, scores, and history will be permanently removed.');
+    if (!confirmed) return;
+    setActionLoading('delete');
+    setActionError('');
+    try {
+      await arenaService.deleteArena(activeArena.id, user.id);
+      setActiveArena(null);
+      setShowSettings(false);
+    } catch (err: any) {
+      setActionError(err?.message || 'Unable to delete arena.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleLeaveArena = async () => {
+    if (!activeArena || !user) return;
+    const confirmed = window.confirm('Are you sure you want to leave this arena?');
+    if (!confirmed) return;
+    setActionLoading('leave');
+    setActionError('');
+    try {
+      await arenaService.leaveArena(activeArena.id, user.id);
+      await activityService.logActivity(activeArena.id, user.id, 'member_left', 'Left the arena', null, { dedupe_key: `leave_${user.id}` }).catch(() => {});
+      setActiveArena(null);
+      setShowSettings(false);
+    } catch (err: any) {
+      setActionError(err?.message || 'Unable to leave arena.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const { leaderboard, currentUserRank, loading: loadingLeaderboard } = useArenaLeaderboard(
     activeArena?.id || null, 
@@ -209,6 +308,15 @@ export default function ArenaPage() {
             onClick={() => setShowInviteModal(true)}
           >
             Invite Friends
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={Settings}
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            Settings
           </Button>
         </div>
       </div>
@@ -622,6 +730,119 @@ export default function ArenaPage() {
           userId={user.id}
           onInvited={() => loadArena()}
         />
+      )}
+
+      {/* ARENA SETTINGS PANEL */}
+      {showSettings && activeArena && user && (
+        <div className="mt-16 space-y-6">
+          <div className="flex items-center space-x-2 text-white px-2">
+            <Settings className="w-6 h-6 text-accent" />
+            <h2 className="text-2xl font-bold">Arena Settings</h2>
+          </div>
+
+          {actionError && (
+            <div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2.5">
+              {actionError}
+            </div>
+          )}
+
+          {/* Members List */}
+          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden shadow-xl">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+              <h3 className="font-semibold text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-accent" /> Members ({members.length})
+              </h3>
+            </div>
+            <div className="divide-y divide-white/5">
+              {members.map(member => {
+                const profile = memberProfiles[member.user_id];
+                const isSelf = member.user_id === user.id;
+                const isMemberOwner = member.user_id === activeArena.owner_id;
+
+                return (
+                  <div key={member.id} className="px-6 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0 border border-gray-600">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
+                          {(profile?.display_name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-white truncate block">
+                        {profile?.display_name || 'Unknown User'}
+                        {isSelf && <span className="ml-2 text-xs text-accent">You</span>}
+                      </span>
+                    </div>
+                    {isMemberOwner && (
+                      <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/20 flex items-center gap-1">
+                        <Crown className="w-3 h-3" /> Owner
+                      </span>
+                    )}
+                    {isOwner && !isSelf && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleTransferOwnership(member.user_id)}
+                          disabled={actionLoading !== null}
+                          className="text-xs text-amber-400 hover:text-amber-300 transition-colors px-2 py-1 rounded-lg hover:bg-amber-400/10"
+                          title="Transfer Ownership"
+                        >
+                          <Crown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveMember(member.user_id)}
+                          disabled={actionLoading === member.user_id}
+                          className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-red-400/10"
+                          title="Remove Member"
+                        >
+                          <UserMinus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6 space-y-4">
+            <h3 className="font-semibold text-red-400 flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5" /> Danger Zone
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {!isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={LogOut}
+                  onClick={handleLeaveArena}
+                  isLoading={actionLoading === 'leave'}
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  Leave Arena
+                </Button>
+              )}
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={handleDeleteArena}
+                  isLoading={actionLoading === 'delete'}
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  Delete Arena
+                </Button>
+              )}
+            </div>
+            {isOwner && (
+              <p className="text-xs text-slate-500">Transfer ownership to another member before leaving. Deleting removes all data permanently.</p>
+            )}
+          </div>
+        </div>
       )}
 
     </div>
