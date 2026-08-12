@@ -101,12 +101,6 @@ export default function App() {
 
           await loadUserData(session.user.id);
           await processAutoAddRecurringExpenses();
-
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .maybeSingle();
         } else {
           setUser(null);
 
@@ -190,6 +184,14 @@ export default function App() {
 
   return (
     <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', position: 'relative' }}>
+      {/* Skip to content — keyboard accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:px-4 focus:py-2 focus:rounded-lg focus:text-white focus:font-semibold focus:text-sm"
+        style={{ background: 'var(--accent-primary)' }}
+      >
+        Skip to content
+      </a>
       {/* Background effects */}
       <div
         className="ambient-orb"
@@ -208,7 +210,7 @@ export default function App() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main content */}
-      <main className="main-content relative z-10">
+      <main id="main-content" className="main-content relative z-10">
         <div className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 pb-24 md:pb-8">
           <Header onMenuClick={() => setSidebarOpen(true)} title={PAGE_TITLES[currentPage]} />
 

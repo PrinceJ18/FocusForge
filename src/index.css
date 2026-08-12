@@ -271,27 +271,7 @@ body {
   justify-content: center;
 }
 
-/* Dashboard Grid System */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: var(--density-gap, 16px);
-  width: 100%;
-}
-
-@media (max-width: 1023px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 639px) {
-  .dashboard-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-}
+/* Dashboard Grid System — single definition at L902 */
 
 /* Accessibility: Focus States */
 *:focus-visible {
@@ -432,7 +412,7 @@ h1, h2, h3, h4 {
   position: fixed;
   left: 0;
   top: 0;
-  background: rgba(5, 5, 8, 0.95);
+  background: var(--bg-secondary);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -567,7 +547,7 @@ h1, h2, h3, h4 {
 /* Progress bar */
 .progress-bar {
   height: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-color);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -658,13 +638,13 @@ h1, h2, h3, h4 {
   justify-content: space-between;
   padding: 12px 16px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.03);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   transition: all 0.2s ease;
 }
 
 .expense-item:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--bg-card-hover);
   border-color: rgba(168, 85, 247, 0.2);
 }
 
@@ -675,13 +655,13 @@ h1, h2, h3, h4 {
   gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.03);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   transition: all 0.2s ease;
 }
 
 .task-item:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--bg-card-hover);
 }
 
 .task-item.completed {
@@ -702,8 +682,8 @@ h1, h2, h3, h4 {
 }
 
 .modal-content {
-  background: rgba(10, 10, 20, 0.95);
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   width: 100%;
   max-width: 480px;
@@ -762,7 +742,7 @@ h1, h2, h3, h4 {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(5, 5, 8, 0.95);
+  background: var(--bg-secondary);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-color);
   padding: 8px 16px;
@@ -771,7 +751,7 @@ h1, h2, h3, h4 {
 
 /* Select */
 select.input-glass option {
-  background: #0a0a12;
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
@@ -799,7 +779,7 @@ select.input-glass option {
 }
 
 .shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
@@ -1637,18 +1617,24 @@ select.input-glass option {
 
 /* Global Input Contrast & Readability Rules */
 input, select, textarea {
-  color: #f8fafc;
+  color: var(--text-primary);
   color-scheme: dark;
 }
 
 input::placeholder, textarea::placeholder {
-  color: #94a3b8 !important;
+  color: var(--text-muted) !important;
   opacity: 1;
 }
 
 select option {
-  background-color: #0f172a !important;
-  color: #f8fafc !important;
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-light input,
+.theme-light select,
+.theme-light textarea {
+  color-scheme: light;
 }
 
 /* Custom scrollbar for modals */
@@ -1668,14 +1654,7 @@ select option {
   background: rgba(168, 85, 247, 0.5);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
+/* Duplicate @keyframes fadeIn and .animate-fadeIn removed — canonical versions at L240/L250 */
 
 /* ============================================================
    PREMIUM LIGHT THEME DESIGN SYSTEM (.theme-light)

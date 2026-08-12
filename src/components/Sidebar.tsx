@@ -94,12 +94,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
 
         {/* Navigation */}
-        <nav className="px-3 flex-1 overflow-y-auto pb-6" style={{ scrollbarWidth: 'none', }} >
+        <nav aria-label="Main navigation" className="px-3 flex-1 overflow-y-auto pb-6" style={{ scrollbarWidth: 'none', }} >
           <div className="space-y-1">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNav(item.id as Page)}
+                aria-current={currentPage === item.id ? 'page' : undefined}
                 className={`nav-item w-full text-left min-h-[48px] touch-manipulation ${currentPage === item.id ? 'active' : ''}`}
               >
                 <span className="nav-icon">{item.icon}</span>

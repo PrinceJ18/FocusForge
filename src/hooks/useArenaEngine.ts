@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
+import { supabase } from '../lib/supabase';
 import { arenaService } from '../services/arenaService';
 import { activityService } from '../services/activityService';
 import { championService } from '../services/championService';
@@ -29,7 +30,6 @@ export function useArenaEngine() {
 
     (async () => {
       try {
-        const { supabase } = await import('../lib/supabase');
         const { data } = await supabase
           .from('arena_members')
           .select('arena_id')
@@ -156,8 +156,6 @@ export function useArenaEngine() {
         });
 
         // Sync to Supabase — only sync to real arenas from arena_members
-        const { supabase } = await import('../lib/supabase');
-        
         const { data: memberData } = await supabase
           .from('arena_members')
           .select('arena_id')

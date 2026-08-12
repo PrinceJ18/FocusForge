@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../store/useStore';
+import { supabase } from '../lib/supabase';
 import { useArenaLeaderboard } from '../hooks/useArenaLeaderboard';
 import { arenaService, Arena, ArenaMember } from '../services/arenaService';
 import { activityService } from '../services/activityService';
@@ -31,7 +32,6 @@ export default function ArenaPage() {
     if (!user) return;
     setLoadingArena(true);
     try {
-      const { supabase } = await import('../lib/supabase');
       const { data } = await supabase
         .from('arena_members')
         .select('arena_id, arenas(*)')
@@ -65,7 +65,6 @@ export default function ArenaPage() {
         const m = await arenaService.getArenaMembers(activeArena.id);
         setMembers(m);
         // Fetch profile info for each member
-        const { supabase } = await import('../lib/supabase');
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, display_name, avatar_url')
