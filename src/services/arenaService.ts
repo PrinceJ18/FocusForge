@@ -47,7 +47,8 @@ export interface LeaderboardEntry extends ArenaScore {
  * Returns the arena_id if so, null otherwise.
  */
 async function getActiveArenaId(userId: string): Promise<string | null> {
-  const { data } = await supabase
+  const payload = { user_id: userId, left_at: null };
+  const res = await supabase
     .from('arena_members')
     .select('arena_id')
     .eq('user_id', userId)
@@ -55,7 +56,22 @@ async function getActiveArenaId(userId: string): Promise<string | null> {
     .limit(1)
     .maybeSingle();
 
-  return data?.arena_id ?? null;
+  if (import.meta.env.DEV) {
+    console.group('Arena Step: Check Active Arena');
+    console.log({
+      payload,
+      data: res.data,
+      error: res.error,
+      code: res.error?.code,
+      message: res.error?.message,
+      details: res.error?.details,
+      hint: res.error?.hint,
+      status: res.status,
+    });
+    console.groupEnd();
+  }
+
+  return res.data?.arena_id ?? null;
 }
 
 export const arenaService = {
@@ -65,30 +81,50 @@ export const arenaService = {
     description: string | null,
     visibility: 'private' | 'friends_only' = 'friends_only'
   ): Promise<Arena> {
-    // One Arena enforcement
+    // Step 0: One Arena enforcement
     const existingArenaId = await getActiveArenaId(userId);
     if (existingArenaId) {
       throw new Error('You already belong to an active arena. Leave your current arena first.');
     }
 
-    // 1. Create Arena
-    const { data: arena, error: arenaErr } = await supabase
+    // Step 1 & 2: Create Arena & Select created arena
+    const arenaPayload = {
+      name,
+      description,
+      owner_id: userId,
+      visibility,
+    };
+
+    const arenaRes = await supabase
       .from('arenas')
-      .insert({
-        name,
-        description,
-        owner_id: userId,
-        visibility
-      })
+      .insert(arenaPayload)
       .select()
       .single();
 
-    if (arenaErr || !arena) {
-      console.error('Error creating arena:', arenaErr);
-      throw new Error('Unable to create arena. Please try again.');
+    if (import.meta.env.DEV) {
+      console.group('Arena Step 1 & 2: Create Arena & Select Created Arena');
+      console.log({
+        payload: arenaPayload,
+        data: arenaRes.data,
+        error: arenaRes.error,
+        code: arenaRes.error?.code,
+        message: arenaRes.error?.message,
+        details: arenaRes.error?.details,
+        hint: arenaRes.error?.hint,
+        status: arenaRes.status,
+      });
+      console.groupEnd();
     }
 
-    // 2. Fetch accepted friends to auto-join (skip those already in an arena)
+    if (arenaRes.error || !arenaRes.data) {
+      console.error('[ArenaService] Step 1/2 Failed (Create/Select Arena):', arenaRes.error);
+      const detail = arenaRes.error?.message || 'Database insert rejected.';
+      throw new Error(`Unable to create arena (Step 1: Create Arena - ${detail})`);
+    }
+
+    const arena = arenaRes.data as Arena;
+
+    // Fetch accepted friends to auto-join (skip those already in an arena)
     let memberIds = new Set<string>([userId]);
     try {
       const friends = await friendService.getFriends(userId);
@@ -103,56 +139,156 @@ export const arenaService = {
       console.error('Error fetching friends for arena auto-join:', err);
     }
 
-    // 3. Insert members
+    // Step 3: Insert owner into arena_members (along with auto-joined friends)
     const membersToInsert = Array.from(memberIds).map(id => ({
       arena_id: arena.id,
       user_id: id,
     }));
 
-    const { error: membersErr } = await supabase
+    const membersRes = await supabase
       .from('arena_members')
       .insert(membersToInsert);
 
-    if (membersErr) {
-      console.error('Error auto-adding friends to arena:', membersErr);
+    if (import.meta.env.DEV) {
+      console.group('Arena Step 3: Insert Owner & Members into arena_members');
+      console.log({
+        payload: membersToInsert,
+        data: membersRes.data,
+        error: membersRes.error,
+        code: membersRes.error?.code,
+        message: membersRes.error?.message,
+        details: membersRes.error?.details,
+        hint: membersRes.error?.hint,
+        status: membersRes.status,
+      });
+      console.groupEnd();
     }
 
-    // 4. Initialize arena_scores for all members (weekly + monthly)
+    if (membersRes.error) {
+      console.error('[ArenaService] Step 3 Failed (Insert arena_members):', membersRes.error);
+      const detail = membersRes.error?.message || 'Member assignment rejected.';
+      throw new Error(`Unable to create arena (Step 3: Insert Members - ${detail})`);
+    }
+
+    // Step 4: Insert weekly arena_scores
     const today = new Date();
     const weeklyStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const monthlyStart = format(startOfMonth(today), 'yyyy-MM-dd');
 
-    const scoresToInsert = Array.from(memberIds).flatMap(id => [
-      {
-        arena_id: arena.id,
-        user_id: id,
-        focus_points: 0,
-        task_points: 0,
-        challenge_points: 0,
-        streak_bonus: 0,
-        last_calculated_at: new Date().toISOString(),
-        period_type: 'weekly' as const,
-        period_start: weeklyStart,
-      },
-      {
-        arena_id: arena.id,
-        user_id: id,
-        focus_points: 0,
-        task_points: 0,
-        challenge_points: 0,
-        streak_bonus: 0,
-        last_calculated_at: new Date().toISOString(),
-        period_type: 'monthly' as const,
-        period_start: monthlyStart,
-      },
-    ]);
+    const weeklyScoresToInsert = Array.from(memberIds).map(id => ({
+      arena_id: arena.id,
+      user_id: id,
+      focus_points: 0,
+      task_points: 0,
+      challenge_points: 0,
+      streak_bonus: 0,
+      last_calculated_at: new Date().toISOString(),
+      period_type: 'weekly' as const,
+      period_start: weeklyStart,
+    }));
 
-    const { error: scoresErr } = await supabase
+    const weeklyScoresRes = await supabase
       .from('arena_scores')
-      .insert(scoresToInsert);
+      .insert(weeklyScoresToInsert);
 
-    if (scoresErr) {
-      console.error('Error initializing scores for arena members:', scoresErr);
+    if (import.meta.env.DEV) {
+      console.group('Arena Step 4: Insert Weekly arena_scores');
+      console.log({
+        payload: weeklyScoresToInsert,
+        data: weeklyScoresRes.data,
+        error: weeklyScoresRes.error,
+        code: weeklyScoresRes.error?.code,
+        message: weeklyScoresRes.error?.message,
+        details: weeklyScoresRes.error?.details,
+        hint: weeklyScoresRes.error?.hint,
+        status: weeklyScoresRes.status,
+      });
+      console.groupEnd();
+    }
+
+    if (weeklyScoresRes.error) {
+      console.error('[ArenaService] Step 4 Failed (Insert Weekly arena_scores):', weeklyScoresRes.error);
+      const detail = weeklyScoresRes.error?.message || 'Weekly score initialization failed.';
+      throw new Error(`Unable to create arena (Step 4: Weekly Scores - ${detail})`);
+    }
+
+    // Step 5: Insert monthly arena_scores
+    const monthlyScoresToInsert = Array.from(memberIds).map(id => ({
+      arena_id: arena.id,
+      user_id: id,
+      focus_points: 0,
+      task_points: 0,
+      challenge_points: 0,
+      streak_bonus: 0,
+      last_calculated_at: new Date().toISOString(),
+      period_type: 'monthly' as const,
+      period_start: monthlyStart,
+    }));
+
+    const monthlyScoresRes = await supabase
+      .from('arena_scores')
+      .insert(monthlyScoresToInsert);
+
+    if (import.meta.env.DEV) {
+      console.group('Arena Step 5: Insert Monthly arena_scores');
+      console.log({
+        payload: monthlyScoresToInsert,
+        data: monthlyScoresRes.data,
+        error: monthlyScoresRes.error,
+        code: monthlyScoresRes.error?.code,
+        message: monthlyScoresRes.error?.message,
+        details: monthlyScoresRes.error?.details,
+        hint: monthlyScoresRes.error?.hint,
+        status: monthlyScoresRes.status,
+      });
+      console.groupEnd();
+    }
+
+    if (monthlyScoresRes.error) {
+      console.error('[ArenaService] Step 5 Failed (Insert Monthly arena_scores):', monthlyScoresRes.error);
+      const detail = monthlyScoresRes.error?.message || 'Monthly score initialization failed.';
+      throw new Error(`Unable to create arena (Step 5: Monthly Scores - ${detail})`);
+    }
+
+    // Step 6: Insert arena_activity
+    const activityPayload = {
+      arena_id: arena.id,
+      user_id: userId,
+      activity_type: 'arena_created',
+      title: 'Created this Arena',
+      description: `${name} is now live!`,
+      metadata: { dedupe_key: `arena_created_${arena.id}` },
+    };
+
+    const activityRes = await supabase
+      .from('arena_activity')
+      .insert(activityPayload);
+
+    if (import.meta.env.DEV) {
+      console.group('Arena Step 6: Insert arena_activity');
+      console.log({
+        payload: activityPayload,
+        data: activityRes.data,
+        error: activityRes.error,
+        code: activityRes.error?.code,
+        message: activityRes.error?.message,
+        details: activityRes.error?.details,
+        hint: activityRes.error?.hint,
+        status: activityRes.status,
+      });
+      console.groupEnd();
+    }
+
+    if (activityRes.error) {
+      // Non-fatal or fatal logging
+      console.warn('[ArenaService] Step 6 Notice (Insert arena_activity):', activityRes.error);
+    }
+
+    // Step 7: Final Return
+    if (import.meta.env.DEV) {
+      console.group('Arena Step 7: Final Return');
+      console.log({ arena });
+      console.groupEnd();
     }
 
     return arena as Arena;
