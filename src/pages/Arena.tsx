@@ -32,16 +32,24 @@ export default function ArenaPage() {
     if (!user) return;
     setLoadingArena(true);
     try {
-      const { data } = await supabase
+      // 1. Get user's active arena membership
+      const { data: memberData } = await supabase
         .from('arena_members')
-        .select('arena_id, arenas(*)')
+        .select('arena_id')
         .eq('user_id', user.id)
         .is('left_at', null)
         .limit(1)
         .maybeSingle();
 
-      if (data && data.arenas) {
-        setActiveArena(data.arenas as any);
+      if (memberData?.arena_id) {
+        // 2. Fetch arena details by ID
+        const { data: arenaData } = await supabase
+          .from('arenas')
+          .select('*')
+          .eq('id', memberData.arena_id)
+          .single();
+
+        setActiveArena(arenaData as any ?? null);
       } else {
         setActiveArena(null);
       }

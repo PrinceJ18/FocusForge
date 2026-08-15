@@ -600,12 +600,9 @@ export const arenaService = {
   },
 
   async getLeaderboard(arenaId: string, periodType: 'weekly' | 'monthly', periodStart: string): Promise<LeaderboardEntry[]> {
-    const { data, error } = await supabase
+    const { data: scores, error } = await supabase
       .from('arena_scores')
-      .select(`
-        *,
-        profile:profiles(display_name, avatar_url, level)
-      `)
+      .select('*')
       .eq('arena_id', arenaId)
       .eq('period_type', periodType)
       .eq('period_start', periodStart)
@@ -617,6 +614,21 @@ export const arenaService = {
       console.error('Error fetching leaderboard:', error);
       throw new Error('Unable to load leaderboard. Please try again.');
     }
+
+    const userIds = Array.from(new Set((scores || []).map(s => s.user_id)));
+    const profileMap = new Map<string, { display_name: string | null; avatar_url: string | null; level: number }>();
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url, level')
+        .in('id', userIds);
+      (profiles || []).forEach(p => profileMap.set(p.id, p));
+    }
+
+    const data = (scores || []).map(s => ({
+      ...s,
+      profile: profileMap.get(s.user_id) || { display_name: null, avatar_url: null, level: 1 }
+    }));
 
     // Tie-breaker 3: joined_at ASC via in-memory sort
     const members = await this.getArenaMembers(arenaId);

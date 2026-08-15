@@ -96,16 +96,16 @@ export const friendService = {
   },
 
   async getFriendRequests(userId: string): Promise<{ incoming: FriendRequest[]; outgoing: FriendRequest[] }> {
-    const { data: incoming, error: inErr } = await supabase
+    const { data: incomingRows, error: inErr } = await supabase
       .from('friend_requests')
-      .select('*, sender:profiles!friend_requests_sender_id_fkey(display_name, avatar_url, friend_code, level, xp, streak)')
+      .select('*')
       .eq('receiver_id', userId)
       .eq('status', 'pending')
       .is('deleted_at', null);
 
-    const { data: outgoing, error: outErr } = await supabase
+    const { data: outgoingRows, error: outErr } = await supabase
       .from('friend_requests')
-      .select('*, receiver:profiles!friend_requests_receiver_id_fkey(display_name, avatar_url, friend_code, level, xp, streak)')
+      .select('*')
       .eq('sender_id', userId)
       .eq('status', 'pending')
       .is('deleted_at', null);
@@ -120,20 +120,39 @@ export const friendService = {
       throw err;
     }
 
+    const allSenderIds = (incomingRows || []).map(r => r.sender_id);
+    const allReceiverIds = (outgoingRows || []).map(r => r.receiver_id);
+    const allProfileIds = Array.from(new Set([...allSenderIds, ...allReceiverIds]));
+
+    const profileMap = new Map<string, any>();
+    if (allProfileIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url, friend_code, level, xp, streak')
+        .in('id', allProfileIds);
+      (profiles || []).forEach(p => profileMap.set(p.id, p));
+    }
+
+    const incoming = (incomingRows || []).map(r => ({
+      ...r,
+      sender: profileMap.get(r.sender_id),
+    }));
+
+    const outgoing = (outgoingRows || []).map(r => ({
+      ...r,
+      receiver: profileMap.get(r.receiver_id),
+    }));
+
     return {
-      incoming: (incoming || []) as FriendRequest[],
-      outgoing: (outgoing || []) as FriendRequest[],
+      incoming: incoming as FriendRequest[],
+      outgoing: outgoing as FriendRequest[],
     };
   },
 
   async getFriends(userId: string): Promise<FriendWithProfile[]> {
-    const { data, error } = await supabase
+    const { data: friendRows, error } = await supabase
       .from('friends')
-      .select(`
-        id, user_id, friend_id, created_at, deleted_at,
-        user_profile:profiles!friends_user_id_fkey(display_name, avatar_url, friend_code, level, xp, streak),
-        friend_profile:profiles!friends_friend_id_fkey(display_name, avatar_url, friend_code, level, xp, streak)
-      `)
+      .select('id, user_id, friend_id, created_at, deleted_at')
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
       .is('deleted_at', null);
 
@@ -146,9 +165,24 @@ export const friendService = {
       throw error;
     }
 
-    return (data || []).map((f: any) => {
-      const isUser1 = f.user_id === userId;
-      const profile = isUser1 ? f.friend_profile : f.user_profile;
+    const targetUserIds = Array.from(
+      new Set(
+        (friendRows || []).map(f => (f.user_id === userId ? f.friend_id : f.user_id))
+      )
+    );
+
+    const profileMap = new Map<string, any>();
+    if (targetUserIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url, friend_code, level, xp, streak')
+        .in('id', targetUserIds);
+      (profiles || []).forEach(p => profileMap.set(p.id, p));
+    }
+
+    return (friendRows || []).map((f: any) => {
+      const otherUserId = f.user_id === userId ? f.friend_id : f.user_id;
+      const profile = profileMap.get(otherUserId);
       
       return {
         id: f.id,

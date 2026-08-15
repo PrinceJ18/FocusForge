@@ -76,12 +76,9 @@ export const activityService = {
     const startIdx = (page - 1) * limit;
     const endIdx = startIdx + limit - 1;
 
-    const { data, error, count } = await supabase
+    const { data: activities, error, count } = await supabase
       .from('arena_activity')
-      .select(`
-        *,
-        profile:profiles(display_name, avatar_url)
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('arena_id', arenaId)
       .order('created_at', { ascending: false })
       .range(startIdx, endIdx);
@@ -91,8 +88,23 @@ export const activityService = {
       return { data: [], hasMore: false };
     }
 
+    const userIds = Array.from(new Set((activities || []).map(a => a.user_id)));
+    const profileMap = new Map<string, { display_name: string | null; avatar_url: string | null }>();
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', userIds);
+      (profiles || []).forEach(p => profileMap.set(p.id, p));
+    }
+
+    const enriched = (activities || []).map(a => ({
+      ...a,
+      profile: profileMap.get(a.user_id) || { display_name: null, avatar_url: null }
+    }));
+
     const hasMore = count ? startIdx + limit < count : false;
-    return { data: (data || []) as ArenaActivity[], hasMore };
+    return { data: enriched as ArenaActivity[], hasMore };
   },
 
   async getRecentActivities(arenaId: string, limit: number = 10): Promise<ArenaActivity[]> {

@@ -55,14 +55,28 @@ export function useArenaActivity(arenaId: string | null) {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'arena_activity', filter: `arena_id=eq.${arenaId}` },
           async (payload) => {
-            const { data, error } = await supabase
+            const { data: actData, error: actErr } = await supabase
               .from('arena_activity')
-              .select('*, profile:profiles(display_name, avatar_url)')
+              .select('*')
               .eq('id', payload.new.id)
               .single();
 
-            if (!error && data) {
-              const newActivity = data as ArenaActivity;
+            if (!actErr && actData) {
+              let profileData = null;
+              if (actData.user_id) {
+                const { data: prof } = await supabase
+                  .from('profiles')
+                  .select('display_name, avatar_url')
+                  .eq('id', actData.user_id)
+                  .maybeSingle();
+                profileData = prof;
+              }
+
+              const newActivity: ArenaActivity = {
+                ...actData,
+                profile: profileData || { display_name: null, avatar_url: null },
+              } as ArenaActivity;
+
               setActivities(prev => {
                 if (prev.some(a => a.id === newActivity.id)) return prev;
                 return [newActivity, ...prev];
