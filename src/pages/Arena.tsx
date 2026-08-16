@@ -7,7 +7,7 @@ import { activityService } from '../services/activityService';
 import { LoadingState } from '../components/ui/Loading';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
-import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, ArrowRight, Sparkles, LogOut, Trash2, Settings, ShieldAlert, UserMinus } from 'lucide-react';
+import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, ArrowRight, Sparkles, LogOut, Trash2, Settings, ShieldAlert, UserMinus, Shield, Eye } from 'lucide-react';
 import { useHallOfFame } from '../hooks/useHallOfFame';
 import { useArenaActivity } from '../hooks/useArenaActivity';
 import { formatDistanceToNow } from 'date-fns';
@@ -27,6 +27,7 @@ export default function ArenaPage() {
   const [memberProfiles, setMemberProfiles] = useState<Record<string, { display_name: string | null; avatar_url: string | null }>>({});
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [ownerName, setOwnerName] = useState<string | null>(null);
 
   const loadArena = useCallback(async () => {
     if (!user) return;
@@ -49,9 +50,21 @@ export default function ArenaPage() {
           .eq('id', memberData.arena_id)
           .single();
 
-        setActiveArena(arenaData as any ?? null);
+        const arena = arenaData as Arena | null;
+        setActiveArena(arena ?? null);
+
+        // 3. Fetch owner display name
+        if (arena?.owner_id) {
+          const { data: ownerProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', arena.owner_id)
+            .maybeSingle();
+          setOwnerName(ownerProfile?.display_name ?? null);
+        }
       } else {
         setActiveArena(null);
+        setOwnerName(null);
       }
     } catch (err) {
       console.error('Failed to load arena:', err);
@@ -285,6 +298,32 @@ export default function ArenaPage() {
         <h1 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
           {activeArena.name}
         </h1>
+
+        {/* Arena metadata sub-header */}
+        <div className="flex items-center justify-center gap-3 flex-wrap text-sm text-slate-400">
+          {activeArena.description && (
+            <span className="text-slate-300 max-w-md">{activeArena.description}</span>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-3 flex-wrap text-xs">
+          {ownerName && (
+            <span className="flex items-center gap-1 text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+              <Crown className="w-3 h-3 text-yellow-400" />
+              {ownerName}
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+            {activeArena.visibility === 'private' ? (
+              <><Shield className="w-3 h-3 text-slate-400" /> Private</>
+            ) : (
+              <><Eye className="w-3 h-3 text-slate-400" /> Friends Only</>
+            )}
+          </span>
+          <span className="flex items-center gap-1 text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+            <Users className="w-3 h-3 text-accent" />
+            {leaderboard.length} {leaderboard.length === 1 ? 'member' : 'members'}
+          </span>
+        </div>
 
         <div className="flex items-center justify-center gap-3 flex-wrap">
           <div className="flex space-x-2 p-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl">

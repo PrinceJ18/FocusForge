@@ -615,7 +615,12 @@ export const arenaService = {
       throw new Error('Unable to load leaderboard. Please try again.');
     }
 
-    const userIds = Array.from(new Set((scores || []).map(s => s.user_id)));
+    // Filter to active members only — prevents ghost entries from left members
+    const members = await this.getArenaMembers(arenaId);
+    const activeMemberIds = new Set(members.map(m => m.user_id));
+    const activeScores = (scores || []).filter(s => activeMemberIds.has(s.user_id));
+
+    const userIds = Array.from(new Set(activeScores.map(s => s.user_id)));
     const profileMap = new Map<string, { display_name: string | null; avatar_url: string | null; level: number }>();
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
@@ -625,13 +630,12 @@ export const arenaService = {
       (profiles || []).forEach(p => profileMap.set(p.id, p));
     }
 
-    const data = (scores || []).map(s => ({
+    const data = activeScores.map(s => ({
       ...s,
       profile: profileMap.get(s.user_id) || { display_name: null, avatar_url: null, level: 1 }
     }));
 
     // Tie-breaker 3: joined_at ASC via in-memory sort
-    const members = await this.getArenaMembers(arenaId);
     const joinMap = new Map(members.map(m => [m.user_id, new Date(m.joined_at).getTime()]));
 
     const sortedData = (data as any[]).sort((a, b) => {

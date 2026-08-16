@@ -361,13 +361,13 @@ export const friendService = {
     // 4. Fetch Arena Score from arena_scores
     const { data: arenaScoreData } = await supabase
       .from('arena_scores')
-      .select('arena_score')
+      .select('total_score')
       .eq('user_id', friendUserId)
-      .order('arena_score', { ascending: false })
+      .order('total_score', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    const arenaScore = arenaScoreData?.arena_score ? Number(arenaScoreData.arena_score) : Math.round(xp * 1.2 + streak * 50);
+    const arenaScore = arenaScoreData?.total_score ? Number(arenaScoreData.total_score) : Math.round(xp * 1.2 + streak * 50);
 
     return {
       id: profile.id,

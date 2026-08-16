@@ -3,7 +3,6 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Trophy, Shield, Users, Sparkles } from 'lucide-react';
 import { arenaService, Arena } from '../../services/arenaService';
-import { activityService } from '../../services/activityService';
 
 interface CreateArenaModalProps {
   isOpen: boolean;
@@ -47,15 +46,7 @@ export default function CreateArenaModal({ isOpen, onClose, userId, onCreated }:
         visibility
       );
 
-      // Log creation activity
-      await activityService.logActivity(
-        arena.id,
-        userId,
-        'arena_created',
-        'Created this Arena',
-        `${trimmedName} is now live!`,
-        { dedupe_key: `arena_created_${arena.id}` }
-      ).catch(() => {}); // Non-fatal
+      // Activity logging is handled inside arenaService.createArena() (Step 6)
 
       setSuccess(true);
       setTimeout(() => {

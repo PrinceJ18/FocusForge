@@ -5,7 +5,7 @@ import { arenaService } from '../services/arenaService';
 import { activityService } from '../services/activityService';
 import { championService } from '../services/championService';
 import { calculateProductivityScore } from '../lib/scoreUtils';
-import { isSameWeek, isSameMonth, parseISO, startOfWeek, startOfMonth, format } from 'date-fns';
+import { isSameWeek, isSameMonth, parseISO, startOfWeek, startOfMonth, format, isSameDay } from 'date-fns';
 
 /**
  * Background engine that syncs the current user's productivity data
@@ -20,6 +20,10 @@ export function useArenaEngine() {
   const currentLevel = Math.floor((profile.xp || 0) / 100) + 1;
   const prevLevel = useRef(currentLevel);
   const prevStreak = useRef(profile.streak);
+  const prevFocusCount = useRef(focusSessions.length);
+  const prevCompletedTaskCount = useRef(
+    tasks.filter(t => t.status === 'completed').length
+  );
 
   // Discover the user's active arena on mount and when user changes
   useEffect(() => {
@@ -68,6 +72,52 @@ export function useArenaEngine() {
       activityService.logActivity(activeArenaId, user.id, 'daily_challenge_completed', 'Completed the Daily Challenge!', null, { dedupe_key: `challenge_${todayStr}` }).catch(console.error);
     }
   }, [currentLevel, profile.streak, events, activeArenaId, user?.id]);
+
+  // Activity logging for focus sessions and task completions
+  useEffect(() => {
+    if (!user?.id || !activeArenaId) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const today = new Date();
+
+    // Detect new focus sessions completed today
+    const todayFocusSessions = focusSessions.filter(
+      s => s.session_date && isSameDay(parseISO(s.session_date), today)
+    );
+    if (todayFocusSessions.length > 0 && focusSessions.length > prevFocusCount.current) {
+      const latestSession = todayFocusSessions[todayFocusSessions.length - 1];
+      const minutes = latestSession.minutes || 0;
+      if (minutes > 0) {
+        activityService.logActivity(
+          activeArenaId,
+          user.id,
+          'focus_session_completed',
+          `Completed a ${minutes} min focus session`,
+          null,
+          { dedupe_key: `focus_${todayStr}_${focusSessions.length}` }
+        ).catch(console.error);
+      }
+    }
+    prevFocusCount.current = focusSessions.length;
+
+    // Detect new task completions today
+    const currentCompletedCount = tasks.filter(t => t.status === 'completed').length;
+    const todayCompletions = tasks.filter(
+      t => t.status === 'completed' && t.completed_at && isSameDay(parseISO(t.completed_at), today)
+    );
+    if (currentCompletedCount > prevCompletedTaskCount.current && todayCompletions.length > 0) {
+      const latestTask = todayCompletions[todayCompletions.length - 1];
+      activityService.logActivity(
+        activeArenaId,
+        user.id,
+        'task_completed',
+        `Completed a task: ${latestTask.title || 'Untitled'}`,
+        null,
+        { dedupe_key: `task_${todayStr}_${currentCompletedCount}` }
+      ).catch(console.error);
+    }
+    prevCompletedTaskCount.current = currentCompletedCount;
+  }, [focusSessions, tasks, activeArenaId, user?.id]);
 
   // Champion archiving (runs on login / page load)
   useEffect(() => {

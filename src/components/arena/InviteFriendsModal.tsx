@@ -4,6 +4,7 @@ import Button from '../ui/Button';
 import { UserPlus, Check, Users, Loader2 } from 'lucide-react';
 import { friendService } from '../../services/friendService';
 import { arenaService, ArenaMember } from '../../services/arenaService';
+import { supabase } from '../../lib/supabase';
 import { activityService } from '../../services/activityService';
 import { FriendWithProfile } from '../../types/friend';
 
@@ -19,6 +20,7 @@ interface FriendItem extends FriendWithProfile {
   /** The actual friend's user ID (not the current user's) */
   friendUserId: string;
   isAlreadyMember: boolean;
+  isInOtherArena: boolean;
 }
 
 export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, onInvited }: InviteFriendsModalProps) {
@@ -41,19 +43,39 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
 
       const memberSet = new Set(members.map((m: ArenaMember) => m.user_id));
 
-      const mapped: FriendItem[] = friendsList.map(f => {
-        // Determine which ID is the friend (not us)
+      // Build list with friend IDs resolved
+      const friendsWithIds = friendsList.map(f => {
         const friendUserId = f.user_id === userId ? f.friend_id : f.user_id;
-        return {
-          ...f,
-          friendUserId,
-          isAlreadyMember: memberSet.has(friendUserId),
-        };
+        return { ...f, friendUserId };
       });
 
-      // Sort: non-members first, then by name
+      // Check which non-member friends are in another arena
+      const nonMemberFriendIds = friendsWithIds
+        .filter(f => !memberSet.has(f.friendUserId))
+        .map(f => f.friendUserId);
+
+      const inOtherArenaSet = new Set<string>();
+      if (nonMemberFriendIds.length > 0) {
+        const { data: otherMemberships } = await supabase
+          .from('arena_members')
+          .select('user_id')
+          .in('user_id', nonMemberFriendIds)
+          .is('left_at', null);
+
+        (otherMemberships || []).forEach(m => inOtherArenaSet.add(m.user_id));
+      }
+
+      const mapped: FriendItem[] = friendsWithIds.map(f => ({
+        ...f,
+        isAlreadyMember: memberSet.has(f.friendUserId),
+        isInOtherArena: inOtherArenaSet.has(f.friendUserId),
+      }));
+
+      // Sort: invitable first, then in-other-arena, then already-member
       mapped.sort((a, b) => {
-        if (a.isAlreadyMember !== b.isAlreadyMember) return a.isAlreadyMember ? 1 : -1;
+        const priorityA = a.isAlreadyMember ? 2 : a.isInOtherArena ? 1 : 0;
+        const priorityB = b.isAlreadyMember ? 2 : b.isInOtherArena ? 1 : 0;
+        if (priorityA !== priorityB) return priorityA - priorityB;
         const nameA = a.profile?.display_name || '';
         const nameB = b.profile?.display_name || '';
         return nameA.localeCompare(nameB);
@@ -126,7 +148,7 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
     }
   };
 
-  const invitableCount = friends.filter(f => !f.isAlreadyMember).length;
+  const invitableCount = friends.filter(f => !f.isAlreadyMember && !f.isInOtherArena).length;
 
   return (
     <Modal
@@ -175,7 +197,8 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
           <div className="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1">
             {friends.map(friend => {
               const isSelected = selected.has(friend.friendUserId);
-              const disabled = friend.isAlreadyMember || inviting;
+              const isUnavailable = friend.isAlreadyMember || friend.isInOtherArena;
+              const disabled = isUnavailable || inviting;
 
               return (
                 <button
@@ -184,7 +207,7 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
                   onClick={() => !disabled && toggleFriend(friend.friendUserId)}
                   disabled={disabled}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 text-left ${
-                    friend.isAlreadyMember
+                    isUnavailable
                       ? 'border-slate-800 bg-slate-800/30 opacity-50 cursor-not-allowed'
                       : isSelected
                       ? 'border-accent bg-accent/10 shadow-lg shadow-accent/5'
@@ -216,6 +239,10 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
                   {friend.isAlreadyMember ? (
                     <span className="text-xs text-slate-500 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 flex-shrink-0">
                       In Arena
+                    </span>
+                  ) : friend.isInOtherArena ? (
+                    <span className="text-xs text-amber-500/70 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 flex-shrink-0">
+                      In Another Arena
                     </span>
                   ) : (
                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
