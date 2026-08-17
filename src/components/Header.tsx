@@ -13,22 +13,23 @@ interface HeaderProps {
   onMenuClick: () => void;
   title: string;
   subtitle?: string;
+  headerActions?: React.ReactNode;
 }
-''
+
 const PAGE_SUBTITLES: Record<string, string> = {
   dashboard: 'Your productivity & finance overview',
   finance: 'Track expenses & manage budget',
   productivity: 'Focus sessions & task management',
   analytics: 'Insights & data visualization',
-  arena: 'Compete with friends, climb the leaderboard, earn achievements, and celebrate your productivity journey',
-  friends: 'Connect with friends, build your productivity network, and grow together through healthy competition',
+  arena: 'Compete with friends, climb the leaderboard, and celebrate your productivity journey',
+  friends: 'Connect with friends, build your productivity network, and grow together',
   splits: 'Track and settle shared expenses with anyone',
-  reports: 'Analyze your productivity, focus sessions, task completion, and financial performance through comprehensive reports.',
+  reports: 'Analyze your productivity, focus sessions, task completion, and financial performance',
   achievements: 'Unlock badges, track milestones, and view your complete journey',
   settings: 'Personalize colors, theme overrides, layout variables, and target goals',
 };
 
-export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
+export default function Header({ onMenuClick, title, subtitle, headerActions }: HeaderProps) {
   const { user, profile, currentPage } = useStore();
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -67,8 +68,7 @@ export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
   return (
     <header
       role="banner"
-      className="flex items-center justify-between mb-8"
-      style={{ paddingTop: 4 }}
+      className="flex items-center justify-between py-3 sm:py-3.5"
     >
       <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
         <Button
@@ -96,7 +96,13 @@ export default function Header({ onMenuClick, title, subtitle }: HeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {headerActions && (
+          <div className="flex items-center gap-2 mr-1 sm:mr-2">
+            {headerActions}
+          </div>
+        )}
+
         {/* Streak badge */}
         {profile.streak > 0 && (
           <Badge variant="warning" size="md" className="hidden sm:flex items-center gap-1">

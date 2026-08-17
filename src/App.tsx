@@ -6,6 +6,7 @@ import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
 import { useArenaEngine } from './hooks/useArenaEngine';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import PageLayout, { PAGE_TITLES } from './components/layout/PageLayout';
 import MobileNav from './components/MobileNav';
 import AchievementNotification from './components/AchievementNotification';
 import { processAutoAddRecurringExpenses } from './lib/recurringUtils';
@@ -24,21 +25,6 @@ const Achievements = React.lazy(() => import('./pages/Achievements'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const Friends = React.lazy(() => import('./pages/Friends'));
 const Arena = React.lazy(() => import('./pages/Arena'));
-
-
-const PAGE_TITLES: Record<string, string> = {
-  dashboard: 'Dashboard',
-  finance: 'Finance & Budget',
-  productivity: 'Productivity Center',
-  analytics: 'Analytics & Trends',
-  friends: 'Friends & Community',
-  arena: 'Productivity Arena',
-
-  splits: 'Group Splits',
-  reports: 'Performance Reports',
-  achievements: 'Achievement Center',
-  settings: 'Personalization & Settings',
-};
 
 const TAB_TITLES: Record<string, string> = {
   dashboard: 'FocusForge Dashboard',
@@ -211,9 +197,7 @@ export default function App() {
 
       {/* Main content */}
       <main id="main-content" className="main-content relative z-10">
-        <div className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 pb-24 md:pb-8">
-          <Header onMenuClick={() => setSidebarOpen(true)} title={PAGE_TITLES[currentPage]} />
-
+        <PageLayout onMenuClick={() => setSidebarOpen(true)}>
           <Suspense fallback={<div className="p-4 md:p-8"><PageSkeleton /></div>}>
             {currentPage === 'dashboard' && <Dashboard />}
             {currentPage === 'finance' && <Finance />}
@@ -226,9 +210,8 @@ export default function App() {
             {currentPage === 'settings' && <Settings />}
             {currentPage === 'friends' && <Friends />}
             {currentPage === 'arena' && <Arena />}
-
           </Suspense>
-        </div>
+        </PageLayout>
       </main>
 
       {/* Mobile navigation */}

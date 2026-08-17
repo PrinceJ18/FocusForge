@@ -200,24 +200,16 @@ export default function Friends() {
       {/* SEARCH BAR & TABS BAR */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar">
+        <div className="tab-group">
           <button
             onClick={() => setActiveTab('friends')}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition whitespace-nowrap min-h-[44px] touch-target ${
-              activeTab === 'friends'
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`tab-pill ${activeTab === 'friends' ? 'active' : ''}`}
           >
             Friends ({friends.length})
           </button>
           <button
             onClick={() => setActiveTab('requests')}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition whitespace-nowrap flex items-center gap-1.5 min-h-[44px] touch-target ${
-              activeTab === 'requests'
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`tab-pill flex items-center gap-1.5 ${activeTab === 'requests' ? 'active' : ''}`}
           >
             <span>Requests</span>
             {incomingRequests.length > 0 && (
@@ -228,11 +220,7 @@ export default function Friends() {
           </button>
           <button
             onClick={() => setActiveTab('discover')}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition whitespace-nowrap min-h-[44px] touch-target ${
-              activeTab === 'discover'
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`tab-pill ${activeTab === 'discover' ? 'active' : ''}`}
           >
             Discover
           </button>

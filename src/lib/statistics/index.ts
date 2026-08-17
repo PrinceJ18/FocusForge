@@ -5,4 +5,5 @@ export * from './finance';
 export * from './rewards';
 export * from './dashboard';
 export * from './analytics';
+export * from './analyticsEngine';
 export * from './reports';

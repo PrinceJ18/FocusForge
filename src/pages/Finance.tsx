@@ -1869,18 +1869,12 @@ function TabNav({ tabs, active, onChange }: {
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="flex gap-1 p-1 rounded-12" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, width: 'fit-content' }}>
+    <div className="tab-group">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className="px-4 py-2 text-sm font-medium rounded-10 transition-all"
-          style={{
-            borderRadius: 10,
-            background: active === tab.id ? 'rgba(168,85,247,0.2)' : 'transparent',
-            color: active === tab.id ? 'white' : 'var(--text-secondary)',
-            border: active === tab.id ? '1px solid rgba(168,85,247,0.3)' : '1px solid transparent',
-          }}
+          className={`tab-pill ${active === tab.id ? 'active' : ''}`}
         >
           {tab.label}
         </button>

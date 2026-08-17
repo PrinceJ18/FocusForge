@@ -119,26 +119,16 @@ export default function Reports() {
 
   // ═══ Toggle: Weekly / Monthly selector ═══
   const ReportToggle = (
-    <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/5 w-fit">
+    <div className="tab-group">
       <button
         onClick={() => setReportType('weekly')}
-        className="px-4 py-1.5 text-xs font-bold rounded-lg transition-all"
-        style={{
-          background: reportType === 'weekly' ? 'rgba(168,85,247,0.15)' : 'transparent',
-          color: reportType === 'weekly' ? '#a855f7' : '#6b7280',
-          border: reportType === 'weekly' ? '1px solid rgba(168,85,247,0.25)' : '1px solid transparent',
-        }}
+        className={`tab-pill ${reportType === 'weekly' ? 'active' : ''}`}
       >
         Weekly
       </button>
       <button
         onClick={() => setReportType('monthly')}
-        className="px-4 py-1.5 text-xs font-bold rounded-lg transition-all"
-        style={{
-          background: reportType === 'monthly' ? 'rgba(168,85,247,0.15)' : 'transparent',
-          color: reportType === 'monthly' ? '#a855f7' : '#6b7280',
-          border: reportType === 'monthly' ? '1px solid rgba(168,85,247,0.25)' : '1px solid transparent',
-        }}
+        className={`tab-pill ${reportType === 'monthly' ? 'active' : ''}`}
       >
         Monthly
       </button>

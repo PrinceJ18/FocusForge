@@ -95,7 +95,7 @@ export default function AuthScreen() {
                     {/* RIGHT SIDE */}
                     <div className="relative hidden lg:block">
                         <div
-                            className="glass-card p-8 rounded-24"
+                            className="glass-card p-8"
                             style={{
                                 background: 'rgba(15,15,25,0.7)',
                                 border: '1px solid rgba(168,85,247,0.2)',
@@ -128,7 +128,7 @@ function FeatureCard({
 }) {
     return (
         <div
-            className="p-5 rounded-20"
+            className="p-5 rounded-card"
             style={{
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid rgba(255,255,255,0.06)',
@@ -157,7 +157,7 @@ function DashboardPreview() {
     return (
         <div className="space-y-5">
             <div
-                className="p-5 rounded-20"
+                className="p-5 rounded-card"
                 style={{
                     background:
                         'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(236,72,153,0.1))',
@@ -184,7 +184,7 @@ function DashboardPreview() {
             </div>
 
             <div
-                className="p-5 rounded-20"
+                className="p-5 rounded-card"
                 style={{
                     background: 'rgba(255,255,255,0.03)',
                 }}
@@ -226,7 +226,7 @@ function MiniCard({
 }) {
     return (
         <div
-            className="p-5 rounded-20"
+            className="p-5 rounded-card"
             style={{
                 background: 'rgba(255,255,255,0.03)',
             }}

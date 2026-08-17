@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
 type SplitType = 'owe' | 'owed';
 
 interface Split {
@@ -42,7 +43,7 @@ export default function Splits() {
   return (
     <div className="page-enter space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="stat-card">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(16,185,129,0.2)' }}>
             <TrendingUp size={18} style={{ color: '#10b981' }} />
@@ -82,7 +83,7 @@ export default function Splits() {
               className="block text-sm mb-2"
               style={{ color: 'var(--text-muted)' }}
             >
-              Bill Amount (₹)
+              Bill Amount
             </label>
 
             <input
@@ -137,7 +138,7 @@ export default function Splits() {
               className="text-3xl font-bold"
               style={{ color: '#a855f7' }}
             >
-              ₹{splitAmount.toFixed(2)}
+              {formatCurrency(splitAmount)}
             </h2>
           </div>
         )}
@@ -149,13 +150,13 @@ export default function Splits() {
           <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
             Active ({unsettled.length})
           </h3>
-          <button
+          <Button
             onClick={() => setShowAdd(true)}
-            className="btn-neon px-3 py-2 text-sm flex items-center gap-1.5"
-            style={{ borderRadius: 10 }}
+            size="sm"
+            icon={Plus}
           >
-            <Plus size={14} /> Add Entry
-          </button>
+            Add Entry
+          </Button>
         </div>
 
         {unsettled.length > 0 ? (
@@ -170,10 +171,16 @@ export default function Splits() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-10" style={{ color: 'var(--text-muted)' }}>
-            <Users size={32} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No active splits. All settled!</p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="All splits are settled"
+            description="You have no active expenses to split. Create a new split entry when sharing costs with friends or groups."
+            action={{
+              label: "Add Entry",
+              onClick: () => setShowAdd(true),
+              icon: Plus,
+            }}
+          />
         )}
       </div>
 
@@ -322,7 +329,7 @@ function AddSplitModal({ onClose, onAdd }: {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            className="input-glass w-full px-3.5 py-2.5"
             placeholder="John — Dinner"
             autoFocus
           />
@@ -334,7 +341,7 @@ function AddSplitModal({ onClose, onAdd }: {
             min="1"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            className="input-glass w-full px-3.5 py-2.5"
             placeholder="0.00"
           />
         </div>

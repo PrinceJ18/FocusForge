@@ -7,7 +7,7 @@ import { activityService } from '../services/activityService';
 import { LoadingState } from '../components/ui/Loading';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
-import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, ArrowRight, Sparkles, LogOut, Trash2, Settings, ShieldAlert, UserMinus, Shield, Eye } from 'lucide-react';
+import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, LogOut, Trash2, Settings, ShieldAlert, UserMinus, Shield, Eye, Pen } from 'lucide-react';
 import { useHallOfFame } from '../hooks/useHallOfFame';
 import { useArenaActivity } from '../hooks/useArenaActivity';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,6 +28,7 @@ export default function ArenaPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
   const [ownerName, setOwnerName] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const loadArena = useCallback(async () => {
     if (!user) return;
@@ -102,6 +103,21 @@ export default function ArenaPage() {
   }, [showSettings, activeArena]);
 
   const isOwner = activeArena && user ? activeArena.owner_id === user.id : false;
+
+  const handleRenameArena = async () => {
+    if (!activeArena || !user || !renameValue.trim()) return;
+    setActionLoading('rename');
+    setActionError('');
+    try {
+      await arenaService.renameArena(activeArena.id, user.id, renameValue);
+      setActiveArena(prev => prev ? { ...prev, name: renameValue.trim() } : null);
+      setRenameValue('');
+    } catch (err: any) {
+      setActionError(err?.message || 'Unable to rename arena.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const handleRemoveMember = async (targetUserId: string) => {
     if (!activeArena || !user) return;
@@ -326,22 +342,16 @@ export default function ArenaPage() {
         </div>
 
         <div className="flex items-center justify-center gap-3 flex-wrap">
-          <div className="flex space-x-2 p-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl">
+          <div className="tab-group">
             <button
               onClick={() => setPeriodType('weekly')}
-              className={clsx(
-                "px-6 py-2 rounded-lg font-medium transition-all duration-300",
-                periodType === 'weekly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
-              )}
+              className={`tab-pill ${periodType === 'weekly' ? 'active' : ''}`}
             >
               Weekly
             </button>
             <button
               onClick={() => setPeriodType('monthly')}
-              className={clsx(
-                "px-6 py-2 rounded-lg font-medium transition-all duration-300",
-                periodType === 'monthly' ? "bg-accent text-white shadow-lg shadow-accent/25" : "text-gray-400 hover:text-white"
-              )}
+              className={`tab-pill ${periodType === 'monthly' ? 'active' : ''}`}
             >
               Monthly
             </button>
@@ -491,13 +501,13 @@ export default function ArenaPage() {
                     <td className="px-6 py-4 text-center text-sm text-gray-300">
                       <div className="flex items-center justify-center space-x-1">
                         <Clock className="w-3 h-3 text-gray-500" />
-                        <span>{Math.floor(entry.focus_points / 1)}m</span>
+                        <span>{entry.focus_points}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center text-sm text-gray-300">
                       <div className="flex items-center justify-center space-x-1">
                         <CheckCircle2 className="w-3 h-3 text-gray-500" />
-                        <span>{Math.floor(entry.task_points / 25)}</span>
+                        <span>{entry.task_points}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-white text-lg">
@@ -550,13 +560,13 @@ export default function ArenaPage() {
                       <td className="px-6 py-4 text-center text-sm text-gray-300">
                         <div className="flex items-center justify-center space-x-1">
                           <Clock className="w-3 h-3 text-gray-500" />
-                          <span>{Math.floor(myEntry.focus_points / 1)}m</span>
+                          <span>{myEntry.focus_points}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center text-sm text-gray-300">
                         <div className="flex items-center justify-center space-x-1">
                           <CheckCircle2 className="w-3 h-3 text-gray-500" />
-                          <span>{Math.floor(myEntry.task_points / 25)}</span>
+                          <span>{myEntry.task_points}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right font-bold text-white text-lg">
@@ -789,6 +799,35 @@ export default function ArenaPage() {
           {actionError && (
             <div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2.5">
               {actionError}
+            </div>
+          )}
+
+          {/* Rename Arena (Owner Only) */}
+          {isOwner && (
+            <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+              <h3 className="font-semibold text-white flex items-center gap-2 text-sm">
+                <Pen className="w-4 h-4 text-accent" /> Rename Arena
+              </h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={renameValue}
+                  onChange={e => setRenameValue(e.target.value)}
+                  placeholder={activeArena.name}
+                  maxLength={50}
+                  className="flex-1 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                  disabled={actionLoading !== null}
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleRenameArena}
+                  disabled={!renameValue.trim() || renameValue.trim() === activeArena.name}
+                  isLoading={actionLoading === 'rename'}
+                >
+                  Save
+                </Button>
+              </div>
             </div>
           )}
 

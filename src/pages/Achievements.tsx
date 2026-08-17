@@ -331,7 +331,7 @@ export default function Achievements() {
     <div className="space-y-6 pb-16 page-enter" style={{ fontFamily: 'Inter, sans-serif' }}>
 
       {/* SECTION 1: Profile Summary */}
-      <section className="glass-card p-6 md:p-8 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(16,12,30,0.8), rgba(26,16,48,0.7))', border: '1px solid rgba(168,85,247,0.25)', borderRadius: '24px' }}>
+      <section className="glass-card p-5 sm:p-6 md:p-8 relative overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(16,12,30,0.8), rgba(26,16,48,0.7))', borderColor: 'rgba(168,85,247,0.25)' }}>
         <div className="absolute top-0 right-0 w-80 h-80 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-600/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -391,7 +391,7 @@ export default function Achievements() {
       </section>
 
       {/* DAILY CHALLENGES (Moved from Rewards) */}
-      <section className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+      <section className="glass-card p-5 sm:p-6">
         <h2 className="text-xl font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
           <Target size={20} style={{ color: '#a855f7' }} />
           Daily Challenges
@@ -451,7 +451,7 @@ export default function Achievements() {
       </section>
 
       {/* SEARCH & FILTERS BAR */}
-      <section className="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4" style={{ borderRadius: '16px' }}>
+      <section className="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-80">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
@@ -502,7 +502,7 @@ export default function Achievements() {
         <div className="lg:col-span-2 space-y-8">
 
           {/* SECTION 2: Achievement Timeline */}
-          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+          <div className="glass-card p-5 sm:p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Trophy className="text-yellow-500" size={20} />
               Key Milestones Timeline
@@ -543,7 +543,7 @@ export default function Achievements() {
           </div>
 
           {/* SECTION 10: Journey Roadmap */}
-          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+          <div className="glass-card p-5 sm:p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Map className="text-cyan-400" size={20} />
               Your Journey Roadmap
@@ -612,7 +612,7 @@ export default function Achievements() {
         <div className="space-y-8">
 
           {/* SECTION 8: Milestones */}
-          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+          <div className="glass-card p-5 sm:p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Sparkles className="text-pink-400" size={20} />
               Important Milestones
@@ -658,7 +658,7 @@ export default function Achievements() {
           </div>
 
           {/* SECTION 9: Statistics Overview */}
-          <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+          <div className="glass-card p-5 sm:p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
               <Activity className="text-cyan-400" size={20} />
               Statistics Overview
@@ -702,7 +702,7 @@ export default function Achievements() {
       </div>
 
       {/* SECTION 5: Badge Collection */}
-      <section className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+      <section className="glass-card p-5 sm:p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-2.5">
@@ -755,7 +755,7 @@ export default function Achievements() {
       </section>
 
       {/* SECTION 6: Achievements */}
-      <section className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+      <section className="glass-card p-5 sm:p-6">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2.5">
           <Trophy className="text-yellow-400" size={24} />
           Long-Term Achievements
@@ -803,7 +803,7 @@ export default function Achievements() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* SECTION 3: XP History */}
-        <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+        <div className="glass-card p-5 sm:p-6">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
             <Zap className="text-purple-400" size={20} />
             XP Log History
@@ -832,7 +832,7 @@ export default function Achievements() {
         </div>
 
         {/* SECTION 4: Level History */}
-        <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+        <div className="glass-card p-5 sm:p-6">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
             <Star className="text-yellow-500" size={20} />
             Level History
@@ -856,7 +856,7 @@ export default function Achievements() {
         </div>
 
         {/* SECTION 7: Activity Timeline */}
-        <div className="glass-card p-6 md:p-8" style={{ borderRadius: '24px' }}>
+        <div className="glass-card p-5 sm:p-6">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
             <Activity className="text-cyan-400" size={20} />
             Complete Activity Log

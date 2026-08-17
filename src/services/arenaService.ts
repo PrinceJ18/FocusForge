@@ -416,6 +416,31 @@ export const arenaService = {
     }
   },
 
+  async renameArena(arenaId: string, ownerId: string, newName: string): Promise<void> {
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      throw new Error('Arena name cannot be empty.');
+    }
+    if (trimmed.length > 50) {
+      throw new Error('Arena name must be 50 characters or less.');
+    }
+
+    const arena = await this.getArena(arenaId);
+    if (!arena || arena.owner_id !== ownerId) {
+      throw new Error('Only the arena owner can rename this arena.');
+    }
+
+    const { error } = await supabase
+      .from('arenas')
+      .update({ name: trimmed })
+      .eq('id', arenaId);
+
+    if (error) {
+      console.error('Error renaming arena:', error);
+      throw new Error('Unable to rename arena. Please try again.');
+    }
+  },
+
   async deleteArena(arenaId: string, ownerId: string): Promise<void> {
     // Validate caller is owner
     const arena = await this.getArena(arenaId);
