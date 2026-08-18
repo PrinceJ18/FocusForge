@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { formatCurrency } from '../lib/formatCurrency';
+import { formatFocusTime } from '../lib/formatUtils';
 import { calculateProductivityScore } from '../lib/scoreUtils';
 import { generateInsights } from '../lib/insightUtils';
 import InsightCard from '../components/analytics/InsightCard';
@@ -125,7 +126,7 @@ export default function WeeklyReport() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
         <div className="glass-card p-4">
           <span className="text-[10px] text-slate-500 block uppercase font-semibold">Total Focus</span>
-          <span className="text-2xl font-black text-purple-400 mt-1 block">{Math.round(reportData.totalMinutes / 60 * 10) / 10}h</span>
+          <span className="text-2xl font-black text-purple-400 mt-1 block">{formatFocusTime(reportData.totalMinutes)}</span>
         </div>
         <div className="glass-card p-4">
           <span className="text-[10px] text-slate-500 block uppercase font-semibold">Tasks Completed</span>

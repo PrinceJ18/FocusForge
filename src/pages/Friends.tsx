@@ -10,7 +10,7 @@ import { friendService } from '../services/friendService';
 import FriendProfileModal from '../components/friends/FriendProfileModal';
 import RemoveFriendModal from '../components/friends/RemoveFriendModal';
 import { format, parseISO } from 'date-fns';
-import { LoadingState } from '../components/ui/Loading';
+import { LoadingState, FriendGridSkeleton } from '../components/ui/Loading';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
 
@@ -243,7 +243,7 @@ export default function Friends() {
       {activeTab === 'friends' && (
         <div className="space-y-4">
           {loadingFriends ? (
-            <div className="py-12"><LoadingState message="Loading your friends list..." /></div>
+            <FriendGridSkeleton />
           ) : errorFriends ? (
             <div className="p-6 text-center text-xs text-red-400 glass-card space-y-2">
               <AlertCircle size={24} className="mx-auto" />
@@ -269,14 +269,14 @@ export default function Friends() {
               {filteredFriends.map((f) => {
                 const displayName = f.profile?.display_name || 'Friend';
                 const friendCode = f.profile?.friend_code || '......';
-                const level = f.profile?.level || Math.floor(Math.sqrt((f.profile?.xp || 0) / 100)) + 1;
+                const level = f.profile?.level || 1;
                 const xp = f.profile?.xp || 0;
                 const streak = f.profile?.streak || 0;
-                const arenaScore = Math.round(xp * 1.2 + streak * 50);
-                const friendSince = f.created_at ? format(parseISO(f.created_at), 'MMM d, yyyy') : 'Recently';
+                const arenaScore = f.profile?.arena_score || 0;
+                const friendSince = f.created_at ? format(parseISO(f.created_at), 'MMM d, yyyy') : 'Recent';
 
                 return (
-                  <div key={f.id} className="glass-card p-4 flex flex-col justify-between space-y-4 hover:border-purple-500/30 transition">
+                  <div key={f.id} className="glass-card p-5 flex flex-col justify-between space-y-4 hover:border-purple-500/30 transition">
                     <div className="flex items-start gap-3">
                       <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
                         {displayName[0].toUpperCase()}
@@ -342,7 +342,7 @@ export default function Friends() {
       {activeTab === 'requests' && (
         <div className="space-y-6">
           {loadingRequests ? (
-            <div className="py-12"><LoadingState message="Loading friend requests..." /></div>
+            <FriendGridSkeleton />
           ) : (
             <>
               {/* INCOMING REQUESTS SECTION */}

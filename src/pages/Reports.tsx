@@ -3,11 +3,13 @@ import { useStore } from '../store/useStore';
 import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
 import { calculateMonthlyReportData } from '../lib/statistics';
 import { formatCurrency } from '../lib/formatCurrency';
+import { formatFocusTime } from '../lib/formatUtils';
 import {
   Brain, CheckSquare, Wallet, Target, Trophy, Flame, TrendingUp,
   Clock, ArrowLeft, ArrowUpRight, Award, Zap, BookOpen, Share2, Download
 } from 'lucide-react';
 import Button from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
@@ -25,7 +27,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function Reports() {
-  const { expenses, tasks, focusSessions, savingsGoals, profile } = useStore();
+  const { expenses, tasks, focusSessions, savingsGoals, profile, setPage } = useStore();
   const { history: goalsHistory } = useDailyGoalsStore();
 
   const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
@@ -259,10 +261,10 @@ export default function Reports() {
               <Brain size={18} style={{ color: '#a855f7' }} /> Focus Summary
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <SummaryPill label="Total Focus" value={`${reportData.focus.totalHours}h`} />
-              <SummaryPill label="Daily Average" value={`${reportData.focus.avgDailyMinutes}m`} />
+              <SummaryPill label="Total Focus" value={formatFocusTime(reportData.focus.totalMinutes)} />
+              <SummaryPill label="Daily Average" value={formatFocusTime(reportData.focus.avgDailyMinutes)} />
               <SummaryPill label="Sessions Completed" value={reportData.focus.totalPomodoros} />
-              <SummaryPill label="Longest Session" value={`${reportData.focus.longestSession}m`} />
+              <SummaryPill label="Longest Session" value={formatFocusTime(reportData.focus.longestSession)} />
             </div>
 
             <div className="h-[180px]">
@@ -570,10 +572,16 @@ export default function Reports() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>
-            <BookOpen size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No report history found. Track your first activity to generate a report!</p>
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="No report history found"
+            description="Complete focus sessions or log expenses to generate your first performance report."
+            action={{
+              label: "Start Focus Session",
+              onClick: () => setPage('productivity'),
+              icon: Brain,
+            }}
+          />
         )}
       </div>
     </div>

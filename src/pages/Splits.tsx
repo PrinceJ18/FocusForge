@@ -18,7 +18,7 @@ interface Split {
 }
 
 export default function Splits() {
-  const { splits, addSplitLocal, removeSplitLocal, setSplits } = useStore();
+  const { splits, addSplitLocal, removeSplitLocal, setSplits, showNotification } = useStore();
   const [showAdd, setShowAdd] = useState(false);
   const [billAmount, setBillAmount] = useState('');
   const [peopleCount, setPeopleCount] = useState('');
@@ -32,6 +32,12 @@ export default function Splits() {
 
   const handleSettle = (id: string) => {
     setSplits(splits.map((s) => (s.id === id ? { ...s, settled: true } : s)));
+    showNotification({ type: 'success', title: 'Split Settled', message: 'Split was marked as settled.' });
+  };
+
+  const handleDelete = (id: string) => {
+    removeSplitLocal(id);
+    showNotification({ type: 'info', title: 'Split Deleted', message: 'Split entry was removed.' });
   };
 
   const splitAmount =
@@ -166,7 +172,7 @@ export default function Splits() {
                 key={split.id}
                 split={split}
                 onSettle={() => handleSettle(split.id)}
-                onDelete={() => removeSplitLocal(split.id)}
+                onDelete={() => handleDelete(split.id)}
               />
             ))}
           </div>
@@ -212,7 +218,7 @@ export default function Splits() {
                     {split.type === 'owed' ? '+' : '-'}{formatCurrency(split.amount)}
                   </span>
                   <button
-                    onClick={() => removeSplitLocal(split.id)}
+                    onClick={() => handleDelete(split.id)}
                     style={{ color: 'var(--text-muted)' }}
                   >
                     <Trash2 size={13} />
@@ -230,6 +236,7 @@ export default function Splits() {
           onAdd={(data) => {
             addSplitLocal({ id: crypto.randomUUID(), ...data, settled: false, date: format(new Date(), 'yyyy-MM-dd') });
             setShowAdd(false);
+            showNotification({ type: 'success', title: 'Split Added', message: `Added ${formatCurrency(data.amount)} for ${data.name}` });
           }}
         />
       )}

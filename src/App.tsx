@@ -27,16 +27,16 @@ const Friends = React.lazy(() => import('./pages/Friends'));
 const Arena = React.lazy(() => import('./pages/Arena'));
 
 const TAB_TITLES: Record<string, string> = {
-  dashboard: 'FocusForge Dashboard',
-  finance: 'FocusForge Finance',
-  productivity: 'FocusForge Focus',
-  analytics: 'FocusForge Analytics',
-  friends: 'FocusForge Friends',
-  arena: 'FocusForge Arena',
-  splits: 'FocusForge Splits',
-  reports: 'FocusForge Reports',
-  achievements: 'FocusForge Achievements',
-  settings: 'FocusForge Settings',
+  dashboard: 'FocusForge — Dashboard',
+  finance: 'FocusForge — Finance & Budget',
+  productivity: 'FocusForge — Focus & Tasks',
+  analytics: 'FocusForge — Analytics Intelligence',
+  friends: 'FocusForge — Friends & Social',
+  arena: 'FocusForge — Productivity Arena',
+  splits: 'FocusForge — Split Expenses',
+  reports: 'FocusForge — Performance Reports',
+  achievements: 'FocusForge — Achievement Center',
+  settings: 'FocusForge — Settings & Preferences',
 };
 
 export default function App() {
@@ -57,7 +57,7 @@ export default function App() {
 
   // Dynamically update the browser tab title
   useEffect(() => {
-    document.title = TAB_TITLES[currentPage] || 'FocusForge Focus Finance Tracker';
+    document.title = TAB_TITLES[currentPage] || 'FocusForge — Operating System';
   }, [currentPage]);
 
   useEffect(() => {

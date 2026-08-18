@@ -101,13 +101,15 @@ export default function Finance() {
         await saveProfile(user.id, { monthly_budget: val });
       }
       setShowBudgetEdit(false);
+      showNotification({ type: 'success', title: 'Budget Updated', message: `Monthly budget set to ${formatCurrency(val)}` });
     }
   };
 
   const handleDeleteExpense = React.useCallback(async (id: string) => {
     removeExpenseLocal(id);
     if (user) await supabase.from('expenses').delete().eq('id', id);
-  }, [removeExpenseLocal, user]);
+    showNotification({ type: 'info', title: 'Expense Deleted', message: 'Expense was removed.' });
+  }, [removeExpenseLocal, user, showNotification]);
 
   const handleSelectRecurring = React.useCallback((bill: RecurringExpense) => {
     setSelectedRecurringDetails(bill);
@@ -392,7 +394,16 @@ export default function Finance() {
                   </div>
                 </div>
               ) : (
-                <EmptyState icon={TrendingDown} title="No expenses this month" description="You haven't logged any expenses yet." />
+                <EmptyState
+                  icon={TrendingDown}
+                  title="No expenses this month"
+                  description="You haven't logged any expenses yet."
+                  action={{
+                    label: "Add Expense",
+                    onClick: () => setShowAddExpense(true),
+                    icon: Plus,
+                  }}
+                />
               )}
             </div>
 
@@ -416,7 +427,16 @@ export default function Finance() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <EmptyState icon={BarChart2} title="No data yet" description="Your spending history will appear here." />
+                <EmptyState
+                  icon={BarChart2}
+                  title="No data yet"
+                  description="Your spending history will appear here."
+                  action={{
+                    label: "Add Expense",
+                    onClick: () => setShowAddExpense(true),
+                    icon: Plus,
+                  }}
+                />
               )}
             </div>
           </div>
@@ -885,6 +905,7 @@ export default function Finance() {
                       const updated = savingsGoals.filter((g) => g.id !== goal.id);
                       setSavingsGoals(updated);
                       if (user) await supabase.from('savings_goals').delete().eq('id', goal.id);
+                      showNotification({ type: 'info', title: 'Goal Deleted', message: `Savings goal "${goal.title}" was removed.` });
                     }}
                     onAddFunds={async (amt) => {
                       const updated = savingsGoals.map((g) => {
@@ -899,6 +920,7 @@ export default function Finance() {
                         const targetGoal = updated.find((g) => g.id === goal.id);
                         await supabase.from('savings_goals').update({ current_amount: targetGoal?.current_amount }).eq('id', goal.id);
                       }
+                      showNotification({ type: 'success', title: 'Funds Added', message: `Added ${formatCurrency(amt)} to "${goal.title}"` });
                     }}
                   />
                 ))}
@@ -963,6 +985,7 @@ export default function Finance() {
                           const updated = customCategories.filter((cc) => cc.id !== c.id);
                           setCustomCategories(updated);
                           if (user) await supabase.from('custom_categories').delete().eq('id', c.id);
+                          showNotification({ type: 'info', title: 'Category Deleted', message: `Category "${c.name}" was removed.` });
                         }}
                         className="p-1 rounded hover:bg-red-500/10 text-red-400"
                       >

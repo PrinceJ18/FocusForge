@@ -104,6 +104,7 @@ export default function Settings() {
     a.click();
     URL.revokeObjectURL(url);
     logEvent('backup_exported', 'system', 'json', { format: 'JSON' });
+    showNotification({ type: 'success', title: 'Export Complete', message: 'Backup JSON downloaded successfully.' });
   };
 
   const handleExportCSV = () => {
@@ -125,6 +126,7 @@ export default function Settings() {
     a.download = `focusforge_transactions_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     logEvent('backup_exported', 'system', 'csv', { format: 'CSV' });
+    showNotification({ type: 'success', title: 'Export Complete', message: 'CSV transactions exported successfully.' });
   };
 
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,10 +140,10 @@ export default function Settings() {
         if (data.preferences) updatePreferencesLocal(data.preferences);
         if (data.profile) updateProfile(data.profile);
 
-        alert('Backup data parsed and applied successfully!');
+        showNotification({ type: 'success', title: 'Import Complete', message: 'Backup data parsed and applied successfully!' });
         logEvent('backup_restored', 'system', 'json', { success: true });
       } catch (err) {
-        alert('Invalid backup file structure!');
+        showNotification({ type: 'error', title: 'Import Failed', message: 'Invalid backup file structure.' });
       }
     };
     reader.readAsText(file);

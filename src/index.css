@@ -2089,4 +2089,38 @@ select option {
   opacity: 0.2;
 }
 
+/* ═══════════════════════════════════════════════════════
+   PHASE 3.4 — MICRO-INTERACTIONS & SKELETON ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
 
+/* Shimmer animation for Skeleton loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Subtle button press micro-interaction */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Smooth card transitions */
+.glass-card,
+.stat-card {
+  transition: transform var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1),
+              border-color var(--transition-normal) ease;
+}
+
+/* Accessible focus ring for keyboard navigation */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--purple-primary);
+  outline-offset: 2px;
+}

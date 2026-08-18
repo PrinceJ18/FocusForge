@@ -41,6 +41,7 @@ import InsightCard from '../components/analytics/InsightCard';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
 import { formatCurrency } from '../lib/formatCurrency';
+import { formatFocusTime } from '../lib/formatUtils';
 import {
   calculateAnalyticsEngineData,
   AnalyticsPeriod,
@@ -165,7 +166,7 @@ export default function Analytics() {
           <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
             <span className="text-slate-400">Total Focus:</span>
             <span className="font-bold text-purple-400 font-mono">
-              {data.totalFocusHours}h
+              {formatFocusTime(data.totalFocusMin)}
             </span>
           </div>
         </div>
@@ -250,7 +251,7 @@ export default function Analytics() {
           </div>
           <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
             <span>{data.completedTasksCount} tasks done</span>
-            <span>{data.todayFocusMin}m today</span>
+            <span>{formatFocusTime(data.totalFocusMin)} focus</span>
           </div>
         </div>
 
@@ -318,8 +319,8 @@ export default function Analytics() {
             <span className="text-xs text-slate-500 font-semibold">Consistency</span>
           </div>
           <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
-            <span>Avg: {data.avgSessionLength}m / session</span>
-            <span>Peak: {data.longestSessionMins}m</span>
+            <span>Avg: {formatFocusTime(data.avgSessionLength)} / session</span>
+            <span>Peak: {formatFocusTime(data.longestSessionMins)}</span>
           </div>
         </div>
       </div>
@@ -437,7 +438,7 @@ export default function Analytics() {
             <HighlightPill
               label="Best Day"
               value={data.bestFocusDay.dayName}
-              sub={data.bestFocusDay.avgMinutes > 0 ? `Avg ${data.bestFocusDay.avgMinutes}m` : undefined}
+              sub={data.bestFocusDay.avgMinutes > 0 ? `Avg ${formatFocusTime(data.bestFocusDay.avgMinutes)}` : undefined}
               color="#a855f7"
             />
             <HighlightPill
@@ -448,13 +449,13 @@ export default function Analytics() {
             />
             <HighlightPill
               label="Avg Session"
-              value={`${data.avgSessionLength} min`}
+              value={formatFocusTime(data.avgSessionLength)}
               sub="Per session block"
               color="#10b981"
             />
             <HighlightPill
               label="Longest Block"
-              value={`${data.longestSessionMins} min`}
+              value={formatFocusTime(data.longestSessionMins)}
               sub="Deep work record"
               color="#f59e0b"
             />

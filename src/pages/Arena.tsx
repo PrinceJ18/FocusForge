@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useArenaLeaderboard } from '../hooks/useArenaLeaderboard';
 import { arenaService, Arena, ArenaMember } from '../services/arenaService';
 import { activityService } from '../services/activityService';
-import { LoadingState } from '../components/ui/Loading';
+import { LeaderboardSkeleton } from '../components/ui/Loading';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
 import { Trophy, Clock, CheckCircle2, UserPlus, Crown, Calendar, Users, History, Activity, Swords, LogOut, Trash2, Settings, ShieldAlert, UserMinus, Shield, Eye, Pen } from 'lucide-react';
@@ -16,7 +16,7 @@ import CreateArenaModal from '../components/arena/CreateArenaModal';
 import InviteFriendsModal from '../components/arena/InviteFriendsModal';
 
 export default function ArenaPage() {
-  const { user } = useStore();
+  const { user, showNotification } = useStore();
   const [periodType, setPeriodType] = useState<'weekly' | 'monthly'>('weekly');
   const [activeArena, setActiveArena] = useState<Arena | null>(null);
   const [loadingArena, setLoadingArena] = useState(true);
@@ -49,19 +49,41 @@ export default function ArenaPage() {
           .from('arenas')
           .select('*')
           .eq('id', memberData.arena_id)
-          .single();
+          .maybeSingle();
 
-        const arena = arenaData as Arena | null;
-        setActiveArena(arena ?? null);
+        if (arenaData) {
+          setActiveArena(arenaData as Arena);
 
-        // 3. Fetch owner display name
-        if (arena?.owner_id) {
-          const { data: ownerProfile } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('id', arena.owner_id)
-            .maybeSingle();
-          setOwnerName(ownerProfile?.display_name ?? null);
+          // 3. Fetch active members
+          const { data: membersData } = await supabase
+            .from('arena_members')
+            .select('*')
+            .eq('arena_id', arenaData.id)
+            .is('left_at', null);
+
+          const activeMembers = membersData || [];
+          setMembers(activeMembers);
+
+          // 4. Fetch profiles for all active members
+          const memberUserIds = activeMembers.map(m => m.user_id);
+          if (memberUserIds.length > 0) {
+            const { data: profilesData } = await supabase
+              .from('profiles')
+              .select('id, display_name, avatar_url')
+              .in('id', memberUserIds);
+
+            const profileMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+            profilesData?.forEach((p: any) => {
+              profileMap[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url };
+            });
+            setMemberProfiles(profileMap);
+
+            // Set owner display name
+            const ownerProfile = profileMap[arenaData.owner_id];
+            setOwnerName(ownerProfile?.display_name || 'Arena Owner');
+          }
+        } else {
+          setActiveArena(null);
         }
       } else {
         setActiveArena(null);
@@ -79,29 +101,6 @@ export default function ArenaPage() {
     loadArena();
   }, [loadArena]);
 
-  // Load members when settings panel is open
-  useEffect(() => {
-    if (!showSettings || !activeArena) return;
-    (async () => {
-      try {
-        const m = await arenaService.getArenaMembers(activeArena.id);
-        setMembers(m);
-        // Fetch profile info for each member
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, display_name, avatar_url')
-          .in('id', m.map(x => x.user_id));
-        if (profiles) {
-          const map: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
-          profiles.forEach((p: any) => { map[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url }; });
-          setMemberProfiles(map);
-        }
-      } catch {
-        // Non-fatal
-      }
-    })();
-  }, [showSettings, activeArena]);
-
   const isOwner = activeArena && user ? activeArena.owner_id === user.id : false;
 
   const handleRenameArena = async () => {
@@ -112,8 +111,10 @@ export default function ArenaPage() {
       await arenaService.renameArena(activeArena.id, user.id, renameValue);
       setActiveArena(prev => prev ? { ...prev, name: renameValue.trim() } : null);
       setRenameValue('');
+      showNotification({ type: 'success', title: 'Arena Renamed', message: 'Arena name has been updated.' });
     } catch (err: any) {
       setActionError(err?.message || 'Unable to rename arena.');
+      showNotification({ type: 'error', title: 'Rename Failed', message: err?.message || 'Unable to rename arena.' });
     } finally {
       setActionLoading(null);
     }
@@ -127,8 +128,10 @@ export default function ArenaPage() {
       await arenaService.removeMember(activeArena.id, user.id, targetUserId);
       await activityService.logActivity(activeArena.id, user.id, 'member_removed', 'Removed a member', null, { dedupe_key: `remove_${targetUserId}` }).catch(() => {});
       setMembers(prev => prev.filter(m => m.user_id !== targetUserId));
+      showNotification({ type: 'info', title: 'Member Removed', message: 'Member was removed from the arena.' });
     } catch (err: any) {
       setActionError(err?.message || 'Unable to remove member.');
+      showNotification({ type: 'error', title: 'Action Failed', message: err?.message || 'Unable to remove member.' });
     } finally {
       setActionLoading(null);
     }
@@ -144,8 +147,10 @@ export default function ArenaPage() {
       await arenaService.transferOwnership(activeArena.id, user.id, newOwnerId);
       await activityService.logActivity(activeArena.id, user.id, 'owner_transferred', 'Transferred arena ownership', null, { dedupe_key: `transfer_${activeArena.id}` }).catch(() => {});
       await loadArena();
+      showNotification({ type: 'success', title: 'Ownership Transferred', message: 'Arena ownership was successfully transferred.' });
     } catch (err: any) {
       setActionError(err?.message || 'Unable to transfer ownership.');
+      showNotification({ type: 'error', title: 'Transfer Failed', message: err?.message || 'Unable to transfer ownership.' });
     } finally {
       setActionLoading(null);
     }
@@ -161,8 +166,10 @@ export default function ArenaPage() {
       await arenaService.deleteArena(activeArena.id, user.id);
       setActiveArena(null);
       setShowSettings(false);
+      showNotification({ type: 'info', title: 'Arena Deleted', message: 'Your arena was deleted.' });
     } catch (err: any) {
       setActionError(err?.message || 'Unable to delete arena.');
+      showNotification({ type: 'error', title: 'Delete Failed', message: err?.message || 'Unable to delete arena.' });
     } finally {
       setActionLoading(null);
     }
@@ -179,8 +186,10 @@ export default function ArenaPage() {
       await activityService.logActivity(activeArena.id, user.id, 'member_left', 'Left the arena', null, { dedupe_key: `leave_${user.id}` }).catch(() => {});
       setActiveArena(null);
       setShowSettings(false);
+      showNotification({ type: 'info', title: 'Left Arena', message: 'You have left the arena.' });
     } catch (err: any) {
       setActionError(err?.message || 'Unable to leave arena.');
+      showNotification({ type: 'error', title: 'Action Failed', message: err?.message || 'Unable to leave arena.' });
     } finally {
       setActionLoading(null);
     }
@@ -214,8 +223,8 @@ export default function ArenaPage() {
 
   if (loadingArena || loadingLeaderboard) {
     return (
-      <div className="py-16 flex justify-center">
-        <LoadingState message="Loading Productivity Arena..." />
+      <div className="page-enter max-w-6xl mx-auto space-y-6 pb-24">
+        <LeaderboardSkeleton />
       </div>
     );
   }

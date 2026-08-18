@@ -25,6 +25,7 @@ import { format, parseISO, subDays, addDays } from 'date-fns';
 import { calculateTodayFocus, calculateTodaySessions } from '../lib/statistics';
 import { logEvent } from '../lib/events';
 import { getTasksForDate } from '../lib/taskRecurrence';
+import { formatFocusTime } from '../lib/formatUtils';
 
 // Import New Modular Task Components
 import TaskSectionManager from '../components/tasks/TaskSectionManager';
@@ -43,6 +44,7 @@ import {
 } from '../store/useStore';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -558,7 +560,7 @@ export default function Productivity() {
                   className="text-3xl font-black"
                   style={{ color: '#10b981', fontFamily: 'Space Grotesk' }}
                 >
-                  {todayMinutes}m
+                  {formatFocusTime(todayMinutes)}
                 </div>
                 <div className="text-sm mt-1 tracking-wide" style={{ color: 'var(--text-muted)' }}>
                   Focus Today
@@ -773,7 +775,7 @@ export default function Productivity() {
               </div>
               <div className="min-w-0">
                 <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Focus</div>
-                <div className="text-xs font-bold text-white leading-tight mt-0.5">{todayMinutes} min</div>
+                <div className="text-xs font-bold text-white leading-tight mt-0.5">{formatFocusTime(todayMinutes)}</div>
               </div>
             </div>
 
@@ -880,16 +882,17 @@ export default function Productivity() {
                   <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
                     {format(parseISO(session.session_date), 'MMM d')}
                   </p>
-                  <p className="text-lg font-bold" style={{ color: '#a855f7' }}>{session.minutes}m</p>
+                  <p className="text-lg font-bold" style={{ color: '#a855f7' }}>{formatFocusTime(session.minutes)}</p>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{session.sessions_count} sessions</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
-              <Clock size={28} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Start your first focus session!</p>
-            </div>
+            <EmptyState
+              icon={Clock}
+              title="No Focus Sessions Yet"
+              description="Launch a Pomodoro or stopwatch focus session above to record your deep work history."
+            />
           )}
         </Card>
 

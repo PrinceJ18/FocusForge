@@ -17,10 +17,12 @@ export function formatPercentage(value: number, decimals = 0): string {
   }).format(value / 100);
 }
 
-export function formatFocusTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}m`;
+export function formatFocusTime(minutes: number | null | undefined): string {
+  if (!minutes || isNaN(minutes) || minutes <= 0) return '0 min';
+  const totalMinutes = Math.round(minutes);
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
   if (mins === 0) return `${hours}h`;
   return `${hours}h ${mins}m`;
 }

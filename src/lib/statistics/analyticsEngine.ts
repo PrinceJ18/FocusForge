@@ -1,7 +1,6 @@
 import {
   subDays,
   parseISO,
-  isAfter,
   format,
   startOfWeek,
   subWeeks,
@@ -145,59 +144,94 @@ export function calculateAnalyticsEngineData(params: {
   } = params;
 
   const now = new Date();
-  const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
+  const todayStr = format(now, 'yyyy-MM-dd');
 
-  const sinceDate = period === 'all' ? subDays(now, 365) : subDays(now, days);
-  const previousPeriodStart = subDays(sinceDate, days);
+  // 1. Determine Exact Date Bounds for Selected Period
+  let daysCount: number;
+  let startDateStr: string;
 
-  // 1. Filter Current & Previous Period Datasets
-  const currentExpenses = expenses.filter((e) => {
-    try {
-      return isAfter(parseISO(e.expense_date), sinceDate);
-    } catch {
-      return false;
+  if (period === '7d') {
+    daysCount = 7;
+    startDateStr = format(subDays(now, 6), 'yyyy-MM-dd');
+  } else if (period === '30d') {
+    daysCount = 30;
+    startDateStr = format(subDays(now, 29), 'yyyy-MM-dd');
+  } else if (period === '90d') {
+    daysCount = 90;
+    startDateStr = format(subDays(now, 89), 'yyyy-MM-dd');
+  } else {
+    // 'all' time: calculate span from earliest recorded activity
+    const recordedDates: string[] = [
+      ...expenses.map((e) => e.expense_date?.slice(0, 10)).filter(Boolean),
+      ...focusSessions.map((s) => s.session_date?.slice(0, 10)).filter(Boolean),
+      ...tasks
+        .map((t) => (t.completed_at || t.scheduled_date || t.created_at)?.slice(0, 10))
+        .filter(Boolean),
+    ].sort();
+
+    if (recordedDates.length > 0 && recordedDates[0] < todayStr) {
+      startDateStr = recordedDates[0];
+      try {
+        const diffMs = now.getTime() - parseISO(startDateStr).getTime();
+        daysCount = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      } catch {
+        startDateStr = format(subDays(now, 364), 'yyyy-MM-dd');
+        daysCount = 365;
+      }
+    } else {
+      startDateStr = format(subDays(now, 29), 'yyyy-MM-dd');
+      daysCount = 30;
     }
+  }
+
+  // Previous comparison period boundaries
+  const prevEndDateStr = format(subDays(parseISO(startDateStr), 1), 'yyyy-MM-dd');
+  const prevStartDateStr = format(subDays(parseISO(startDateStr), daysCount), 'yyyy-MM-dd');
+
+  // 2. Filter Single Source of Truth Datasets
+  const currentExpenses = expenses.filter((e) => {
+    const d = e.expense_date?.slice(0, 10);
+    if (!d) return false;
+    return period === 'all' ? d <= todayStr : d >= startDateStr && d <= todayStr;
   });
 
   const previousExpenses = expenses.filter((e) => {
-    try {
-      const d = parseISO(e.expense_date);
-      return isAfter(d, previousPeriodStart) && !isAfter(d, sinceDate);
-    } catch {
-      return false;
-    }
+    const d = e.expense_date?.slice(0, 10);
+    if (!d) return false;
+    return d >= prevStartDateStr && d <= prevEndDateStr;
   });
 
   const currentSessions = focusSessions.filter((s) => {
-    try {
-      return isAfter(parseISO(s.session_date), sinceDate);
-    } catch {
-      return false;
-    }
+    const d = s.session_date?.slice(0, 10);
+    if (!d) return false;
+    return period === 'all' ? d <= todayStr : d >= startDateStr && d <= todayStr;
   });
 
   const previousSessions = focusSessions.filter((s) => {
-    try {
-      const d = parseISO(s.session_date);
-      return isAfter(d, previousPeriodStart) && !isAfter(d, sinceDate);
-    } catch {
-      return false;
-    }
+    const d = s.session_date?.slice(0, 10);
+    if (!d) return false;
+    return d >= prevStartDateStr && d <= prevEndDateStr;
   });
 
-  // Check if any real data exists
+  const currentTasks = tasks.filter((t) => {
+    const d = (t.completed_at || t.scheduled_date || t.created_at)?.slice(0, 10);
+    if (!d) return true; // keep unscheduled tasks in pool
+    return period === 'all' ? d <= todayStr : d >= startDateStr && d <= todayStr;
+  });
+
   const hasData = expenses.length > 0 || focusSessions.length > 0 || tasks.length > 0;
 
-  // 2. Daily Timeline Mapping
+  // 3. Build Daily Timeline Exclusively From Current Period Range
   const timelineMap: Record<
     string,
     { date: string; rawDate: string; focus: number; spending: number; tasksCompleted: number }
   > = {};
 
-  for (let i = days - 1; i >= 0; i--) {
+  const timelineDays = Math.min(daysCount, 90); // Cap timeline display points to 90 for clean chart rendering
+  for (let i = timelineDays - 1; i >= 0; i--) {
     const target = subDays(now, i);
     const dKey = format(target, 'yyyy-MM-dd');
-    const label = format(target, days <= 14 ? 'EEE, MMM d' : 'MMM d');
+    const label = format(target, timelineDays <= 14 ? 'EEE, MMM d' : 'MMM d');
     timelineMap[dKey] = {
       date: label,
       rawDate: dKey,
@@ -208,18 +242,19 @@ export function calculateAnalyticsEngineData(params: {
   }
 
   currentExpenses.forEach((e) => {
-    if (timelineMap[e.expense_date]) {
-      timelineMap[e.expense_date].spending += e.amount;
+    const d = e.expense_date?.slice(0, 10);
+    if (d && timelineMap[d]) {
+      timelineMap[d].spending += e.amount;
     }
   });
 
   currentSessions.forEach((s) => {
-    if (timelineMap[s.session_date]) {
-      timelineMap[s.session_date].focus += s.minutes;
+    const d = s.session_date?.slice(0, 10);
+    if (d && timelineMap[d]) {
+      timelineMap[d].focus += s.minutes;
     }
   });
 
-  // Task completions over the timeline
   tasks.forEach((t) => {
     if (t.status === 'completed' && t.completed_at) {
       const cDate = t.completed_at.slice(0, 10);
@@ -231,7 +266,7 @@ export function calculateAnalyticsEngineData(params: {
 
   const dailyTimeline = Object.values(timelineMap);
 
-  // 3. Productivity Calculations
+  // 4. Productivity Metrics (Strictly from Current Filtered Dataset)
   const totalFocusMin = currentSessions.reduce((sum, s) => sum + s.minutes, 0);
   const totalFocusHours = parseFloat((totalFocusMin / 60).toFixed(1));
   const totalSessionsCount = currentSessions.reduce((sum, s) => sum + (s.sessions_count || 1), 0);
@@ -273,7 +308,7 @@ export function calculateAnalyticsEngineData(params: {
     }
   });
 
-  // Best focus hour window (from events timestamp or fallback to prime morning/evening block)
+  // Best focus hour window from events in period
   const hourBuckets: Record<string, number> = {
     'Morning (8 AM - 12 PM)': 0,
     'Afternoon (12 PM - 4 PM)': 0,
@@ -283,14 +318,17 @@ export function calculateAnalyticsEngineData(params: {
 
   events.forEach((ev) => {
     if (ev.category === 'focus' && ev.timestamp) {
-      try {
-        const hour = new Date(ev.timestamp).getHours();
-        if (hour >= 8 && hour < 12) hourBuckets['Morning (8 AM - 12 PM)'] += 1;
-        else if (hour >= 12 && hour < 16) hourBuckets['Afternoon (12 PM - 4 PM)'] += 1;
-        else if (hour >= 16 && hour < 20) hourBuckets['Evening (4 PM - 8 PM)'] += 1;
-        else hourBuckets['Night (8 PM - 12 AM)'] += 1;
-      } catch {
-        // ignore
+      const evDate = ev.timestamp.slice(0, 10);
+      if (period === 'all' || (evDate >= startDateStr && evDate <= todayStr)) {
+        try {
+          const hour = new Date(ev.timestamp).getHours();
+          if (hour >= 8 && hour < 12) hourBuckets['Morning (8 AM - 12 PM)'] += 1;
+          else if (hour >= 12 && hour < 16) hourBuckets['Afternoon (12 PM - 4 PM)'] += 1;
+          else if (hour >= 16 && hour < 20) hourBuckets['Evening (4 PM - 8 PM)'] += 1;
+          else hourBuckets['Night (8 PM - 12 AM)'] += 1;
+        } catch {
+          // ignore
+        }
       }
     }
   });
@@ -304,11 +342,11 @@ export function calculateAnalyticsEngineData(params: {
     }
   });
 
-  // Focus Consistency Rate (active days with >= 30m / total days in period)
+  // Focus Consistency Rate (active days with >= 30m / days in period)
   const activeFocusDaysCount = dailyTimeline.filter((d) => d.focus >= 30).length;
-  const focusConsistencyRate = Math.round((activeFocusDaysCount / Math.max(1, days)) * 100);
+  const focusConsistencyRate = Math.min(100, Math.round((activeFocusDaysCount / Math.max(1, timelineDays)) * 100));
 
-  // Task Priority Distribution
+  // Task Priority & Completion for Current Period
   const priorityDistribution: {
     high: PriorityBreakdown;
     medium: PriorityBreakdown;
@@ -319,8 +357,8 @@ export function calculateAnalyticsEngineData(params: {
     low: { total: 0, completed: 0, rate: 0 },
   };
 
-  tasks.forEach((t) => {
-    const p = t.priority || 'medium';
+  currentTasks.forEach((t) => {
+    const p = (t.priority as 'high' | 'medium' | 'low') || 'medium';
     if (priorityDistribution[p]) {
       priorityDistribution[p].total += 1;
       if (t.status === 'completed') {
@@ -335,8 +373,8 @@ export function calculateAnalyticsEngineData(params: {
     priorityDistribution[p].rate = total > 0 ? Math.round((completed / total) * 100) : 0;
   });
 
-  const totalTasksCount = tasks.length;
-  const completedTasksCount = tasks.filter((t) => t.status === 'completed').length;
+  const totalTasksCount = currentTasks.length;
+  const completedTasksCount = currentTasks.filter((t) => t.status === 'completed').length;
   const taskCompletionRate =
     totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
 
@@ -356,10 +394,80 @@ export function calculateAnalyticsEngineData(params: {
     });
   }
 
-  // 4. Finance Calculations
+  // 5. Finance Metrics (Strictly from Current Filtered Dataset)
   const totalSpent = currentExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const avgDailySpend = days > 0 ? parseFloat((totalSpent / days).toFixed(2)) : 0;
+  const avgDailySpend = daysCount > 0 ? parseFloat((totalSpent / daysCount).toFixed(2)) : 0;
 
+  // Period budget scaling
+  const baseMonthlyBudget = profile?.monthly_budget || 0;
+  const periodBudget = period === '30d' 
+    ? baseMonthlyBudget 
+    : period === '7d' 
+    ? Math.round((baseMonthlyBudget / 30) * 7) 
+    : period === '90d' 
+    ? Math.round(baseMonthlyBudget * 3) 
+    : Math.round((baseMonthlyBudget / 30) * daysCount);
+
+  const availableBudget = Math.max(0, periodBudget - totalSpent);
+  const budgetUtilizationPct =
+    periodBudget > 0 ? Math.min(100, Math.round((totalSpent / periodBudget) * 100)) : 0;
+
+  let budgetHealth: 'Healthy' | 'Warning' | 'Critical' = 'Healthy';
+  if (budgetUtilizationPct >= 90) budgetHealth = 'Critical';
+  else if (budgetUtilizationPct >= 70) budgetHealth = 'Warning';
+
+  // Category allocation strictly from currentExpenses
+  const categoryTotals: Record<string, number> = {};
+  currentExpenses.forEach((e) => {
+    const cat = e.category || 'other';
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + e.amount;
+  });
+
+  const categoryBreakdown: CategoryShare[] = Object.entries(categoryTotals)
+    .map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value,
+      percentage: totalSpent > 0 ? Math.round((value / totalSpent) * 100) : 0,
+      fill: CATEGORY_COLORS[name.toLowerCase()] || '#8b5cf6',
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const topCategory = categoryBreakdown.length > 0
+    ? {
+        name: categoryBreakdown[0].name,
+        amount: categoryBreakdown[0].value,
+        percentage: categoryBreakdown[0].percentage,
+      }
+    : { name: 'None', amount: 0, percentage: 0 };
+
+  // Largest single expense strictly within currentExpenses
+  let largestExpense: { title: string; amount: number; date: string; category: string } | null = null;
+  currentExpenses.forEach((e) => {
+    if (!largestExpense || e.amount > largestExpense.amount) {
+      largestExpense = {
+        title: e.title,
+        amount: e.amount,
+        date: e.expense_date,
+        category: e.category,
+      };
+    }
+  });
+
+  // 6. Comparison vs Equal Previous Period
+  const prevTotalSpent = previousExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const prevTotalFocus = previousSessions.reduce((sum, s) => sum + s.minutes, 0);
+
+  const spendingChangePct = prevTotalSpent > 0
+    ? Math.round(((totalSpent - prevTotalSpent) / prevTotalSpent) * 100)
+    : 0;
+
+  const focusGrowthPct = prevTotalFocus > 0
+    ? Math.round(((totalFocusMin - prevTotalFocus) / prevTotalFocus) * 100)
+    : 0;
+
+  const tasksGrowthPct = 0;
+
+  // 7. Standard Single-Day Totals (for contextual indicators)
   const todaySpent = expenses
     .filter((e) => {
       try {
@@ -390,66 +498,6 @@ export function calculateAnalyticsEngineData(params: {
     })
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const monthlyBudget = profile?.monthly_budget || 0;
-  const availableBudget = Math.max(0, monthlyBudget - monthlySpent);
-  const budgetUtilizationPct =
-    monthlyBudget > 0 ? Math.min(100, Math.round((monthlySpent / monthlyBudget) * 100)) : 0;
-
-  let budgetHealth: 'Healthy' | 'Warning' | 'Critical' = 'Healthy';
-  if (budgetUtilizationPct >= 90) budgetHealth = 'Critical';
-  else if (budgetUtilizationPct >= 70) budgetHealth = 'Warning';
-
-  // Category breakdown
-  const categoryTotals: Record<string, number> = {};
-  currentExpenses.forEach((e) => {
-    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
-  });
-
-  const categoryBreakdown: CategoryShare[] = Object.entries(categoryTotals)
-    .map(([name, value]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      value,
-      percentage: totalSpent > 0 ? Math.round((value / totalSpent) * 100) : 0,
-      fill: CATEGORY_COLORS[name.toLowerCase()] || '#8b5cf6',
-    }))
-    .sort((a, b) => b.value - a.value);
-
-  const topCategory = categoryBreakdown.length > 0
-    ? {
-        name: categoryBreakdown[0].name,
-        amount: categoryBreakdown[0].value,
-        percentage: categoryBreakdown[0].percentage,
-      }
-    : { name: 'None', amount: 0, percentage: 0 };
-
-  // Largest single expense
-  let largestExpense: { title: string; amount: number; date: string; category: string } | null = null;
-  currentExpenses.forEach((e) => {
-    if (!largestExpense || e.amount > largestExpense.amount) {
-      largestExpense = {
-        title: e.title,
-        amount: e.amount,
-        date: e.expense_date,
-        category: e.category,
-      };
-    }
-  });
-
-  // 5. Period Comparison vs Previous Period
-  const prevTotalSpent = previousExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const prevTotalFocus = previousSessions.reduce((sum, s) => sum + s.minutes, 0);
-
-  const spendingChangePct = prevTotalSpent > 0
-    ? Math.round(((totalSpent - prevTotalSpent) / prevTotalSpent) * 100)
-    : 0;
-
-  const focusGrowthPct = prevTotalFocus > 0
-    ? Math.round(((totalFocusMin - prevTotalFocus) / prevTotalFocus) * 100)
-    : 0;
-
-  const tasksGrowthPct = 0; // standard neutral
-
-  // 6. Fast Single-Day Totals for KPI Cards
   const todayFocusMin = focusSessions
     .filter((s) => {
       try {
@@ -500,21 +548,22 @@ export function calculateAnalyticsEngineData(params: {
     })
     .reduce((sum, s) => sum + s.minutes, 0);
 
-  // 7. Composite Scores
+  // 8. Composite Scores (Scaled strictly to the selected period)
+  const targetPeriodFocus = daysCount * 120; // 120 min daily target scaled over period days
   const prodScoreObj = calculateProductivityScore({
     completedTasks: completedTasksCount,
     totalTasks: totalTasksCount,
-    focusMinutes: todayFocusMin,
-    focusGoal: 120,
+    focusMinutes: totalFocusMin,
+    focusGoal: Math.max(120, targetPeriodFocus),
     streak: profile?.streak || 0,
-    hasActivity: currentSessions.length > 0 || currentExpenses.length > 0,
+    hasActivity: currentSessions.length > 0 || currentExpenses.length > 0 || currentTasks.length > 0,
     budgetHealth,
     challengeCompleted: false,
   });
 
   const finScoreObj = calculateFinancialHealthScore({
-    totalSpent: monthlySpent,
-    monthlyBudget,
+    totalSpent,
+    monthlyBudget: periodBudget,
     totalExpensesCount: currentExpenses.length,
     categoriesCount: Object.keys(categoryTotals).length,
     savingsProgressPct: 50,
@@ -534,7 +583,7 @@ export function calculateAnalyticsEngineData(params: {
   const focusDollarRatio =
     totalSpent > 0 ? parseFloat((totalFocusMin / totalSpent).toFixed(1)) : totalFocusMin > 0 ? 99 : 0;
 
-  // 8. Scatter Data
+  // 9. Scatter Plot Data
   const scatterData = dailyTimeline
     .map((d) => ({
       x: d.focus,
@@ -544,7 +593,7 @@ export function calculateAnalyticsEngineData(params: {
     }))
     .filter((d) => d.x > 0 || d.y > 0);
 
-  // 9. 12-Week Heatmap
+  // 10. 12-Week Activity Heatmap (Structure untouched per Phase 3.6.1 instruction)
   const heatmap: Array<Array<{ date: string; spending: number; focus: number }>> = [];
   for (let week = 11; week >= 0; week--) {
     const weekData: Array<{ date: string; spending: number; focus: number }> = [];
@@ -557,15 +606,15 @@ export function calculateAnalyticsEngineData(params: {
     heatmap.push(weekData);
   }
 
-  // 10. Predictive Forecast Engine
+  // 11. Predictive Forecast
   const dayOfMonth = getDate(now);
   const totalDaysInCurrentMonth = getDaysInMonth(now);
   const dailyBurnRate = dayOfMonth > 0 ? monthlySpent / dayOfMonth : 0;
   const projectedMonthEndSpend = Math.round(dailyBurnRate * totalDaysInCurrentMonth);
-  const remainingBudget = monthlyBudget - monthlySpent;
+  const remainingMonthBudget = baseMonthlyBudget - monthlySpent;
   const daysUntilBudgetExhaustion =
-    dailyBurnRate > 0 && remainingBudget > 0
-      ? Math.max(1, Math.round(remainingBudget / dailyBurnRate))
+    dailyBurnRate > 0 && remainingMonthBudget > 0
+      ? Math.max(1, Math.round(remainingMonthBudget / dailyBurnRate))
       : null;
 
   const dailyFocusRate = dayOfMonth > 0 ? monthlyFocusMin / dayOfMonth : 0;
@@ -574,9 +623,9 @@ export function calculateAnalyticsEngineData(params: {
   );
 
   let budgetHealthStatus: 'healthy' | 'caution' | 'critical' = 'healthy';
-  if (monthlyBudget > 0) {
-    if (projectedMonthEndSpend > monthlyBudget * 1.1) budgetHealthStatus = 'critical';
-    else if (projectedMonthEndSpend > monthlyBudget * 0.9) budgetHealthStatus = 'caution';
+  if (baseMonthlyBudget > 0) {
+    if (projectedMonthEndSpend > baseMonthlyBudget * 1.1) budgetHealthStatus = 'critical';
+    else if (projectedMonthEndSpend > baseMonthlyBudget * 0.9) budgetHealthStatus = 'caution';
   }
 
   const forecast: ForecastData = {
@@ -589,7 +638,7 @@ export function calculateAnalyticsEngineData(params: {
 
   return {
     period,
-    daysCount: days,
+    daysCount,
     hasData,
     totalSpent,
     totalFocusMin,

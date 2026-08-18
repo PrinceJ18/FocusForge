@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '../../lib/formatCurrency';
+import { formatFocusTime } from '../../lib/formatUtils';
 
 import DashboardWidget from './DashboardWidget';
 import KpiCard from './KpiCard';
@@ -99,7 +100,7 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
   const tasksDone = todayCompletedCount ?? 0;
 
   const heroStats = [
-    { icon: Timer, label: "Today's Focus", value: `${focusMinutes} min`, color: '#a855f7' },
+    { icon: Timer, label: "Today's Focus", value: formatFocusTime(focusMinutes), color: '#a855f7' },
     { icon: CheckSquare, label: "Today's Tasks", value: `${tasksDone} / ${tasksTotal}`, color: '#06b6d4' },
     { icon: Wallet, label: 'Budget Remaining', value: formatCurrency(budgetRemaining ?? 0), color: '#10b981' },
     { icon: Flame, label: 'Current Streak', value: `${streak} ${streak === 1 ? 'Day' : 'Days'}`, color: '#f59e0b' },
@@ -246,13 +247,13 @@ const SnapshotWidget: React.FC<WidgetProps> = ({ context }) => {
       <KpiCard
         icon={Timer}
         title="Focus Time"
-        value={`${focusMinutesToday} min`}
+        value={formatFocusTime(focusMinutesToday)}
         valueColor="#a855f7"
         iconBg="rgba(168,85,247,0.15)"
         iconColor="#a855f7"
         colSpan={3}
         progressBar={{ value: focusMinutesToday, max: preferences.default_daily_focus_goal || 120, gradient: 'linear-gradient(90deg, #a855f7, #7c3aed)' }}
-        footer={estimatedTimeLeft > 0 ? `${estimatedTimeLeft} min remaining` : 'Daily goal reached! 🎉'}
+        footer={estimatedTimeLeft > 0 ? `${formatFocusTime(estimatedTimeLeft)} remaining` : 'Daily goal reached! 🎉'}
         onClick={() => setPage('productivity')}
       />
       <KpiCard
