@@ -3,11 +3,13 @@ import {
   Wallet, Brain, AlertTriangle, Sparkles, Timer, TrendingUp, Target,
   CheckSquare, Zap, ArrowUpRight, ArrowDownRight, Clock, Star,
   Award, Play, Pause, RotateCcw, Plus, Calendar, Bell, ChevronUp, ChevronDown, Eye, EyeOff, Pin, X, List,
-  PiggyBank, BarChart3, Lightbulb, Activity, Flame, Heart, Shield, SlidersHorizontal
+  PiggyBank, BarChart3, Lightbulb, Activity, Flame, Heart, Shield, SlidersHorizontal,
+  type LucideIcon
 } from 'lucide-react';
 import { useStore, type Page, type Task, completeTask, uncompleteTask, deleteTask, updateTask, markTaskWontDo } from '../store/useStore';
 import { format, parseISO, isToday, differenceInDays } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
+import { formatFocusTime } from '../lib/formatUtils';
 import { getLevelInfo } from '../lib/levels';
 import { calculateDashboardStatistics } from '../lib/statistics';
 import { calculateProductivityScore } from '../lib/scoreUtils';
@@ -196,33 +198,6 @@ export default function Dashboard() {
     return data;
   }, [expenses]);
 
-  // Recommendations Engine
-  const recommendations = useMemo(() => {
-    const list: string[] = [];
-    const pending = tasks.filter(t => t.status === 'pending').length;
-    const todayMinutes = getTodayFocusMinutes(focusSessions);
-
-    if (pending > 0) {
-      list.push(`Finish ${Math.min(2, pending)} pending tasks to clear your workspace.`);
-    }
-    if (todayMinutes < (preferences.default_daily_focus_goal || 120)) {
-      list.push('Complete one more Pomodoro session to hit your focus goals.');
-    }
-    const todayExpenses = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
-    if (todayExpenses > 500) {
-      list.push('Spend less than ₹200 tomorrow to balance your daily budget.');
-    }
-    if (profile.xp % 100 > 80) {
-      list.push('Earn 20 more XP by completing tasks to level up today!');
-    }
-
-    if (list.length === 0) {
-      list.push('Maintain your daily active streak by logging focus sessions.');
-      list.push('Review your weekly analytics reports to analyze trends.');
-    }
-
-    return list;
-  }, [tasks, focusSessions, expenses, profile.xp, preferences]);
 
   // Productivity Score Explanation
   const productivityScoreExplanation = useMemo(() => {
@@ -446,6 +421,220 @@ export default function Dashboard() {
   const monthlySpent = getMonthlyExpensesAmount(expenses);
   const budgetRemaining = profile.monthly_budget - monthlySpent;
 
+  // -------------------------------------------------------
+  // DAILY BRIEF — contextual summary sentences (Section 1)
+  // -------------------------------------------------------
+  const dailyBrief = useMemo(() => {
+    const sentences: string[] = [];
+    const todayMinutes = getTodayFocusMinutes(focusSessions);
+    const targetFocus = preferences.default_daily_focus_goal || 120;
+    const todayTasks = todayTaskOccurrences?.length ?? 0;
+    const streak = profile.streak ?? 0;
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    const dailyBudget = profile.monthly_budget > 0 ? Math.round(profile.monthly_budget / daysInMonth) : 0;
+    const todaySpent = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
+    const dailyRemaining = dailyBudget - todaySpent;
+
+    // Task summary
+    if (todayTasks > 0) {
+      const pending = todayTasks - (todayCompletedCount ?? 0);
+      if (pending > 0) {
+        sentences.push(`You have ${pending} task${pending !== 1 ? 's' : ''} remaining today.`);
+      } else {
+        sentences.push('All tasks completed today! 🎉');
+      }
+    }
+
+    // Focus summary
+    const focusRemaining = Math.max(0, targetFocus - todayMinutes);
+    if (focusRemaining > 0) {
+      sentences.push(`${formatFocusTime(focusRemaining)} away from today's focus goal.`);
+    } else {
+      sentences.push('Focus goal reached for today! ✨');
+    }
+
+    // Budget summary
+    if (dailyBudget > 0) {
+      if (dailyRemaining > 0) {
+        sentences.push(`${formatCurrency(dailyRemaining)} remaining in today's allowance.`);
+      } else {
+        sentences.push('Daily budget exceeded — consider pausing spending.');
+      }
+    }
+
+    // Streak summary
+    if (streak >= 7) {
+      sentences.push(`${streak}-day streak — you're on fire! 🔥`);
+    } else if (streak >= 3) {
+      sentences.push(`${streak}-day streak — keep building momentum!`);
+    } else if (streak === 0) {
+      sentences.push('Start your streak today with a focus session.');
+    }
+
+    return sentences;
+  }, [focusSessions, preferences, profile, expenses, todayTaskOccurrences, todayCompletedCount]);
+
+  // -------------------------------------------------------
+  // DAILY PROGRESS — percentages for composite ring (Section 3)
+  // -------------------------------------------------------
+  const dailyProgress = useMemo(() => {
+    const todayMinutes = getTodayFocusMinutes(focusSessions);
+    const targetFocus = preferences.default_daily_focus_goal || 120;
+    const todayTasks = todayTaskOccurrences?.length ?? 0;
+    const completedTasks = todayCompletedCount ?? 0;
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    const dailyBudget = profile.monthly_budget > 0 ? Math.round(profile.monthly_budget / daysInMonth) : 0;
+    const todaySpent = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
+
+    const focusPct = targetFocus > 0 ? Math.min(100, Math.round((todayMinutes / targetFocus) * 100)) : 0;
+    const taskPct = todayTasks > 0 ? Math.min(100, Math.round((completedTasks / todayTasks) * 100)) : 100;
+    const budgetPct = dailyBudget > 0 ? Math.min(100, Math.max(0, Math.round(((dailyBudget - todaySpent) / dailyBudget) * 100))) : 100;
+    const streak = profile.streak ?? 0;
+
+    // Overall is weighted average: Focus 30%, Tasks 30%, Budget 20%, Streak 20%
+    const streakScore = Math.min(100, streak * 15); // 7 days = 100%
+    const overall = Math.round(focusPct * 0.3 + taskPct * 0.3 + budgetPct * 0.2 + streakScore * 0.2);
+
+    return {
+      focus: { pct: focusPct, current: todayMinutes, target: targetFocus },
+      tasks: { pct: taskPct, current: completedTasks, target: todayTasks },
+      budget: { pct: budgetPct, spent: todaySpent, limit: dailyBudget },
+      streak: { value: streak, score: streakScore },
+      overall,
+    };
+  }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile, expenses]);
+
+  // -------------------------------------------------------
+  // SMART RECOMMENDATIONS — premium cards (Section 5)
+  // -------------------------------------------------------
+  interface SmartRecommendation {
+    icon: LucideIcon;
+    title: string;
+    action: string;
+    color: string;
+    priority: 'high' | 'medium' | 'low';
+  }
+
+  const smartRecommendations = useMemo((): SmartRecommendation[] => {
+    const recs: SmartRecommendation[] = [];
+    const pending = tasks.filter(t => t.status === 'pending').length;
+    const todayMinutes = getTodayFocusMinutes(focusSessions);
+    const targetFocus = preferences.default_daily_focus_goal || 120;
+    const todayExpenses = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
+    const streak = profile.streak ?? 0;
+    const xpToNext = getLevelInfo(profile.xp).xpToNext;
+
+    // High priority: overdue tasks
+    const overdue = tasks.filter(t => t.status === 'pending' && t.deadline && new Date(t.deadline) < new Date());
+    if (overdue.length > 0) {
+      recs.push({ icon: AlertTriangle, title: `${overdue.length} overdue task${overdue.length !== 1 ? 's' : ''}`, action: 'Review and clear overdue items', color: '#ef4444', priority: 'high' });
+    }
+
+    // Focus recommendation
+    if (todayMinutes < targetFocus) {
+      const remaining = targetFocus - todayMinutes;
+      recs.push({ icon: Timer, title: `${formatFocusTime(remaining)} to focus goal`, action: 'Start a Pomodoro session', color: '#a855f7', priority: remaining > targetFocus * 0.5 ? 'high' : 'medium' });
+    }
+
+    // Task recommendation
+    if (pending > 0) {
+      recs.push({ icon: CheckSquare, title: `${pending} pending task${pending !== 1 ? 's' : ''}`, action: `Complete ${Math.min(3, pending)} tasks to boost your score`, color: '#06b6d4', priority: pending > 5 ? 'high' : 'medium' });
+    }
+
+    // Budget warning
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    const dailyBudget = profile.monthly_budget > 0 ? Math.round(profile.monthly_budget / daysInMonth) : 0;
+    if (dailyBudget > 0 && todayExpenses > dailyBudget * 0.8) {
+      recs.push({ icon: Wallet, title: 'Budget caution', action: 'You\'ve used 80%+ of today\'s daily limit', color: '#f59e0b', priority: todayExpenses > dailyBudget ? 'high' : 'medium' });
+    }
+
+    // XP / Level up
+    if (xpToNext <= 30) {
+      recs.push({ icon: Zap, title: `${xpToNext} XP to level up!`, action: 'Complete a few tasks to level up', color: '#ec4899', priority: 'medium' });
+    }
+
+    // Streak encouragement
+    if (streak === 0) {
+      recs.push({ icon: Flame, title: 'Start your streak', action: 'Log a focus session to begin', color: '#f59e0b', priority: 'low' });
+    }
+
+    // Fallback
+    if (recs.length === 0) {
+      recs.push({ icon: Star, title: 'You\'re doing great!', action: 'Maintain your streak and check analytics', color: '#10b981', priority: 'low' });
+    }
+
+    return recs.slice(0, 4);
+  }, [tasks, focusSessions, expenses, profile, preferences]);
+
+  // -------------------------------------------------------
+  // QUICK CONTINUE — resume items (Section 6)
+  // -------------------------------------------------------
+  const quickContinueItems = useMemo(() => {
+    const items: Array<{ icon: LucideIcon; label: string; sublabel: string; page: Page; color: string }> = [];
+
+    // Last incomplete high-priority task
+    const highPriPending = tasks.find(t => t.status === 'pending' && t.priority === 'high');
+    if (highPriPending) {
+      items.push({ icon: CheckSquare, label: highPriPending.title, sublabel: 'High priority task', page: 'productivity', color: '#ef4444' });
+    }
+
+    // Most recent focus session — suggest continuing
+    const lastSession = focusSessions.length > 0 ? focusSessions[0] : null;
+    if (lastSession) {
+      items.push({ icon: Timer, label: `Continue Focus`, sublabel: `Last: ${formatFocusTime(lastSession.minutes)} session`, page: 'productivity', color: '#a855f7' });
+    }
+
+    // Savings goal in progress
+    if (savingsSummary && savingsSummary.pct < 100) {
+      items.push({ icon: PiggyBank, label: savingsSummary.goal.title, sublabel: `${savingsSummary.pct}% saved`, page: 'finance', color: '#10b981' });
+    }
+
+    // Analytics
+    if (items.length < 3) {
+      items.push({ icon: BarChart3, label: 'Review Analytics', sublabel: 'Check your weekly trends', page: 'analytics', color: '#06b6d4' });
+    }
+
+    return items.slice(0, 3);
+  }, [tasks, focusSessions, savingsSummary]);
+
+  // -------------------------------------------------------
+  // GOAL TRACKER — multi-goal progress (Section 4)
+  // -------------------------------------------------------
+  const goalTrackerData = useMemo(() => {
+    const todayMinutes = getTodayFocusMinutes(focusSessions);
+    const targetFocus = preferences.default_daily_focus_goal || 120;
+    const todayTasks = todayTaskOccurrences?.length ?? 0;
+    const completedTasks = todayCompletedCount ?? 0;
+    const streak = profile.streak ?? 0;
+    const longestStreak = Math.max(streak, profile.streak ?? 0);
+
+    return {
+      focus: { current: todayMinutes, target: targetFocus, label: 'Daily Focus', color: '#a855f7', icon: Timer },
+      tasks: { current: completedTasks, target: todayTasks, label: 'Tasks Today', color: '#06b6d4', icon: CheckSquare },
+      budget: {
+        current: getMonthlyExpensesAmount(expenses),
+        target: profile.monthly_budget || 0,
+        label: 'Monthly Budget',
+        color: '#ec4899',
+        icon: Wallet,
+        isInverse: true,
+      },
+      savings: savingsSummary ? {
+        current: savingsSummary.goal.current_amount,
+        target: savingsSummary.goal.target_amount,
+        label: savingsSummary.goal.title,
+        color: '#10b981',
+        icon: PiggyBank,
+      } : null,
+      streak: { current: streak, longest: longestStreak, label: 'Day Streak', color: '#f59e0b', icon: Flame },
+    };
+  }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile, expenses, savingsSummary]);
+
+  // Legacy recommendations (kept for backward compat)
+  const recommendations = useMemo(() => {
+    return smartRecommendations.map(r => r.action);
+  }, [smartRecommendations]);
+
   // Score color helpers
   const getScoreColor = useCallback((score: number) => {
     if (score >= 80) return '#10b981';
@@ -459,6 +648,8 @@ export default function Dashboard() {
     focusTrendData, expenseTrendData, recommendations, productivityScoreExplanation,
     achievementsPreview, upcomingBills, recentEvents, savingsSummary, todayExpensesAmount,
     budgetRemaining, todayCompletedCount, todayTaskOccurrences, todayDate, preferences, taskSections,
+    // Phase 3.7 additions
+    dailyBrief, dailyProgress, smartRecommendations, quickContinueItems, goalTrackerData,
     // Actions
     setShowCustomize, setPage, setShowQuickAddTask, setShowQuickAddExpense,
     handleStartTimer, handleToggleTask, setSelectedTaskDetails, getScoreColor
@@ -468,6 +659,7 @@ export default function Dashboard() {
     focusTrendData, expenseTrendData, recommendations, productivityScoreExplanation,
     achievementsPreview, upcomingBills, recentEvents, savingsSummary, todayExpensesAmount,
     budgetRemaining, todayCompletedCount, todayTaskOccurrences, todayDate, preferences, taskSections,
+    dailyBrief, dailyProgress, smartRecommendations, quickContinueItems, goalTrackerData,
     setShowCustomize, setPage, setShowQuickAddTask, setShowQuickAddExpense,
     handleStartTimer, handleToggleTask, setSelectedTaskDetails, getScoreColor
   ]);

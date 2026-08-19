@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Sparkles, Award, Timer, CheckSquare, Zap, Calendar, BarChart3,
   TrendingUp, Lightbulb, Activity, PiggyBank, Flame, Brain, Shield,
-  Wallet, Target, Plus, Play, XCircle
+  Wallet, Target, Plus, Play, XCircle, ArrowRight, RotateCcw, AlertTriangle, Star
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '../../lib/formatCurrency';
@@ -56,6 +56,37 @@ export interface DashboardContextData {
   todayDate: Date;
   preferences: any;
   taskSections: any[];
+
+  // Phase 3.7 additions
+  dailyBrief: string[];
+  dailyProgress: {
+    focus: { pct: number; current: number; target: number };
+    tasks: { pct: number; current: number; target: number };
+    budget: { pct: number; spent: number; limit: number };
+    streak: { value: number; score: number };
+    overall: number;
+  };
+  smartRecommendations: Array<{
+    icon: LucideIcon;
+    title: string;
+    action: string;
+    color: string;
+    priority: 'high' | 'medium' | 'low';
+  }>;
+  quickContinueItems: Array<{
+    icon: LucideIcon;
+    label: string;
+    sublabel: string;
+    page: any;
+    color: string;
+  }>;
+  goalTrackerData: {
+    focus: { current: number; target: number; label: string; color: string; icon: LucideIcon };
+    tasks: { current: number; target: number; label: string; color: string; icon: LucideIcon };
+    budget: { current: number; target: number; label: string; color: string; icon: LucideIcon; isInverse?: boolean };
+    savings: { current: number; target: number; label: string; color: string; icon: LucideIcon } | null;
+    streak: { current: number; longest: number; label: string; color: string; icon: LucideIcon };
+  };
   
   // Actions
   setShowCustomize: (show: boolean) => void;
@@ -92,7 +123,7 @@ export interface WidgetConfig {
 // ----------------------------------------------------
 
 const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { greeting, displayName, levelInfo, profile, todayDate, setShowCustomize, stats, todayCompletedCount, todayTaskOccurrences, budgetRemaining } = context;
+  const { greeting, displayName, levelInfo, profile, todayDate, setShowCustomize, stats, todayCompletedCount, todayTaskOccurrences, budgetRemaining, dailyBrief, dailyProgress } = context;
 
   const focusMinutes = stats.todayMinutes ?? 0;
   const streak = profile.streak ?? 0;
@@ -141,7 +172,7 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
               : displayName.charAt(0).toUpperCase()
             }
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
               {greeting}, {displayName}! 👋
             </h2>
@@ -150,6 +181,17 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
             </p>
           </div>
         </div>
+
+        {/* Smart Daily Brief — contextual sentences */}
+        {dailyBrief && dailyBrief.length > 0 && (
+          <div className="daily-brief-sentences">
+            {dailyBrief.map((sentence, idx) => (
+              <span key={idx} className="daily-brief-chip">
+                {sentence}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Daily summary chips */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -183,56 +225,84 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
   );
 };
 
-const KpiMetricsWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { levelInfo, profile, productivityScore, prodLabel, financialScore, finLabel, budgetRemaining, getScoreColor } = context;
-  const streak = profile.streak ?? 0;
+
+// -------------------------------------------------------
+// DailyProgressRingWidget — Phase 3.7 composite daily ring
+// -------------------------------------------------------
+function DailyProgressArc({ value, max, color, size = 120, strokeWidth = 8, offset = 0 }: { value: number; max: number; color: string; size?: number; strokeWidth?: number; offset?: number }) {
+  const radius = (size - strokeWidth * 2) / 2 - offset;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(Math.max(value, 0), max);
+  const progress = max > 0 ? clamped / max : 0;
+  const dashOffset = circumference * (1 - progress);
+  return (
+    <circle
+      cx={size / 2} cy={size / 2} r={radius}
+      fill="none" stroke={color} strokeWidth={strokeWidth}
+      strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset}
+      style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%', transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
+    />
+  );
+}
+
+const DailyProgressRingWidget: React.FC<WidgetProps> = ({ context }) => {
+  const { dailyProgress, getScoreColor, setPage } = context;
+  const overall = dailyProgress.overall;
+  const ringSize = 130;
+  const overallColor = getScoreColor(overall);
+
+  const metrics = [
+    { label: 'Focus', pct: dailyProgress.focus.pct, color: '#a855f7', detail: `${dailyProgress.focus.current}/${dailyProgress.focus.target} min` },
+    { label: 'Tasks', pct: dailyProgress.tasks.pct, color: '#06b6d4', detail: `${dailyProgress.tasks.current}/${dailyProgress.tasks.target}` },
+    { label: 'Budget', pct: dailyProgress.budget.pct, color: '#10b981', detail: dailyProgress.budget.limit > 0 ? `${formatCurrency(dailyProgress.budget.spent)}/${formatCurrency(dailyProgress.budget.limit)}` : 'No limit' },
+    { label: 'Streak', pct: dailyProgress.streak.score, color: '#f59e0b', detail: `${dailyProgress.streak.value} days` },
+  ];
+
   return (
     <>
-      <KpiCard
-        icon={Award}
-        title={levelInfo.title}
-        value={`Level ${levelInfo.level}`}
-        valueColor={levelInfo.color}
-        iconBg={`${levelInfo.color}1a`}
-        iconColor={levelInfo.color}
-        colSpan={3}
-        progressBar={{ value: levelInfo.progress, max: 100, gradient: `linear-gradient(90deg, ${levelInfo.color}, #ec4899)` }}
-        footer={`${levelInfo.xpToNext} XP to Level ${levelInfo.level + 1}`}
-      />
-      <KpiCard
-        icon={Flame}
-        title="Day Streak"
-        value={`${streak} ${streak === 1 ? 'Day' : 'Days'}`}
-        valueColor="#f59e0b"
-        iconBg="rgba(245,158,11,0.15)"
-        iconColor="#f59e0b"
-        colSpan={3}
-        badge={streak >= 7 ? { label: '🔥 On Fire!', color: '#f59e0b' } : streak >= 3 ? { label: 'Building!', color: '#06b6d4' } : undefined}
-        footer={streak === 0 ? 'Start your streak today!' : streak === 1 ? 'Keep it going!' : 'Continue your amazing streak!'}
-      />
-      <KpiCard
-        icon={Brain}
-        title="Productivity Score"
-        value={`${productivityScore}%`}
-        valueColor={getScoreColor(productivityScore)}
-        iconBg={`${getScoreColor(productivityScore)}1a`}
-        iconColor={getScoreColor(productivityScore)}
-        colSpan={3}
-        progressRing={{ value: productivityScore, max: 100, color: getScoreColor(productivityScore) }}
-        badge={{ label: prodLabel, color: getScoreColor(productivityScore) }}
-      />
-      <KpiCard
-        icon={Shield}
-        title="Financial Health"
-        value={`${financialScore}%`}
-        valueColor={getScoreColor(financialScore)}
-        iconBg={`${getScoreColor(financialScore)}1a`}
-        iconColor={getScoreColor(financialScore)}
-        colSpan={3}
-        progressRing={{ value: financialScore, max: 100, color: getScoreColor(financialScore) }}
-        badge={{ label: finLabel, color: getScoreColor(financialScore) }}
-        footer={`Budget: ${formatCurrency(budgetRemaining)} left`}
-      />
+      <h2 className="dashboard-section-title w-full col-span-12">Daily Progress</h2>
+      <DashboardWidget icon={Target} title="Daily Progress" badge={`${overall}%`} colSpan={12} iconBg={`${overallColor}1a`} iconColor={overallColor}>
+        <div className="daily-progress-ring-layout">
+          {/* SVG composite ring */}
+          <div className="daily-progress-ring-container">
+            <svg width={ringSize} height={ringSize} viewBox={`0 0 ${ringSize} ${ringSize}`}>
+              {/* Track rings */}
+              {[0, 10, 20, 30].map((offset, i) => (
+                <circle key={`track-${i}`} cx={ringSize/2} cy={ringSize/2} r={(ringSize - 16) / 2 - offset} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={7} />
+              ))}
+              {/* Progress arcs */}
+              <DailyProgressArc value={metrics[0].pct} max={100} color={metrics[0].color} size={ringSize} strokeWidth={7} offset={0} />
+              <DailyProgressArc value={metrics[1].pct} max={100} color={metrics[1].color} size={ringSize} strokeWidth={7} offset={10} />
+              <DailyProgressArc value={metrics[2].pct} max={100} color={metrics[2].color} size={ringSize} strokeWidth={7} offset={20} />
+              <DailyProgressArc value={metrics[3].pct} max={100} color={metrics[3].color} size={ringSize} strokeWidth={7} offset={30} />
+            </svg>
+            {/* Center value */}
+            <div className="daily-progress-ring-center">
+              <div className="text-2xl font-black" style={{ color: overallColor, fontFamily: 'Space Grotesk' }}>{overall}%</div>
+              <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Overall</div>
+            </div>
+          </div>
+
+          {/* Metric breakdown */}
+          <div className="daily-progress-metrics">
+            {metrics.map(m => (
+              <div key={m.label} className="daily-progress-metric-row">
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold text-white">{m.label}</span>
+                    <span className="text-[10px] font-bold" style={{ color: m.color }}>{m.pct}%</span>
+                  </div>
+                  <div className="daily-progress-bar-track">
+                    <div className="daily-progress-bar-fill" style={{ width: `${m.pct}%`, background: m.color }} />
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">{m.detail}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </DashboardWidget>
     </>
   );
 };
@@ -496,19 +566,43 @@ const ExpenseTrendWidget: React.FC<WidgetProps> = ({ context }) => {
 };
 
 const AiInsightsWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { smartInsights } = context;
+  const { smartRecommendations, smartInsights, handleStartTimer, setShowQuickAddTask, setPage } = context;
+
+  // Priority order mapping for sort
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  const sortedRecs = [...smartRecommendations].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
   return (
-    <DashboardWidget icon={Lightbulb} title="AI Insights" badge="Beta" colSpan={6} scrollable iconBg="rgba(245,158,11,0.12)" iconColor="#f59e0b">
+    <DashboardWidget icon={Lightbulb} title="Smart Recommendations" colSpan={6} scrollable iconBg="rgba(245,158,11,0.12)" iconColor="#f59e0b">
       <div className="space-y-2 h-full">
-        {smartInsights.length === 0 ? (
+        {sortedRecs.length === 0 ? (
           <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-3">
-              <Lightbulb size={24} className="text-amber-400" />
+              <Star size={24} className="text-amber-400" />
             </div>
-            <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Continue using FocusForge. We'll generate personalized insights automatically.</p>
+            <h3 className="text-sm font-bold text-white mb-1">You're on track!</h3>
+            <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Keep using FocusForge. We'll surface smart recommendations here.</p>
           </div>
         ) : (
-          smartInsights.slice(0, 3).map((insight, idx) => <InsightCard key={idx} insight={insight} />)
+          sortedRecs.map((rec, idx) => {
+            const Icon = rec.icon;
+            return (
+              <div
+                key={idx}
+                className="smart-rec-card"
+                style={{ borderLeftColor: rec.color }}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${rec.color}15`, color: rec.color }}>
+                  <Icon size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-white">{rec.title}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{rec.action}</div>
+                </div>
+                <span className="smart-rec-priority" style={{ background: `${rec.color}15`, color: rec.color }}>{rec.priority}</span>
+              </div>
+            );
+          })
         )}
       </div>
     </DashboardWidget>
@@ -516,33 +610,71 @@ const AiInsightsWidget: React.FC<WidgetProps> = ({ context }) => {
 };
 
 const RecentActivityWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { recentEvents } = context;
+  const { recentEvents, setPage } = context;
+
+  // Relative time formatter
+  const getRelativeTime = (timestamp: string): string => {
+    const now = new Date();
+    const then = parseISO(timestamp);
+    const diffMs = now.getTime() - then.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return format(then, 'MMM d');
+  };
+
+  const getCategoryConfig = (category: string) => {
+    switch (category) {
+      case 'tasks': return { icon: CheckSquare, color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' };
+      case 'focus': return { icon: Timer, color: '#a855f7', bg: 'rgba(168,85,247,0.12)' };
+      case 'finance': return { icon: Wallet, color: '#ec4899', bg: 'rgba(236,72,153,0.12)' };
+      default: return { icon: Activity, color: '#10b981', bg: 'rgba(16,185,129,0.12)' };
+    }
+  };
+
   return (
-    <DashboardWidget icon={Activity} title="Recent Activity" colSpan={6} scrollable iconBg="rgba(16,185,129,0.12)" iconColor="#10b981">
-      <div className="space-y-0 relative">
+    <DashboardWidget icon={Activity} title="Activity Timeline" colSpan={6} scrollable iconBg="rgba(16,185,129,0.12)" iconColor="#10b981">
+      <div className="activity-timeline">
         {recentEvents.length === 0 ? (
           <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[140px]">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-3">
               <Activity size={24} className="text-emerald-400" />
             </div>
-            <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Complete your first task or focus session. Your timeline will appear here.</p>
+            <h3 className="text-sm font-bold text-white mb-1">No activity yet</h3>
+            <p className="text-xs text-slate-400 max-w-[200px] mx-auto mb-3">Complete a task or start a focus session to build your timeline.</p>
+            <button onClick={() => setPage('productivity')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors">
+              Go to Productivity
+            </button>
           </div>
         ) : (
-          recentEvents.map((e, idx) => (
-            <div key={e.id} className="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0">
-              <div className="flex flex-col items-center flex-shrink-0 pt-0.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: e.category === 'tasks' ? '#06b6d4' : e.category === 'focus' ? '#a855f7' : '#ec4899' }} />
-                {idx < recentEvents.length - 1 && <div className="w-px h-full bg-white/5 mt-1" style={{ minHeight: 16 }} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-white block font-semibold truncate">{e.metadata.title || e.type}</span>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-slate-500">{format(parseISO(e.timestamp), 'h:mm a')}</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase" style={{ background: e.category === 'tasks' ? 'rgba(6,182,212,0.1)' : e.category === 'focus' ? 'rgba(168,85,247,0.1)' : 'rgba(236,72,153,0.1)', color: e.category === 'tasks' ? '#06b6d4' : e.category === 'focus' ? '#a855f7' : '#ec4899' }}>{e.category}</span>
+          recentEvents.slice(0, 8).map((e, idx) => {
+            const config = getCategoryConfig(e.category);
+            const Icon = config.icon;
+            return (
+              <div key={e.id} className="activity-timeline-item">
+                <div className="activity-timeline-line-container">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: config.bg, color: config.color }}>
+                    <Icon size={13} />
+                  </div>
+                  {idx < recentEvents.length - 1 && <div className="activity-timeline-connector" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-white truncate">{e.metadata.title || e.type}</span>
+                    <span className="text-[10px] text-slate-500 flex-shrink-0">{getRelativeTime(e.timestamp)}</span>
+                  </div>
+                  {e.metadata.description && (
+                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">{e.metadata.description}</p>
+                  )}
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </DashboardWidget>
@@ -582,20 +714,125 @@ const SavingsWidget: React.FC<WidgetProps> = ({ context }) => {
   );
 };
 
+// -------------------------------------------------------
+// GoalTrackerWidget — Phase 3.7 multi-goal progress bars
+// -------------------------------------------------------
+const GoalTrackerWidget: React.FC<WidgetProps> = ({ context }) => {
+  const { goalTrackerData, setPage } = context;
+
+  const goals = [
+    goalTrackerData.focus,
+    goalTrackerData.tasks,
+    goalTrackerData.budget,
+    ...(goalTrackerData.savings ? [goalTrackerData.savings] : []),
+  ];
+
+  return (
+    <DashboardWidget icon={Target} title="Goal Tracker" colSpan={6} scrollable iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Details</button>}>
+      <div className="space-y-3">
+        {goals.map((goal) => {
+          const Icon = goal.icon;
+          const isInverse = 'isInverse' in goal && goal.isInverse;
+          const pct = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
+          const displayPct = isInverse ? Math.max(0, 100 - pct) : pct;
+          const barColor = isInverse
+            ? (pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : goal.color)
+            : goal.color;
+          return (
+            <div key={goal.label} className="goal-tracker-row">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${goal.color}15`, color: goal.color }}>
+                <Icon size={14} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[11px] font-semibold text-white truncate">{goal.label}</span>
+                  <span className="text-[10px] font-bold" style={{ color: barColor }}>
+                    {isInverse ? `${formatCurrency(goal.current)} / ${formatCurrency(goal.target)}` : `${goal.current} / ${goal.target}`}
+                  </span>
+                </div>
+                <div className="daily-progress-bar-track">
+                  <div className="daily-progress-bar-fill" style={{ width: `${displayPct}%`, background: barColor }} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Streak row — special */}
+        <div className="goal-tracker-row">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+            <Flame size={14} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] font-semibold text-white">{goalTrackerData.streak.label}</span>
+              <span className="text-[10px] font-bold text-amber-400">{goalTrackerData.streak.current} day{goalTrackerData.streak.current !== 1 ? 's' : ''}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DashboardWidget>
+  );
+};
+
+// -------------------------------------------------------
+// QuickContinueWidget — Phase 3.7 "Continue Where You Left Off"
+// -------------------------------------------------------
+const QuickContinueWidget: React.FC<WidgetProps> = ({ context }) => {
+  const { quickContinueItems, setPage } = context;
+  return (
+    <DashboardWidget icon={RotateCcw} title="Continue Where You Left Off" colSpan={6} iconBg="rgba(6,182,212,0.12)" iconColor="#06b6d4">
+      <div className="space-y-2">
+        {quickContinueItems.length === 0 ? (
+          <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[100px]">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-3">
+              <RotateCcw size={24} className="text-cyan-400" />
+            </div>
+            <h3 className="text-sm font-bold text-white mb-1">Nothing to resume</h3>
+            <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Start a task or focus session. Quick resume links will appear here.</p>
+          </div>
+        ) : (
+          quickContinueItems.map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={idx}
+                onClick={() => setPage(item.page)}
+                className="quick-continue-card"
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}12`, color: item.color }}>
+                  <Icon size={18} />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-xs font-bold text-white truncate">{item.label}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{item.sublabel}</div>
+                </div>
+                <ArrowRight size={14} className="text-slate-600 flex-shrink-0" />
+              </button>
+            );
+          })
+        )}
+      </div>
+    </DashboardWidget>
+  );
+};
+
 // ----------------------------------------------------
 // REGISTRY
 // ----------------------------------------------------
 
 export const WIDGET_REGISTRY: WidgetConfig[] = [
-  { id: 'hero', title: 'Welcome', description: 'Greeting and level info', icon: Sparkles, component: HeroWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 0, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
-  { id: 'kpiMetrics', title: 'Key Metrics', description: 'Level, Streak, Scores', icon: Award, component: KpiMetricsWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 1, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
+  { id: 'hero', title: 'Daily Brief', description: 'Smart greeting with daily context', icon: Sparkles, component: HeroWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 0, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
+  { id: 'kpiMetrics', title: 'Daily Progress', description: 'Composite daily progress ring', icon: Target, component: DailyProgressRingWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 1, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
   { id: 'snapshot', title: "Today's Snapshot", description: 'Focus, Tasks, Expenses, Budget', icon: Timer, component: SnapshotWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 2, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
   { id: 'quickActions', title: 'Quick Actions', description: 'Command center shortcuts', icon: Zap, component: QuickActionsWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 3, category: 'Overview', defaultVisible: true, minimumSize: { w: 6, h: 1 }, maximumSize: { w: 12, h: 2 } },
   { id: 'todaysTasks', title: "Today's Tasks", description: 'Task list for today', icon: CheckSquare, component: TodaysTasksWidget, defaultSize: { w: 8, h: 2, colSpan: 8 }, defaultOrder: 4, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'upcomingBills', title: 'Upcoming Bills', description: 'Recurring payment schedule', icon: Calendar, component: UpcomingBillsWidget, defaultSize: { w: 4, h: 2, colSpan: 4 }, defaultOrder: 5, category: 'Finance', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
-  { id: 'focusTrend', title: 'Focus Trend', description: '7-day focus chart', icon: BarChart3, component: FocusTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 6, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'expenseTrend', title: 'Expense Trend', description: '7-day expense chart', icon: TrendingUp, component: ExpenseTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 7, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'aiInsights', title: 'AI Insights', description: 'Smart recommendations', icon: Lightbulb, component: AiInsightsWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 8, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'recentActivity', title: 'Recent Activity', description: 'Event timeline', icon: Activity, component: RecentActivityWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 9, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'savings', title: 'Savings Progress', description: 'Savings goal tracker', icon: PiggyBank, component: SavingsWidget, defaultSize: { w: 12, h: 2, colSpan: 12 }, defaultOrder: 10, category: 'Finance', defaultVisible: true, minimumSize: { w: 6, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'goalTracker', title: 'Goal Tracker', description: 'Multi-goal progress overview', icon: Target, component: GoalTrackerWidget, defaultSize: { w: 4, h: 2, colSpan: 4 }, defaultOrder: 5, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'quickContinue', title: 'Quick Continue', description: 'Resume where you left off', icon: RotateCcw, component: QuickContinueWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 6, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'upcomingBills', title: 'Upcoming Bills', description: 'Recurring payment schedule', icon: Calendar, component: UpcomingBillsWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 7, category: 'Finance', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'focusTrend', title: 'Focus Trend', description: '7-day focus chart', icon: BarChart3, component: FocusTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 8, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'expenseTrend', title: 'Expense Trend', description: '7-day expense chart', icon: TrendingUp, component: ExpenseTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 9, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'aiInsights', title: 'Smart Recommendations', description: 'Prioritized action items', icon: Lightbulb, component: AiInsightsWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 10, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'recentActivity', title: 'Recent Activity', description: 'Event timeline', icon: Activity, component: RecentActivityWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 11, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'savings', title: 'Savings Progress', description: 'Savings goal tracker', icon: PiggyBank, component: SavingsWidget, defaultSize: { w: 12, h: 2, colSpan: 12 }, defaultOrder: 12, category: 'Finance', defaultVisible: true, minimumSize: { w: 6, h: 2 }, maximumSize: { w: 12, h: 4 } },
 ];

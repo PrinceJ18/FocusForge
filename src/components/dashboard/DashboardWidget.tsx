@@ -87,6 +87,8 @@ export default function DashboardWidget({
     <div
       className={`dashboard-widget ${sizeClass} ${className}`.trim()}
       style={widgetStyle}
+      role="region"
+      aria-label={title}
     >
       <WidgetHeader
         title={title}

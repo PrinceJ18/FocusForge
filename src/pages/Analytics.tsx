@@ -38,6 +38,7 @@ import {
 } from 'recharts';
 import { CustomTooltip } from '../components/analytics/CustomTooltip';
 import InsightCard from '../components/analytics/InsightCard';
+import FocusHeatMap from '../components/analytics/FocusHeatMap';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
 import { formatCurrency } from '../lib/formatCurrency';
@@ -875,85 +876,8 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* ═══ 8. 12-WEEK ACTIVITY HEATMAP ═══ */}
-      <div className="glass-card p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="section-header mb-0">
-            <div
-              className="section-header-icon"
-              style={{ background: 'rgba(16,185,129,0.15)' }}
-            >
-              <Flame size={16} style={{ color: '#10b981' }} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-100">
-                12-Week Consistency Matrix
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Daily deep work intensity grid (GitHub-style consistency).
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2 overflow-x-auto pb-2">
-          {/* Day of week labels */}
-          <div className="flex flex-col gap-1 mr-1 shrink-0 pt-4">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-              <div
-                key={i}
-                className="text-[10px] text-slate-500 text-center h-3.5 leading-none flex items-center justify-center"
-              >
-                {i % 2 === 1 ? d : ''}
-              </div>
-            ))}
-          </div>
-
-          {/* Week columns */}
-          <div className="flex gap-1 shrink-0">
-            {data.heatmap.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-1">
-                {week.map((day, di) => {
-                  const intensity = Math.min(1, day.focus / 120);
-                  const bg =
-                    day.focus > 0
-                      ? `rgba(168, 85, 247, ${0.25 + intensity * 0.75})`
-                      : 'rgba(255, 255, 255, 0.04)';
-
-                  return (
-                    <div
-                      key={di}
-                      className="w-3.5 h-3.5 rounded-sm transition-transform hover:scale-125 cursor-pointer"
-                      title={`${day.date}: ${day.focus}m focus, ${formatCurrency(
-                        day.spending
-                      )} spend`}
-                      style={{
-                        backgroundColor: bg,
-                        border:
-                          day.focus >= 60
-                            ? '1px solid rgba(168, 85, 247, 0.6)'
-                            : '1px solid transparent',
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 pt-2 text-[10px] text-slate-400 border-t border-white/5">
-          <span>Less Focus</span>
-          {[0.04, 0.25, 0.5, 0.75, 1.0].map((opacity, idx) => (
-            <div
-              key={idx}
-              className="w-3 h-3 rounded-sm"
-              style={{ backgroundColor: `rgba(168, 85, 247, ${opacity})` }}
-            />
-          ))}
-          <span>120+ min Deep Work</span>
-        </div>
-      </div>
+      {/* ═══ 8. FOCUS HEAT MAP (FLAGSHIP CALENDAR FEATURE) ═══ */}
+      <FocusHeatMap period={period} />
     </div>
   );
 }
