@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -271,7 +271,7 @@ body {
   justify-content: center;
 }
 
-/* Dashboard Grid System — single definition at L902 */
+/* Dashboard Grid System â€” single definition at L902 */
 
 /* Accessibility: Focus States */
 *:focus-visible {
@@ -521,7 +521,7 @@ h1, h2, h3, h4 {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Tab Group — reusable period / tab pill selector */
+/* Tab Group â€” reusable period / tab pill selector */
 .tab-group {
   display: inline-flex;
   gap: 4px;
@@ -554,7 +554,7 @@ h1, h2, h3, h4 {
   border-color: rgba(168, 85, 247, 0.3);
 }
 
-/* Section Header — standardized section title pattern */
+/* Section Header â€” standardized section title pattern */
 .section-header {
   display: flex;
   align-items: center;
@@ -961,7 +961,7 @@ select.input-glass option {
 }
 
 /* ============================================================
-   DASHBOARD WIDGET SYSTEM — Phase D1.1
+   DASHBOARD WIDGET SYSTEM â€” Phase D1.1
    ============================================================ */
 
 /* Responsive 12-column grid */
@@ -1212,7 +1212,7 @@ select.input-glass option {
 }
 
 /* ============================================================
-   KPI CARD SYSTEM — Phase D1.3
+   KPI CARD SYSTEM â€” Phase D1.3
    Premium KPI metric cards with glassmorphism, hover effects,
    progress bars, circular rings, and status badges.
    ============================================================ */
@@ -1417,7 +1417,7 @@ select.input-glass option {
   }
 }
 
-/* Responsive: tablet — 2-column KPI row */
+/* Responsive: tablet â€” 2-column KPI row */
 @media (min-width: 768px) and (max-width: 1279px) {
   .kpi-card[style*="span 3"] {
     grid-column: span 3 !important;
@@ -1425,7 +1425,7 @@ select.input-glass option {
 }
 
 /* ============================================================
-   PHASE 3.7 — INTELLIGENT DASHBOARD STYLES
+   PHASE 3.7 â€” INTELLIGENT DASHBOARD STYLES
    Daily Brief, Progress Ring, Recommendations, Goal Tracker,
    Quick Continue, Dashboard Section Titles
    ============================================================ */
@@ -1442,7 +1442,7 @@ select.input-glass option {
   margin: 0;
 }
 
-/* Daily Brief — contextual summary sentences */
+/* Daily Brief â€” contextual summary sentences */
 .daily-brief-sentences {
   display: flex;
   flex-wrap: wrap;
@@ -1469,7 +1469,7 @@ select.input-glass option {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-/* Daily Progress Ring — composite layout */
+/* Daily Progress Ring â€” composite layout */
 .daily-progress-ring-layout {
   display: flex;
   align-items: center;
@@ -1603,7 +1603,7 @@ select.input-glass option {
   }
 }
 /* ============================================================
-   PHASE 3.7 — ACTIVITY TIMELINE & ENTRANCE ANIMATIONS
+   PHASE 3.7 â€” ACTIVITY TIMELINE & ENTRANCE ANIMATIONS
    ============================================================ */
 
 /* Activity Timeline */
@@ -1668,7 +1668,7 @@ select.input-glass option {
 .dashboard-widget:nth-child(13) { animation-delay: 0.50s; }
 
 /* ============================================================
-   DASHBOARD CUSTOMIZATION DRAWER — Phase D1.4
+   DASHBOARD CUSTOMIZATION DRAWER â€” Phase D1.4
    Side drawer for widget show/hide toggles with glassmorphism,
    smooth slide animation, and toggle switches.
    ============================================================ */
@@ -1764,7 +1764,7 @@ select.input-glass option {
   border-color: rgba(168, 85, 247, 0.3);
 }
 
-/* Body — scrollable widget list */
+/* Body â€” scrollable widget list */
 .customize-drawer__body {
   flex: 1;
   overflow-y: auto;
@@ -1983,7 +1983,7 @@ select option {
   background: rgba(168, 85, 247, 0.5);
 }
 
-/* Duplicate @keyframes fadeIn and .animate-fadeIn removed — canonical versions at L240/L250 */
+/* Duplicate @keyframes fadeIn and .animate-fadeIn removed â€” canonical versions at L240/L250 */
 
 /* ============================================================
    PREMIUM LIGHT THEME DESIGN SYSTEM (.theme-light)
@@ -2332,9 +2332,9 @@ select option {
   opacity: 0.2;
 }
 
-/* ═══════════════════════════════════════════════════════
-   PHASE 3.4 — MICRO-INTERACTIONS & SKELETON ANIMATIONS
-   ═══════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PHASE 3.4 â€” MICRO-INTERACTIONS & SKELETON ANIMATIONS
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Shimmer animation for Skeleton loading */
 @keyframes shimmer {
@@ -2366,4 +2366,161 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid var(--purple-primary);
   outline-offset: 2px;
+}
+
+/* ============================================================
+   PHASE 3.8 â€” PROFESSIONAL REPORTS CSS
+   Grade badge, comparison cards, win/improvement cards
+   ============================================================ */
+
+/* Report Grade Badge */
+.report-grade-badge {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+}
+
+/* Report Comparison Card */
+.report-comparison-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.report-comparison-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Win Card */
+.report-win-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #10b981;
+  transition: background 0.2s ease;
+}
+
+.report-win-card:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+/* Improvement Card */
+.report-improvement-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.04);
+  border: 1px solid rgba(245, 158, 11, 0.08);
+  border-left: 3px solid #f59e0b;
+  transition: background 0.2s ease;
+}
+
+.report-improvement-card:hover {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+/* ============================================================
+   @MEDIA PRINT â€” Phase 3.8
+   Professional print-friendly layout for reports
+   ============================================================ */
+@media print {
+  /* Hide non-report elements */
+  .no-print,
+  nav,
+  aside,
+  .sidebar,
+  .app-sidebar,
+  .mobile-nav,
+  .tab-group,
+  .btn-neon,
+  .btn-outline,
+  button,
+  .toast-container {
+    display: none !important;
+  }
+
+  /* Reset backgrounds for print */
+  body,
+  html,
+  .app-layout,
+  .main-content,
+  .page-enter {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .glass-card {
+    background: white !important;
+    border: 1px solid #e0e0e0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: black !important;
+    break-inside: avoid;
+  }
+
+  /* Text colors for print */
+  h1, h2, h3, h4, h5, h6,
+  .text-white,
+  [style*="color: var(--text-primary)"] {
+    color: black !important;
+  }
+
+  [style*="color: var(--text-secondary)"],
+  [style*="color: var(--text-muted)"] {
+    color: #555 !important;
+  }
+
+  /* Grade badge for print */
+  .report-grade-badge {
+    border-color: #333 !important;
+    background: #f5f5f5 !important;
+    backdrop-filter: none !important;
+  }
+
+  .report-grade-badge span {
+    color: #333 !important;
+  }
+
+  /* Comparison cards */
+  .report-comparison-card {
+    background: #f9f9f9 !important;
+    border: 1px solid #ddd !important;
+  }
+
+  /* Chart containers need height */
+  .recharts-responsive-container {
+    break-inside: avoid;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+
+  /* Keep header and summary on first page */
+  .report-executive-header {
+    break-after: avoid;
+  }
 }

@@ -6,7 +6,8 @@ import { formatCurrency } from '../lib/formatCurrency';
 import { formatFocusTime } from '../lib/formatUtils';
 import {
   Brain, CheckSquare, Wallet, Target, Trophy, Flame, TrendingUp,
-  Clock, ArrowLeft, ArrowUpRight, Award, Zap, BookOpen, Share2, Download
+  ArrowLeft, ArrowUpRight, Award, Zap, BookOpen, Share2, Download,
+  Printer, Lightbulb, ArrowUp, ArrowDown, Minus, Star, FileText
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
@@ -19,6 +20,7 @@ import { logEvent } from '../lib/events';
 import { useEffect } from 'react';
 import WeeklyReport from './WeeklyReport';
 import { CustomTooltip } from '../components/analytics/CustomTooltip';
+import { exportCSV, printReport, shareReport, buildExportData } from '../lib/exportUtils';
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b', transport: '#06b6d4', shopping: '#ec4899',
@@ -112,11 +114,20 @@ export default function Reports() {
   }, [selectedMonth, expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory]);
 
   const handleShare = () => {
-    alert("Share Card architecture ready. Future update will enable direct export to Twitter/LinkedIn/Slack!");
+    if (!reportData) return;
+    const exportData = buildExportData(reportData);
+    shareReport(exportData);
   };
 
-  const handleExportPDF = () => {
-    alert("PDF report layout prepared. Direct browser PDF download will be activated next.");
+  const handleExportCSV = () => {
+    if (!reportData) return;
+    const exportData = buildExportData(reportData);
+    exportCSV(exportData);
+    logEvent('report_exported', 'reports', 'csv', { month: selectedMonth });
+  };
+
+  const handlePrint = () => {
+    printReport();
   };
 
   // ═══ Toggle: Weekly / Monthly selector ═══
@@ -166,8 +177,8 @@ export default function Reports() {
       <div className="page-enter space-y-5 pb-12">
         {ReportToggle}
         {SectionHeader}
-        {/* Navigation / Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Navigation + Export Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
           <button
             onClick={() => setSelectedMonth(null)}
             className="flex items-center gap-2 text-sm font-medium transition-all hover:translate-x-[-4px]"
@@ -177,74 +188,182 @@ export default function Reports() {
           </button>
 
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleShare}
-              className="py-2 text-xs font-semibold"
-              icon={Share2}
-            >
-              Share Card
+            <Button variant="outline" onClick={handleExportCSV} className="py-2 text-xs font-semibold" icon={Download}>
+              Export CSV
             </Button>
-            <Button
-              variant="neon"
-              onClick={handleExportPDF}
-              className="py-2 text-xs font-semibold"
-              icon={Download}
-            >
-              Export PDF
+            <Button variant="outline" onClick={handlePrint} className="py-2 text-xs font-semibold" icon={Printer}>
+              Print
+            </Button>
+            <Button variant="outline" onClick={handleShare} className="py-2 text-xs font-semibold" icon={Share2}>
+              Share
             </Button>
           </div>
         </div>
 
-        {/* Section 1: Monthly Cover */}
+        {/* ═══ SECTION 1: Executive Report Header ═══ */}
         <div
-          className="glass-card p-6 sm:p-10 relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[400px]"
+          className="report-executive-header glass-card p-6 sm:p-8 relative overflow-hidden"
+          role="region" aria-label="Executive Report Header"
           style={{
-            background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.08))',
-            border: '1px solid rgba(168,85,247,0.25)',
+            background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(236,72,153,0.06))',
+            border: `1px solid ${reportData.gradeColor}30`,
           }}
         >
-          <div
-            className="absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-10"
-            style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }}
-          />
+          <div className="absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-10" style={{ background: `radial-gradient(circle, ${reportData.gradeColor}, transparent)` }} />
 
-          <span
-            className="px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase mb-4"
-            style={{ background: 'rgba(168,85,247,0.2)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)' }}
-          >
-            Monthly Productivity Review
-          </span>
-
-          <h1
-            className="text-4xl sm:text-6xl font-black mb-2 tracking-tight"
-            style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)' }}
-          >
-            {reportData.monthName}
-          </h1>
-
-          <p className="text-sm max-w-md mx-auto mb-8" style={{ color: 'var(--text-secondary)' }}>
-            "{reportData.cover.quote}" <br />
-            <span className="text-xs font-bold mt-1 block" style={{ color: '#a855f7' }}>— {reportData.cover.quoteAuthor}</span>
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl mt-4">
-            <div className="glass-card p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Productivity Score</p>
-              <h2 className="text-3xl font-black gradient-text">{reportData.cover.productivityScore}%</h2>
+          <div className="flex flex-col sm:flex-row items-center gap-6 relative z-10">
+            {/* Grade Badge */}
+            <div
+              className="report-grade-badge"
+              style={{ borderColor: `${reportData.gradeColor}40`, color: reportData.gradeColor }}
+            >
+              <span className="text-4xl font-black" style={{ fontFamily: 'Space Grotesk' }}>{reportData.grade}</span>
+              <span className="text-[10px] uppercase tracking-widest font-bold mt-1" style={{ color: 'var(--text-muted)' }}>Grade</span>
             </div>
-            <div className="glass-card p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Average Completion</p>
-              <h2 className="text-3xl font-black" style={{ color: '#10b981' }}>{reportData.cover.completionPct}%</h2>
+
+            {/* Report Info */}
+            <div className="flex-1 text-center sm:text-left">
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase inline-block mb-2" style={{ background: `${reportData.gradeColor}15`, color: reportData.gradeColor, border: `1px solid ${reportData.gradeColor}25` }}>
+                Monthly Performance Report
+              </span>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight" style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)' }}>
+                {reportData.monthName}
+              </h1>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                Overall Score: <span className="font-bold" style={{ color: reportData.gradeColor }}>{reportData.overallScore}/100</span>
+              </p>
             </div>
-            <div className="glass-card p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Total XP Earned</p>
-              <h2 className="text-3xl font-black" style={{ color: '#fbbf24' }}>{reportData.cover.totalXP} XP</h2>
+
+            {/* KPI Mini Cards */}
+            <div className="grid grid-cols-3 gap-3 flex-shrink-0">
+              <div className="text-center p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Score</div>
+                <div className="text-lg font-black mt-0.5" style={{ color: reportData.gradeColor, fontFamily: 'Space Grotesk' }}>{reportData.cover.productivityScore}%</div>
+              </div>
+              <div className="text-center p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Tasks</div>
+                <div className="text-lg font-black mt-0.5" style={{ color: '#10b981', fontFamily: 'Space Grotesk' }}>{reportData.tasks.completionRate}%</div>
+              </div>
+              <div className="text-center p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>XP</div>
+                <div className="text-lg font-black mt-0.5" style={{ color: '#fbbf24', fontFamily: 'Space Grotesk' }}>{reportData.cover.totalXP}</div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Section 12: Monthly Journal (Featured Top-level Story) */}
+        {/* ═══ SECTION 2: Executive Summary ═══ */}
+        <div className="glass-card p-5" role="region" aria-label="Executive Summary" style={{ border: '1px solid rgba(6,182,212,0.15)' }}>
+          <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <FileText size={18} style={{ color: '#06b6d4' }} /> Executive Summary
+          </h3>
+          <ul className="space-y-2">
+            {reportData.executiveSummary.map((sentence, idx) => (
+              <li key={idx} className="flex items-start gap-2.5 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#06b6d4' }} />
+                {sentence}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ═══ SECTION 6 & 7: Wins + Improvements ═══ */}
+        {(reportData.wins.length > 0 || reportData.improvements.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Wins */}
+            {reportData.wins.length > 0 && (
+              <div className="glass-card p-5" role="region" aria-label="Wins">
+                <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <Star size={18} style={{ color: '#10b981' }} /> Top Wins
+                </h3>
+                <div className="space-y-2.5">
+                  {reportData.wins.map((win, idx) => (
+                    <div key={idx} className="report-win-card" style={{ borderLeftColor: win.color }}>
+                      <span className="text-xl flex-shrink-0">{win.icon}</span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{win.title}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{win.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Improvements */}
+            {reportData.improvements.length > 0 && (
+              <div className="glass-card p-5" role="region" aria-label="Areas for Improvement">
+                <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <TrendingUp size={18} style={{ color: '#f59e0b' }} /> Needs Improvement
+                </h3>
+                <div className="space-y-2.5">
+                  {reportData.improvements.map((imp, idx) => (
+                    <div key={idx} className="report-improvement-card" style={{ borderLeftColor: imp.color }}>
+                      <span className="text-xl flex-shrink-0">{imp.icon}</span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{imp.title}</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{imp.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ SECTION 9: Period Comparison ═══ */}
+        <div className="glass-card p-5" role="region" aria-label="Period Comparison">
+          <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <TrendingUp size={18} style={{ color: '#a855f7' }} /> vs Previous Month
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Focus', growth: reportData.comparison.focusGrowth, current: formatFocusTime(reportData.focus.totalMinutes), prev: formatFocusTime(reportData.comparison.prevFocusMinutes) },
+              { label: 'Tasks', growth: reportData.comparison.taskGrowth, current: String(reportData.tasks.completed), prev: String(reportData.comparison.prevTasksCompleted) },
+              { label: 'Spending', growth: reportData.comparison.spendingChange, current: formatCurrency(reportData.finance.monthlySpending), prev: formatCurrency(reportData.comparison.prevSpending), isInverse: true },
+              { label: 'XP', growth: reportData.comparison.xpGrowth, current: `${reportData.cover.totalXP}`, prev: `${reportData.comparison.prevXP}` },
+            ].map(item => {
+              const isPositive = item.isInverse ? item.growth < 0 : item.growth > 0;
+              const isNeutral = item.growth === 0;
+              const color = isNeutral ? 'var(--text-muted)' : isPositive ? '#10b981' : '#ef4444';
+              const GrowthIcon = isNeutral ? Minus : isPositive ? ArrowUp : ArrowDown;
+              return (
+                <div key={item.label} className="report-comparison-card">
+                  <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>{item.label}</div>
+                  <div className="text-lg font-black mt-1" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>{item.current}</div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <GrowthIcon size={12} style={{ color }} />
+                    <span className="text-[10px] font-bold" style={{ color }}>{item.growth > 0 ? '+' : ''}{item.growth}%</span>
+                  </div>
+                  <div className="text-[9px] mt-0.5" style={{ color: 'var(--text-muted)' }}>prev: {item.prev}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ═══ SECTION 8: AI Recommendations ═══ */}
+        {reportData.recommendations.length > 0 && (
+          <div className="glass-card p-5" role="region" aria-label="AI Recommendations">
+            <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <Lightbulb size={18} style={{ color: '#f59e0b' }} /> Recommendations
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {reportData.recommendations.map((rec, idx) => (
+                <div key={idx} className="smart-rec-card" style={{ borderLeftColor: rec.color }}>
+                  <span className="text-xl flex-shrink-0">{rec.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{rec.text}</div>
+                  </div>
+                  <span className="smart-rec-priority" style={{ background: `${rec.color}15`, color: rec.color }}>{rec.priority}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ Monthly Journal ═══ */}
         <div className="glass-card p-6" style={{ border: '1px solid rgba(6,182,212,0.15)' }}>
           <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
             <BookOpen size={18} style={{ color: '#06b6d4' }} /> Monthly Journal Summary

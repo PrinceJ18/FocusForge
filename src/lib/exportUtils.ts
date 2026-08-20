@@ -1,68 +1,168 @@
-export type ExportFormat = 'pdf' | 'csv' | 'png';
+import type { MonthlyReportData } from './statistics/reports';
+import { formatCurrency } from './formatCurrency';
 
-export interface ReportData {
+// ============================================================
+// Export Utilities — Phase 3.8
+// Real CSV download, Print, Share implementations
+// ============================================================
+
+export type ExportFormat = 'csv' | 'print' | 'share';
+
+export interface ReportExportData {
   title: string;
   dateRange: string;
+  grade: string;
+  overallScore: number;
+  executiveSummary: string[];
   sections: {
     title: string;
     data: Record<string, string | number>;
   }[];
 }
 
-export async function exportReport(format: ExportFormat, data: ReportData): Promise<boolean> {
-  
-  try {
-    switch (format) {
-      case 'pdf':
-        return await generatePDF(data);
-      case 'csv':
-        return await generateCSV(data);
-      case 'png':
-        return await generatePNG(data);
-      default:
-        throw new Error(`Unsupported export format: ${format}`);
-    }
-  } catch (error) {
-    console.error('Export failed:', error);
-    return false;
-  }
+/**
+ * Build a ReportExportData from MonthlyReportData for export.
+ */
+export function buildExportData(report: MonthlyReportData): ReportExportData {
+  return {
+    title: `FocusForge Performance Report — ${report.monthName}`,
+    dateRange: report.monthName,
+    grade: report.grade,
+    overallScore: report.overallScore,
+    executiveSummary: report.executiveSummary,
+    sections: [
+      {
+        title: 'Focus Summary',
+        data: {
+          'Total Focus Time': `${report.focus.totalHours}h`,
+          'Average Daily Focus': `${report.focus.avgDailyMinutes}m`,
+          'Sessions Completed': report.focus.totalPomodoros,
+          'Longest Session': `${report.focus.longestSession}m`,
+          'Best Day': report.focus.bestDay,
+        },
+      },
+      {
+        title: 'Task Summary',
+        data: {
+          'Tasks Completed': report.tasks.completed,
+          'Tasks Pending': report.tasks.pending,
+          'Completion Rate': `${report.tasks.completionRate}%`,
+          'Daily Average': report.tasks.avgDailyTasks,
+          'Best Day': report.tasks.bestDay,
+        },
+      },
+      {
+        title: 'Finance Summary',
+        data: {
+          'Total Spending': formatCurrency(report.finance.monthlySpending),
+          'Budget Used': `${report.finance.budgetUsed}%`,
+          'Money Saved': formatCurrency(report.finance.moneySaved),
+          'Top Category': report.finance.highestCategory,
+          'Budget Health': report.finance.budgetHealth,
+          'Avg Daily Spending': formatCurrency(report.finance.avgDailySpending),
+        },
+      },
+      {
+        title: 'Rewards',
+        data: {
+          'XP Earned': `${report.rewards.xpEarned} XP`,
+          'Level Ups': report.rewards.levelUps,
+          'Achievements': report.rewards.achievementsCount,
+          'Badges Unlocked': report.rewards.badgesUnlocked.length,
+        },
+      },
+      {
+        title: 'Period Comparison',
+        data: {
+          'Focus Growth': `${report.comparison.focusGrowth > 0 ? '+' : ''}${report.comparison.focusGrowth}%`,
+          'Task Growth': `${report.comparison.taskGrowth > 0 ? '+' : ''}${report.comparison.taskGrowth}%`,
+          'Spending Change': `${report.comparison.spendingChange > 0 ? '+' : ''}${report.comparison.spendingChange}%`,
+          'XP Growth': `${report.comparison.xpGrowth > 0 ? '+' : ''}${report.comparison.xpGrowth}%`,
+        },
+      },
+    ],
+  };
 }
 
-async function generatePDF(data: ReportData): Promise<boolean> {
-  // Architecture stub for future PDF generation library (e.g., jspdf, react-pdf)
-  // Simulate delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return true;
-}
+/**
+ * Generate and download a CSV file from report data.
+ */
+export function exportCSV(data: ReportExportData): void {
+  const lines: string[] = [];
 
-async function generateCSV(data: ReportData): Promise<boolean> {
-  // Architecture stub for future CSV generation
-  
-  let csvContent = 'data:text/csv;charset=utf-8,\n';
-  csvContent += `${data.title} - ${data.dateRange}\n\n`;
-  
+  // Header
+  lines.push(data.title);
+  lines.push(`Period: ${data.dateRange}`);
+  lines.push(`Grade: ${data.grade} (${data.overallScore}/100)`);
+  lines.push('');
+
+  // Executive Summary
+  lines.push('Executive Summary');
+  data.executiveSummary.forEach(s => lines.push(`"${s}"`));
+  lines.push('');
+
+  // Sections
   data.sections.forEach(section => {
-    csvContent += `${section.title}\n`;
+    lines.push(section.title);
     Object.entries(section.data).forEach(([key, value]) => {
-      csvContent += `"${key}","${value}"\n`;
+      lines.push(`"${key}","${value}"`);
     });
-    csvContent += '\n';
+    lines.push('');
   });
 
-  // Example trigger download
-  // const encodedUri = encodeURI(csvContent);
-  // const link = document.createElement('a');
-  // link.setAttribute('href', encodedUri);
-  // link.setAttribute('download', `${data.title.replace(/\s+/g, '_')}.csv`);
-  // document.body.appendChild(link);
-  // link.click();
-  // document.body.removeChild(link);
-
-  return true;
+  const csvContent = lines.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `FocusForge_Report_${data.dateRange.replace(/\s+/g, '_')}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
-async function generatePNG(data: ReportData): Promise<boolean> {
-  // Architecture stub for future PNG generation library (e.g., html2canvas)
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return true;
+/**
+ * Trigger browser print dialog. Relies on @media print CSS.
+ */
+export function printReport(): void {
+  window.print();
+}
+
+/**
+ * Share report via Web Share API, with clipboard fallback.
+ */
+export async function shareReport(data: ReportExportData): Promise<boolean> {
+  const shareText = [
+    data.title,
+    `Grade: ${data.grade} (${data.overallScore}/100)`,
+    '',
+    ...data.executiveSummary,
+    '',
+    '— Generated by FocusForge',
+  ].join('\n');
+
+  // Try native share API
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: data.title,
+        text: shareText,
+      });
+      return true;
+    } catch (err) {
+      // User cancelled or not supported — fall through to clipboard
+      if ((err as DOMException)?.name === 'AbortError') return false;
+    }
+  }
+
+  // Clipboard fallback
+  try {
+    await navigator.clipboard.writeText(shareText);
+    return true;
+  } catch {
+    // Last resort: prompt
+    prompt('Copy your report summary:', shareText);
+    return true;
+  }
 }

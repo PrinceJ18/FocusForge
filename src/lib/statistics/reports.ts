@@ -8,6 +8,13 @@ import { calculateProductivityScore } from '../scoreUtils';
 export interface MonthlyReportData {
   yearMonth: string;
   monthName: string;
+  grade: string; // A+ / A / B / C / F
+  gradeColor: string;
+  overallScore: number; // 0–100 weighted composite
+  executiveSummary: string[]; // 3–5 data-driven sentences
+  wins: Array<{ title: string; description: string; icon: string; color: string }>;
+  improvements: Array<{ title: string; description: string; icon: string; color: string }>;
+  recommendations: Array<{ text: string; icon: string; priority: 'high' | 'medium' | 'low'; color: string }>;
   cover: {
     productivityScore: number;
     completionPct: number;
@@ -41,6 +48,8 @@ export interface MonthlyReportData {
     highestCategory: string;
     lowestCategory: string;
     budgetHealth: string;
+    avgDailySpending: number;
+    largestExpense: { amount: number; category: string; description: string };
     expenseTrend: Array<{ day: string; amount: number }>;
   };
   goals: {
@@ -63,10 +72,14 @@ export interface MonthlyReportData {
     heatmapData: Array<{ date: string; focus: number; spending: number }>;
   };
   comparison: {
-    focusGrowth: number; // percentage comparison vs previous month
+    focusGrowth: number;
     taskGrowth: number;
     spendingChange: number;
     xpGrowth: number;
+    prevFocusMinutes: number;
+    prevTasksCompleted: number;
+    prevSpending: number;
+    prevXP: number;
   };
   timeline: Array<{
     date: string;
@@ -337,14 +350,197 @@ export function calculateMonthlyReportData(params: {
     streak: profile.streak,
     hasActivity: activeDaysInMonth > 0,
     budgetHealth: budgetHealth as 'Healthy' | 'Warning' | 'Critical',
-    challengeCompleted: false, // Not tracked effectively for historical months
+    challengeCompleted: false,
   }).score;
 
-  // Growth (Mock Comparisons vs Prev Month)
-  const focusGrowth = totalMinutes > 0 ? 12 : 0;
-  const taskGrowth = completed > 0 ? 8 : 0;
-  const spendingChange = monthlySpending > 0 ? -5 : 0;
-  const xpGrowth = totalXP > 0 ? 15 : 0;
+  // ═══════════════════════════════════════════════════
+  // REAL COMPARISON ENGINE — Phase 3.8
+  // ═══════════════════════════════════════════════════
+  const prevYearMonth = (() => {
+    const [y, m] = yearMonth.split('-').map(Number);
+    const prevM = m === 1 ? 12 : m - 1;
+    const prevY = m === 1 ? y - 1 : y;
+    return `${prevY}-${String(prevM).padStart(2, '0')}`;
+  })();
+  const isPrevMonth = (dateStr: string) => dateStr && typeof dateStr === 'string' && dateStr.startsWith(prevYearMonth);
+
+  const prevSessions = focusSessions.filter(s => s?.session_date && isPrevMonth(s.session_date));
+  const prevExpenses = expenses.filter(e => e?.expense_date && isPrevMonth(e.expense_date));
+  const prevComps = comps.filter(c => c?.occurrence_date && isPrevMonth(c.occurrence_date));
+  const prevTasks = tasks.filter(t => (!t.recurrence_type || t.recurrence_type === 'none') && t?.completed_at && isPrevMonth(t.completed_at));
+
+  const prevFocusMinutes = prevSessions.reduce((sum, s) => sum + s.minutes, 0);
+  const prevTasksCompleted = prevTasks.filter(t => t.status === 'completed').length + prevComps.filter(c => c.status === 'completed').length;
+  const prevSpending = prevExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+  const prevFocusXP = prevSessions.reduce((sum, s) => {
+    const mins = s.minutes;
+    return sum + (mins >= 60 ? 30 : mins >= 45 ? 20 : mins >= 25 ? 10 : 5);
+  }, 0);
+  const prevTaskXP = prevTasks.reduce((sum, t) => {
+    return sum + (t.priority === 'high' ? 20 : t.priority === 'medium' ? 10 : 5);
+  }, 0) + prevComps.reduce((sum, c) => {
+    const t = tasks.find(x => x.id === c.task_id);
+    return sum + ((t?.priority === 'high') ? 20 : (t?.priority === 'medium') ? 10 : 5);
+  }, 0);
+  const prevXP = prevFocusXP + prevTaskXP;
+
+  const pctChange = (curr: number, prev: number) => prev > 0 ? Math.round(((curr - prev) / prev) * 100) : (curr > 0 ? 100 : 0);
+  const focusGrowth = pctChange(totalMinutes, prevFocusMinutes);
+  const taskGrowth = pctChange(completed, prevTasksCompleted);
+  const spendingChange = pctChange(monthlySpending, prevSpending);
+  const xpGrowth = pctChange(totalXP, prevXP);
+
+  // ═══════════════════════════════════════════════════
+  // FINANCE EXTENDED — Phase 3.8
+  // ═══════════════════════════════════════════════════
+  const avgDailySpending = daysInMonth > 0 ? Math.round(monthlySpending / daysInMonth) : 0;
+  const largestExpenseItem = monthExpenses.length > 0
+    ? monthExpenses.reduce((max, e) => e.amount > max.amount ? e : max, monthExpenses[0])
+    : null;
+  const largestExpense = largestExpenseItem
+    ? { amount: largestExpenseItem.amount, category: largestExpenseItem.category, description: largestExpenseItem.description || '' }
+    : { amount: 0, category: 'N/A', description: '' };
+
+  // ═══════════════════════════════════════════════════
+  // GRADE CALCULATION — Phase 3.8
+  // Weighted: Productivity 30%, Tasks 25%, Finance 20%, Consistency 15%, Streak 10%
+  // ═══════════════════════════════════════════════════
+  const taskScore = completionRate;
+  const financeScore = budgetUsed <= 100 ? Math.max(0, 100 - budgetUsed) + 50 : Math.max(0, 200 - budgetUsed);
+  const financeNormalized = Math.min(100, Math.max(0, financeScore));
+  const streakScore = Math.min(100, (profile.streak / 30) * 100);
+  const overallScore = Math.round(
+    monthlyOverallScore * 0.30 +
+    taskScore * 0.25 +
+    financeNormalized * 0.20 +
+    consistencyPct * 0.15 +
+    streakScore * 0.10
+  );
+  const grade = overallScore >= 95 ? 'A+' : overallScore >= 85 ? 'A' : overallScore >= 70 ? 'B' : overallScore >= 50 ? 'C' : 'F';
+  const gradeColor = grade === 'A+' || grade === 'A' ? '#10b981' : grade === 'B' ? '#06b6d4' : grade === 'C' ? '#f59e0b' : '#ef4444';
+
+  // ═══════════════════════════════════════════════════
+  // EXECUTIVE SUMMARY — Phase 3.8
+  // ═══════════════════════════════════════════════════
+  const executiveSummary: string[] = [];
+  executiveSummary.push(
+    `This ${monthName.split(' ')[0].toLowerCase()} you completed ${completed} task${completed !== 1 ? 's' : ''}, focused for ${totalHours}h ${Math.round(totalMinutes % 60)}m, and earned ${totalXP} XP.`
+  );
+  if (monthlySpending > 0) {
+    executiveSummary.push(
+      monthlySpending <= profile.monthly_budget
+        ? `You stayed within your ₹${profile.monthly_budget.toLocaleString()} budget, saving ${formatCurrency(moneySaved)}.`
+        : `Spending reached ${formatCurrency(monthlySpending)}, exceeding your budget by ${formatCurrency(monthlySpending - profile.monthly_budget)}.`
+    );
+  }
+  if (focusGrowth !== 0 && prevFocusMinutes > 0) {
+    executiveSummary.push(
+      focusGrowth > 0
+        ? `Focus time increased by ${focusGrowth}% compared to last month.`
+        : `Focus time decreased by ${Math.abs(focusGrowth)}% compared to last month.`
+    );
+  }
+  if (consistencyPct >= 80) {
+    executiveSummary.push(`Consistency was strong at ${consistencyPct}% — you showed up on most days.`);
+  } else if (consistencyPct < 50) {
+    executiveSummary.push(`Consistency was ${consistencyPct}% — try to maintain daily activity for better results.`);
+  }
+  if (profile.streak >= 7) {
+    executiveSummary.push(`You're on a ${profile.streak}-day streak — keep the momentum going!`);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // WINS — Phase 3.8 (max 5)
+  // ═══════════════════════════════════════════════════
+  const wins: MonthlyReportData['wins'] = [];
+  if (monthlySpending <= profile.monthly_budget && profile.monthly_budget > 0) {
+    wins.push({ title: 'Stayed Under Budget', description: `Saved ${formatCurrency(moneySaved)} this month.`, icon: '💰', color: '#10b981' });
+  }
+  if (completionRate >= 80) {
+    wins.push({ title: 'High Task Completion', description: `Completed ${completionRate}% of all tasks.`, icon: '✅', color: '#06b6d4' });
+  }
+  if (profile.streak >= 7) {
+    wins.push({ title: 'Streak Champion', description: `Maintained a ${profile.streak}-day streak.`, icon: '🔥', color: '#f59e0b' });
+  }
+  if (totalMinutes >= 600) {
+    wins.push({ title: 'Focus Powerhouse', description: `Logged ${totalHours}+ hours of focused work.`, icon: '🧠', color: '#a855f7' });
+  }
+  if (focusGrowth > 10 && prevFocusMinutes > 0) {
+    wins.push({ title: 'Focus Improvement', description: `Focus time grew by ${focusGrowth}% vs last month.`, icon: '📈', color: '#10b981' });
+  }
+  if (badgesUnlocked.length > 0) {
+    wins.push({ title: 'Badges Earned', description: `Unlocked ${badgesUnlocked.length} new badge${badgesUnlocked.length > 1 ? 's' : ''}.`, icon: '🏅', color: '#06b6d4' });
+  }
+
+  // ═══════════════════════════════════════════════════
+  // IMPROVEMENTS — Phase 3.8 (max 5)
+  // ═══════════════════════════════════════════════════
+  const improvements: MonthlyReportData['improvements'] = [];
+  if (budgetUsed > 100) {
+    improvements.push({ title: 'Over Budget', description: `Spent ${budgetUsed}% of monthly budget.`, icon: '💸', color: '#ef4444' });
+  }
+  if (focusGrowth < -10 && prevFocusMinutes > 0) {
+    improvements.push({ title: 'Focus Declined', description: `Focus time dropped by ${Math.abs(focusGrowth)}% vs last month.`, icon: '📉', color: '#f59e0b' });
+  }
+  if (completionRate < 50 && completed + pending > 0) {
+    improvements.push({ title: 'Low Task Completion', description: `Only ${completionRate}% of tasks were completed.`, icon: '⚠️', color: '#f59e0b' });
+  }
+  if (consistencyPct < 50) {
+    improvements.push({ title: 'Low Consistency', description: `Active on only ${consistencyPct}% of days.`, icon: '📊', color: '#f59e0b' });
+  }
+  if (highestCategory !== 'N/A' && sortedCategories.length > 0) {
+    const topCatPct = monthlySpending > 0 ? Math.round((sortedCategories[0][1] / monthlySpending) * 100) : 0;
+    if (topCatPct > 50) {
+      improvements.push({ title: `${highestCategory.charAt(0).toUpperCase() + highestCategory.slice(1)} Spending High`, description: `${topCatPct}% of total spending went to ${highestCategory}.`, icon: '🍔', color: '#ec4899' });
+    }
+  }
+  if (missedDays > daysInMonth * 0.5) {
+    improvements.push({ title: 'Missed Goal Days', description: `Missed goals on ${missedDays} out of ${daysInMonth} days.`, icon: '🎯', color: '#f59e0b' });
+  }
+
+  // ═══════════════════════════════════════════════════
+  // AI RECOMMENDATIONS — Phase 3.8
+  // ═══════════════════════════════════════════════════
+  const recommendations: MonthlyReportData['recommendations'] = [];
+  if (totalMinutes < 300) {
+    recommendations.push({ text: 'Try to complete at least one 25-minute focus session daily.', icon: '🧠', priority: 'high', color: '#a855f7' });
+  }
+  if (budgetUsed > 80) {
+    recommendations.push({ text: `Reduce ${highestCategory} spending to stay within budget.`, icon: '💰', priority: budgetUsed > 100 ? 'high' : 'medium', color: '#ec4899' });
+  }
+  if (completionRate < 70 && completed + pending > 0) {
+    recommendations.push({ text: 'Focus on completing high-priority tasks first each morning.', icon: '✅', priority: 'medium', color: '#06b6d4' });
+  }
+  if (profile.streak < 3) {
+    recommendations.push({ text: 'Build a daily streak by completing at least one task every day.', icon: '🔥', priority: 'medium', color: '#f59e0b' });
+  }
+  if (avgDailyMinutes < 30 && totalMinutes > 0) {
+    recommendations.push({ text: 'Increase daily focus to 30+ minutes for consistent progress.', icon: '⏱️', priority: 'medium', color: '#a855f7' });
+  }
+  if (moneySaved > 0 && savingsGoals.length > 0) {
+    recommendations.push({ text: 'Allocate a portion of your monthly savings to your savings goals.', icon: '🐷', priority: 'low', color: '#10b981' });
+  }
+
+  // ═══════════════════════════════════════════════════
+  // WEEKLY GOALS PERFORMANCE — Phase 3.8 (real data)
+  // ═══════════════════════════════════════════════════
+  const weeklyPerformance: Array<{ week: string; completed: number; total: number }> = [];
+  for (let w = 0; w < Math.ceil(daysInMonth / 7); w++) {
+    const weekStart = w * 7;
+    const weekEnd = Math.min((w + 1) * 7, daysInMonth);
+    let weekCompleted = 0;
+    let weekTotal = 0;
+    for (let d = weekStart; d < weekEnd; d++) {
+      const dayStr = `${yearMonth}-${String(d + 1).padStart(2, '0')}`;
+      const dayGoal = monthGoalsHistory.find(h => h.date === dayStr);
+      if (dayGoal) {
+        weekCompleted += dayGoal.completedCount;
+        weekTotal += dayGoal.totalCount || dayGoal.completedCount;
+      }
+    }
+    weeklyPerformance.push({ week: `W${w + 1}`, completed: weekCompleted, total: Math.max(weekTotal, weekCompleted) });
+  }
 
   // Achievements
   const achievements = [
@@ -392,6 +588,13 @@ export function calculateMonthlyReportData(params: {
   return {
     yearMonth,
     monthName,
+    grade,
+    gradeColor,
+    overallScore,
+    executiveSummary,
+    wins: wins.slice(0, 5),
+    improvements: improvements.slice(0, 5),
+    recommendations: recommendations.slice(0, 6),
     cover: {
       productivityScore: monthlyOverallScore,
       completionPct: avgCompletionPct || consistencyPct,
@@ -425,6 +628,8 @@ export function calculateMonthlyReportData(params: {
       highestCategory: highestCategory === 'N/A' ? 'Other' : highestCategory,
       lowestCategory: lowestCategory === 'N/A' ? 'Other' : lowestCategory,
       budgetHealth,
+      avgDailySpending,
+      largestExpense,
       expenseTrend
     },
     goals: {
@@ -432,12 +637,7 @@ export function calculateMonthlyReportData(params: {
       completionPct: avgCompletionPct,
       bestDay: bestGoalDay,
       missedDays,
-      weeklyPerformance: [
-        { week: 'W1', completed: 4, total: 6 },
-        { week: 'W2', completed: 5, total: 6 },
-        { week: 'W3', completed: 6, total: 6 },
-        { week: 'W4', completed: 4, total: 6 }
-      ]
+      weeklyPerformance
     },
     rewards: {
       xpEarned: totalXP,
@@ -455,7 +655,11 @@ export function calculateMonthlyReportData(params: {
       focusGrowth,
       taskGrowth,
       spendingChange,
-      xpGrowth
+      xpGrowth,
+      prevFocusMinutes,
+      prevTasksCompleted,
+      prevSpending,
+      prevXP
     },
     timeline,
     achievements,
@@ -463,3 +667,4 @@ export function calculateMonthlyReportData(params: {
     journal
   };
 }
+
