@@ -87,7 +87,7 @@ export interface DashboardContextData {
     savings: { current: number; target: number; label: string; color: string; icon: LucideIcon } | null;
     streak: { current: number; longest: number; label: string; color: string; icon: LucideIcon };
   };
-  
+
   // Actions
   setShowCustomize: (show: boolean) => void;
   setPage: (page: any) => void;
@@ -268,7 +268,7 @@ const DailyProgressRingWidget: React.FC<WidgetProps> = ({ context }) => {
             <svg width={ringSize} height={ringSize} viewBox={`0 0 ${ringSize} ${ringSize}`}>
               {/* Track rings */}
               {[0, 10, 20, 30].map((offset, i) => (
-                <circle key={`track-${i}`} cx={ringSize/2} cy={ringSize/2} r={(ringSize - 16) / 2 - offset} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={7} />
+                <circle key={`track-${i}`} cx={ringSize / 2} cy={ringSize / 2} r={(ringSize - 16) / 2 - offset} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={7} />
               ))}
               {/* Progress arcs */}
               <DailyProgressArc value={metrics[0].pct} max={100} color={metrics[0].color} size={ringSize} strokeWidth={7} offset={0} />
@@ -426,7 +426,7 @@ const TodaysTasksWidget: React.FC<WidgetProps> = ({ context }) => {
         icon={CheckSquare}
         title="Today's Tasks"
         badge={`${todayTaskOccurrences.length}`}
-        size="large"
+        size="auto"
         colSpan={8}
         scrollable
         iconBg="rgba(168,85,247,0.12)"
@@ -440,7 +440,7 @@ const TodaysTasksWidget: React.FC<WidgetProps> = ({ context }) => {
       >
         <div className="space-y-2">
           {todayTaskOccurrences.length === 0 ? (
-            <div className="text-center py-10 px-4 flex flex-col items-center justify-center h-full">
+            <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[140px]">
               <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-3">
                 <CheckSquare size={24} className="text-purple-400" />
               </div>
@@ -486,7 +486,7 @@ const UpcomingBillsWidget: React.FC<WidgetProps> = ({ context }) => {
       icon={Calendar}
       title="Upcoming Bills"
       badge={`${upcomingBills.length}`}
-      size="large"
+      size="auto"
       colSpan={4}
       scrollable
       iconBg="rgba(236,72,153,0.12)"
@@ -495,7 +495,7 @@ const UpcomingBillsWidget: React.FC<WidgetProps> = ({ context }) => {
     >
       <div className="space-y-2">
         {upcomingBills.length === 0 ? (
-          <div className="text-center py-10 px-4 flex flex-col items-center justify-center h-full">
+          <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[140px]">
             <div className="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center mb-3">
               <Calendar size={24} className="text-pink-400" />
             </div>
@@ -523,7 +523,7 @@ const FocusTrendWidget: React.FC<WidgetProps> = ({ context }) => {
   const hasFocus = focusTrendData && focusTrendData.some(d => d.focus > 0);
   return (
     <>
-      <h2 className="dashboard-section-title w-full col-span-12">Analytics & Insights</h2>
+      <h2 className="dashboard-section-title w-full col-span-12">Analytics & Trends</h2>
       <DashboardWidget icon={BarChart3} title="Focus Trend" size="medium" colSpan={6} iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Details</button>}>
         {!hasFocus ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-6">
@@ -566,46 +566,49 @@ const ExpenseTrendWidget: React.FC<WidgetProps> = ({ context }) => {
 };
 
 const AiInsightsWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { smartRecommendations, smartInsights, handleStartTimer, setShowQuickAddTask, setPage } = context;
+  const { smartRecommendations } = context;
 
   // Priority order mapping for sort
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   const sortedRecs = [...smartRecommendations].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
   return (
-    <DashboardWidget icon={Lightbulb} title="Smart Recommendations" colSpan={6} scrollable iconBg="rgba(245,158,11,0.12)" iconColor="#f59e0b">
-      <div className="space-y-2 h-full">
-        {sortedRecs.length === 0 ? (
-          <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-3">
-              <Star size={24} className="text-amber-400" />
-            </div>
-            <h3 className="text-sm font-bold text-white mb-1">You're on track!</h3>
-            <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Keep using FocusForge. We'll surface smart recommendations here.</p>
-          </div>
-        ) : (
-          sortedRecs.map((rec, idx) => {
-            const Icon = rec.icon;
-            return (
-              <div
-                key={idx}
-                className="smart-rec-card"
-                style={{ borderLeftColor: rec.color }}
-              >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${rec.color}15`, color: rec.color }}>
-                  <Icon size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-white">{rec.title}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{rec.action}</div>
-                </div>
-                <span className="smart-rec-priority" style={{ background: `${rec.color}15`, color: rec.color }}>{rec.priority}</span>
+    <>
+      <h2 className="dashboard-section-title w-full col-span-12">Insights & Activity</h2>
+      <DashboardWidget icon={Lightbulb} title="Smart Recommendations" size="medium" colSpan={6} scrollable iconBg="rgba(245,158,11,0.12)" iconColor="#f59e0b">
+        <div className="space-y-2">
+          {sortedRecs.length === 0 ? (
+            <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[140px]">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-3">
+                <Star size={24} className="text-amber-400" />
               </div>
-            );
-          })
-        )}
-      </div>
-    </DashboardWidget>
+              <h3 className="text-sm font-bold text-white mb-1">You're on track!</h3>
+              <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Keep using FocusForge. We'll surface smart recommendations here.</p>
+            </div>
+          ) : (
+            sortedRecs.map((rec, idx) => {
+              const Icon = rec.icon;
+              return (
+                <div
+                  key={idx}
+                  className="smart-rec-card"
+                  style={{ borderLeftColor: rec.color }}
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${rec.color}15`, color: rec.color }}>
+                    <Icon size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-white">{rec.title}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">{rec.action}</div>
+                  </div>
+                  <span className="smart-rec-priority" style={{ background: `${rec.color}15`, color: rec.color }}>{rec.priority}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </DashboardWidget>
+    </>
   );
 };
 
@@ -638,7 +641,7 @@ const RecentActivityWidget: React.FC<WidgetProps> = ({ context }) => {
   };
 
   return (
-    <DashboardWidget icon={Activity} title="Activity Timeline" colSpan={6} scrollable iconBg="rgba(16,185,129,0.12)" iconColor="#10b981">
+    <DashboardWidget icon={Activity} title="Activity Timeline" size="medium" colSpan={6} scrollable iconBg="rgba(16,185,129,0.12)" iconColor="#10b981">
       <div className="activity-timeline">
         {recentEvents.length === 0 ? (
           <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[140px]">
@@ -686,7 +689,7 @@ const SavingsWidget: React.FC<WidgetProps> = ({ context }) => {
   return (
     <>
       <h2 className="dashboard-section-title w-full col-span-12">Savings</h2>
-      <DashboardWidget icon={PiggyBank} title="Savings Progress" badge={savingsSummary ? `${savingsSummary.count} goal${savingsSummary.count !== 1 ? 's' : ''}` : '0'} colSpan={12} iconBg="rgba(16,185,129,0.12)" iconColor="#10b981" headerAction={<button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Manage</button>}>
+      <DashboardWidget icon={PiggyBank} title="Savings Progress" badge={savingsSummary ? `${savingsSummary.count} goal${savingsSummary.count !== 1 ? 's' : ''}` : '0'} size="auto" colSpan={12} iconBg="rgba(16,185,129,0.12)" iconColor="#10b981" headerAction={<button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Manage</button>}>
         {!savingsSummary ? (
           <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-3">
@@ -728,50 +731,53 @@ const GoalTrackerWidget: React.FC<WidgetProps> = ({ context }) => {
   ];
 
   return (
-    <DashboardWidget icon={Target} title="Goal Tracker" colSpan={6} scrollable iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Details</button>}>
-      <div className="space-y-3">
-        {goals.map((goal) => {
-          const Icon = goal.icon;
-          const isInverse = 'isInverse' in goal && goal.isInverse;
-          const pct = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
-          const displayPct = isInverse ? Math.max(0, 100 - pct) : pct;
-          const barColor = isInverse
-            ? (pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : goal.color)
-            : goal.color;
-          return (
-            <div key={goal.label} className="goal-tracker-row">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${goal.color}15`, color: goal.color }}>
-                <Icon size={14} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[11px] font-semibold text-white truncate">{goal.label}</span>
-                  <span className="text-[10px] font-bold" style={{ color: barColor }}>
-                    {isInverse ? `${formatCurrency(goal.current)} / ${formatCurrency(goal.target)}` : `${goal.current} / ${goal.target}`}
-                  </span>
+    <>
+      <h2 className="dashboard-section-title w-full col-span-12">Goals & Progress</h2>
+      <DashboardWidget icon={Target} title="Goal Tracker" size="medium" colSpan={6} scrollable iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Details</button>}>
+        <div className="space-y-3">
+          {goals.map((goal) => {
+            const Icon = goal.icon;
+            const isInverse = 'isInverse' in goal && goal.isInverse;
+            const pct = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
+            const displayPct = isInverse ? Math.max(0, 100 - pct) : pct;
+            const barColor = isInverse
+              ? (pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : goal.color)
+              : goal.color;
+            return (
+              <div key={goal.label} className="goal-tracker-row">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${goal.color}15`, color: goal.color }}>
+                  <Icon size={14} />
                 </div>
-                <div className="daily-progress-bar-track">
-                  <div className="daily-progress-bar-fill" style={{ width: `${displayPct}%`, background: barColor }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[11px] font-semibold text-white truncate">{goal.label}</span>
+                    <span className="text-[10px] font-bold" style={{ color: barColor }}>
+                      {isInverse ? `${formatCurrency(goal.current)} / ${formatCurrency(goal.target)}` : `${goal.current} / ${goal.target}`}
+                    </span>
+                  </div>
+                  <div className="daily-progress-bar-track">
+                    <div className="daily-progress-bar-fill" style={{ width: `${displayPct}%`, background: barColor }} />
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        {/* Streak row — special */}
-        <div className="goal-tracker-row">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
-            <Flame size={14} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] font-semibold text-white">{goalTrackerData.streak.label}</span>
-              <span className="text-[10px] font-bold text-amber-400">{goalTrackerData.streak.current} day{goalTrackerData.streak.current !== 1 ? 's' : ''}</span>
+          {/* Streak row — special */}
+          <div className="goal-tracker-row">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+              <Flame size={14} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-semibold text-white">{goalTrackerData.streak.label}</span>
+                <span className="text-[10px] font-bold text-amber-400">{goalTrackerData.streak.current} day{goalTrackerData.streak.current !== 1 ? 's' : ''}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </DashboardWidget>
+      </DashboardWidget>
+    </>
   );
 };
 
@@ -781,10 +787,10 @@ const GoalTrackerWidget: React.FC<WidgetProps> = ({ context }) => {
 const QuickContinueWidget: React.FC<WidgetProps> = ({ context }) => {
   const { quickContinueItems, setPage } = context;
   return (
-    <DashboardWidget icon={RotateCcw} title="Continue Where You Left Off" colSpan={6} iconBg="rgba(6,182,212,0.12)" iconColor="#06b6d4">
+    <DashboardWidget icon={RotateCcw} title="Continue Where You Left Off" size="medium" colSpan={6} scrollable iconBg="rgba(6,182,212,0.12)" iconColor="#06b6d4">
       <div className="space-y-2">
         {quickContinueItems.length === 0 ? (
-          <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[100px]">
+          <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full min-h-[140px]">
             <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-3">
               <RotateCcw size={24} className="text-cyan-400" />
             </div>
@@ -827,9 +833,9 @@ export const WIDGET_REGISTRY: WidgetConfig[] = [
   { id: 'snapshot', title: "Today's Snapshot", description: 'Focus, Tasks, Expenses, Budget', icon: Timer, component: SnapshotWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 2, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
   { id: 'quickActions', title: 'Quick Actions', description: 'Command center shortcuts', icon: Zap, component: QuickActionsWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 3, category: 'Overview', defaultVisible: true, minimumSize: { w: 6, h: 1 }, maximumSize: { w: 12, h: 2 } },
   { id: 'todaysTasks', title: "Today's Tasks", description: 'Task list for today', icon: CheckSquare, component: TodaysTasksWidget, defaultSize: { w: 8, h: 2, colSpan: 8 }, defaultOrder: 4, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'goalTracker', title: 'Goal Tracker', description: 'Multi-goal progress overview', icon: Target, component: GoalTrackerWidget, defaultSize: { w: 4, h: 2, colSpan: 4 }, defaultOrder: 5, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
-  { id: 'quickContinue', title: 'Quick Continue', description: 'Resume where you left off', icon: RotateCcw, component: QuickContinueWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 6, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
-  { id: 'upcomingBills', title: 'Upcoming Bills', description: 'Recurring payment schedule', icon: Calendar, component: UpcomingBillsWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 7, category: 'Finance', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'upcomingBills', title: 'Upcoming Bills', description: 'Recurring payment schedule', icon: Calendar, component: UpcomingBillsWidget, defaultSize: { w: 4, h: 2, colSpan: 4 }, defaultOrder: 5, category: 'Finance', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'goalTracker', title: 'Goal Tracker', description: 'Multi-goal progress overview', icon: Target, component: GoalTrackerWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 6, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'quickContinue', title: 'Quick Continue', description: 'Resume where you left off', icon: RotateCcw, component: QuickContinueWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 7, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
   { id: 'focusTrend', title: 'Focus Trend', description: '7-day focus chart', icon: BarChart3, component: FocusTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 8, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
   { id: 'expenseTrend', title: 'Expense Trend', description: '7-day expense chart', icon: TrendingUp, component: ExpenseTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 9, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
   { id: 'aiInsights', title: 'Smart Recommendations', description: 'Prioritized action items', icon: Lightbulb, component: AiInsightsWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 10, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },

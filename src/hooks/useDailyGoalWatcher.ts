@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO, isToday } from 'date-fns';
 import { useStore } from '../store/useStore';
 import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
 import type { DailyGoalHistory } from '../store/useDailyGoalsStore';
@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase';
  * 2. Daily XP start tracking
  * 3. Goal completion detection → fire notifications + award XP
  * 4. All-goals-completed detection → celebration notification + bonus XP
+ * 5. Persistent Daily Progress calculation & synchronization (Phase 3.9.1 Task 3)
  *
  * Reads existing store data reactively — no new event plumbing needed.
  */
@@ -115,6 +116,33 @@ export function useDailyGoalWatcher() {
     if (!lastSnapshotDate) {
       useDailyGoalsStore.setState({ lastSnapshotDate: today });
     }
+
+    // ── Phase 3.9.1 Task 3: Automatic Persistence of Daily Progress Percentage ──
+    const targetFocus = profile.focus_goal || 120;
+    const todaySessions = focusSessions.filter((s) => {
+      if (!s.started_at) return false;
+      try { return isToday(parseISO(s.started_at)); } catch { return false; }
+    });
+    const todayMinutes = todaySessions.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
+
+    const completedTasks = tasks.filter((t) => t.status === 'completed' && t.completed_at && isToday(parseISO(t.completed_at))).length;
+    const totalTodayTasks = Math.max(completedTasks, tasks.filter((t) => t.status === 'pending').length + completedTasks);
+
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    const dailyBudget = (profile.monthly_budget || 0) > 0 ? Math.round(profile.monthly_budget / daysInMonth) : 0;
+    const todayExpenses = expenses.filter((e) => {
+      if (!e?.expense_date) return false;
+      try { return isToday(parseISO(e.expense_date)); } catch { return false; }
+    });
+    const todaySpent = todayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    const focusPct = targetFocus > 0 ? Math.min(100, Math.round((todayMinutes / targetFocus) * 100)) : 0;
+    const taskPct = totalTodayTasks > 0 ? Math.min(100, Math.round((completedTasks / totalTodayTasks) * 100)) : 100;
+    const budgetPct = dailyBudget > 0 ? Math.min(100, Math.max(0, Math.round(((dailyBudget - todaySpent) / dailyBudget) * 100))) : 100;
+    const streakScore = Math.min(100, (profile.streak || 0) * 15);
+    const compositeScore = Math.round(focusPct * 0.3 + taskPct * 0.3 + budgetPct * 0.2 + streakScore * 0.2);
+
+    useDailyGoalsStore.getState().saveDailyProgressPercentage(today, compositeScore);
 
     // ── Goal completion detection ─────────────────────────
     if (!notificationsEnabled) return;

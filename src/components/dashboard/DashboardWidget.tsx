@@ -18,7 +18,7 @@ import WidgetHeader from '../ui/WidgetHeader';
 // internally while the header stays fixed.
 // ============================================================
 
-type WidgetSize = 'kpi' | 'medium' | 'large' | 'hero';
+type WidgetSize = 'kpi' | 'small' | 'medium' | 'large' | 'hero' | 'auto';
 
 interface DashboardWidgetProps {
   /** Header icon (lucide-react icon component) */

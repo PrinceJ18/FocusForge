@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   Wallet, Brain, AlertTriangle, Sparkles, Timer, TrendingUp, Target,
   CheckSquare, Zap, ArrowUpRight, ArrowDownRight, Clock, Star,
@@ -7,6 +7,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { useStore, type Page, type Task, completeTask, uncompleteTask, deleteTask, updateTask, markTaskWontDo } from '../store/useStore';
+import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
 import { format, parseISO, isToday, differenceInDays } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
 import { formatFocusTime } from '../lib/formatUtils';
@@ -430,10 +431,30 @@ export default function Dashboard() {
     const targetFocus = preferences.default_daily_focus_goal || 120;
     const todayTasks = todayTaskOccurrences?.length ?? 0;
     const streak = profile.streak ?? 0;
-    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    const dailyBudget = profile.monthly_budget > 0 ? Math.round(profile.monthly_budget / daysInMonth) : 0;
-    const todaySpent = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
-    const dailyRemaining = dailyBudget - todaySpent;
+
+    // Month-to-date spending
+    const currentYear = todayDate.getFullYear();
+    const currentMonth = todayDate.getMonth();
+    const currentYearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    const monthExpenses = expenses.filter(e => e?.expense_date && e.expense_date.startsWith(currentYearMonthStr));
+    const monthSpending = monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    // Today's spending
+    const todayExpenses = expenses.filter(e => {
+      if (!e?.expense_date) return false;
+      try { return isToday(parseISO(e.expense_date)); } catch { return false; }
+    });
+    const todaySpent = todayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    // Calendar days remaining in this month INCLUDING today
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentDay = todayDate.getDate();
+    const remainingDays = Math.max(1, daysInMonth - currentDay + 1);
+
+    const monthlyBudget = profile.monthly_budget || 0;
+    const remainingBudget = Math.max(0, monthlyBudget - monthSpending);
+    const dailySpendingAllowance = monthlyBudget > 0 && remainingDays > 0 ? Math.round(remainingBudget / remainingDays) : 0;
+    const remainingSafeSpendingToday = Math.max(0, dailySpendingAllowance - todaySpent);
 
     // Task summary
     if (todayTasks > 0) {
@@ -453,12 +474,14 @@ export default function Dashboard() {
       sentences.push('Focus goal reached for today! ✨');
     }
 
-    // Budget summary
-    if (dailyBudget > 0) {
-      if (dailyRemaining > 0) {
-        sentences.push(`${formatCurrency(dailyRemaining)} remaining in today's allowance.`);
+    // Budget summary — Smart Daily Spending (Phase 3.9.1 Task 2)
+    if (monthlyBudget > 0) {
+      if (dailySpendingAllowance > 0 && todaySpent < dailySpendingAllowance) {
+        sentences.push(`${formatCurrency(remainingSafeSpendingToday)} remaining in today's allowance.`);
+      } else if (todaySpent >= dailySpendingAllowance && dailySpendingAllowance > 0) {
+        sentences.push(`Daily allowance reached — ${formatCurrency(todaySpent - dailySpendingAllowance)} over today's safe limit.`);
       } else {
-        sentences.push('Daily budget exceeded — consider pausing spending.');
+        sentences.push('Monthly budget exhausted — consider pausing spending.');
       }
     }
 
@@ -472,7 +495,7 @@ export default function Dashboard() {
     }
 
     return sentences;
-  }, [focusSessions, preferences, profile, expenses, todayTaskOccurrences, todayCompletedCount]);
+  }, [focusSessions, preferences, profile, expenses, todayDate, todayTaskOccurrences, todayCompletedCount]);
 
   // -------------------------------------------------------
   // DAILY PROGRESS — percentages for composite ring (Section 3)
@@ -503,6 +526,12 @@ export default function Dashboard() {
       overall,
     };
   }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile, expenses]);
+
+  // Synchronize persisted daily progress percentage (Phase 3.9.1 Task 3)
+  useEffect(() => {
+    const todayStr = format(todayDate, 'yyyy-MM-dd');
+    useDailyGoalsStore.getState().saveDailyProgressPercentage(todayStr, dailyProgress.overall);
+  }, [todayDate, dailyProgress.overall]);
 
   // -------------------------------------------------------
   // SMART RECOMMENDATIONS — premium cards (Section 5)

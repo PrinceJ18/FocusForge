@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -970,32 +970,49 @@ select.input-glass option {
   grid-template-columns: repeat(12, 1fr);
   gap: var(--density-gap);
   width: 100%;
+  align-items: stretch;
 }
 
-@media (max-width: 1279px) {
+/* Tablet: 768px to 1439px */
+@media (max-width: 1439px) and (min-width: 768px) {
   .dashboard-grid {
     grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
   }
-  .dashboard-widget[style*="span 12"],
-  .dashboard-widget[style*="span 8"],
-  .dashboard-widget[style*="span 6"],
-  .dashboard-widget[style*="span 4"] {
+  .dashboard-widget[style*="span 12"] {
     grid-column: 1 / -1 !important;
+  }
+  .dashboard-widget[style*="span 8"] {
+    grid-column: 1 / -1 !important;
+  }
+  .dashboard-widget[style*="span 6"] {
+    grid-column: span 3 !important;
+  }
+  .dashboard-widget[style*="span 4"] {
+    grid-column: span 3 !important;
   }
   .kpi-card[style*="span 3"] {
     grid-column: span 3 !important;
   }
 }
 
+/* Mobile: <768px */
 @media (max-width: 767px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .dashboard-widget, .kpi-card {
     grid-column: 1 / -1 !important;
   }
+  .dashboard-widget--medium,
+  .dashboard-widget--large,
+  .dashboard-widget--auto {
+    max-height: none;
+    min-height: auto;
+  }
   .dashboard-widget button {
-    min-height: 44px;
+    min-height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1028,19 +1045,29 @@ select.input-glass option {
     0 0 0 1px rgba(168, 85, 247, 0.1);
 }
 
-/* Fixed height tiers */
+/* Standard Height Tiers — Phase 3.7.1 */
 .dashboard-widget--kpi {
   min-height: 120px;
   max-height: 120px;
 }
 
+.dashboard-widget--small {
+  min-height: 200px;
+  max-height: 200px;
+}
+
 .dashboard-widget--medium {
-  min-height: 320px;
-  max-height: 320px;
+  min-height: 340px;
+  max-height: 340px;
 }
 
 .dashboard-widget--large {
-  min-height: 420px;
+  min-height: 440px;
+  max-height: 440px;
+}
+
+.dashboard-widget--auto {
+  min-height: 180px;
   max-height: 420px;
 }
 
@@ -1430,16 +1457,21 @@ select.input-glass option {
    Quick Continue, Dashboard Section Titles
    ============================================================ */
 
-/* Dashboard Section Title */
+/* Dashboard Section Title — Phase 3.7.1 */
 .dashboard-section-title {
+  grid-column: 1 / -1 !important;
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding-top: 8px;
+  padding-top: 14px;
+  padding-bottom: 2px;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Daily Brief â€” contextual summary sentences */
