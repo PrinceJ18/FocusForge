@@ -7,7 +7,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { useStore, type Page, type Task, completeTask, uncompleteTask, deleteTask, updateTask, markTaskWontDo } from '../store/useStore';
-import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
+import { saveDailySnapshot, type DailySnapshotData } from '../services/dailySnapshotService';
 import { format, parseISO, isToday, differenceInDays } from 'date-fns';
 import { formatCurrency } from '../lib/formatCurrency';
 import { formatFocusTime } from '../lib/formatUtils';
@@ -527,11 +527,53 @@ export default function Dashboard() {
     };
   }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile, expenses]);
 
-  // Synchronize persisted daily progress percentage (Phase 3.9.1 Task 3)
+  // -------------------------------------------------------
+  // PERSIST DAILY SNAPSHOT TO SUPABASE (Phase 3.9.2B)
+  // Reactively syncs all daily metrics to daily_progress_snapshots.
+  // The service handles UPSERT, diff guard, and error resilience.
+  // -------------------------------------------------------
   useEffect(() => {
+    if (!user?.id) return; // Only persist for authenticated users
+
     const todayStr = format(todayDate, 'yyyy-MM-dd');
-    useDailyGoalsStore.getState().saveDailyProgressPercentage(todayStr, dailyProgress.overall);
-  }, [todayDate, dailyProgress.overall]);
+
+    // Reuse the same month/date math as dailyBrief for safe spending
+    const currentYear = todayDate.getFullYear();
+    const currentMonth = todayDate.getMonth();
+    const currentYearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    const monthExpenses = expenses.filter(e => e?.expense_date && e.expense_date.startsWith(currentYearMonthStr));
+    const monthSpending = monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentDay = todayDate.getDate();
+    const remainingDays = Math.max(1, daysInMonth - currentDay + 1);
+    const monthlyBudget = profile.monthly_budget || 0;
+    const remBudget = Math.max(0, monthlyBudget - monthSpending);
+    const dailyAllowance = monthlyBudget > 0 && remainingDays > 0 ? Math.round(remBudget / remainingDays) : 0;
+    const todaySpentForSnapshot = expenses
+      .filter(e => { try { return e?.expense_date && isToday(parseISO(e.expense_date)); } catch { return false; } })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const remainingSafeSpending = Math.max(0, dailyAllowance - todaySpentForSnapshot);
+
+    const snapshotData: DailySnapshotData = {
+      daily_progress_percentage: dailyProgress.overall,
+      productivity_score: productivityScore,
+      financial_score: financialScore,
+      focus_minutes: dailyProgress.focus.current,
+      tasks_completed: dailyProgress.tasks.current,
+      tasks_total: dailyProgress.tasks.target,
+      current_streak: dailyProgress.streak.value,
+      monthly_budget: monthlyBudget,
+      remaining_budget: remBudget,
+      today_spending: todaySpentForSnapshot,
+      daily_allowance: dailyAllowance,
+      remaining_safe_spending: remainingSafeSpending,
+    };
+
+    saveDailySnapshot(user.id, todayStr, snapshotData);
+  }, [
+    user?.id, todayDate, dailyProgress, productivityScore, financialScore,
+    expenses, profile.monthly_budget,
+  ]);
 
   // -------------------------------------------------------
   // SMART RECOMMENDATIONS — premium cards (Section 5)

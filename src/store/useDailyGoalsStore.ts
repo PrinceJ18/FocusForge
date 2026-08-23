@@ -171,12 +171,6 @@ interface DailyGoalsState {
 
   // Daily XP tracking
   updateDailyXPStart: (xp: number, date: string) => void;
-
-  // Persisted Daily Progress percentage (Phase 3.9.1 Task 3)
-  dailyProgressPercentage: number;
-  dailyProgressHistory: Record<string, number>;
-  saveDailyProgressPercentage: (date: string, pct: number) => void;
-  getDailyProgressPercentage: (date: string) => number | null;
 }
 
 // ============================================================
@@ -286,24 +280,6 @@ export const useDailyGoalsStore = create<DailyGoalsState>()(
 
       updateDailyXPStart: (xp, date) =>
         set({ dailyXPStart: xp, dailyXPDate: date }),
-
-      // Persisted Daily Progress percentage (Phase 3.9.1 Task 3)
-      dailyProgressPercentage: 0,
-      dailyProgressHistory: {},
-
-      saveDailyProgressPercentage: (date, pct) =>
-        set((s) => ({
-          dailyProgressPercentage: pct,
-          dailyProgressHistory: {
-            ...s.dailyProgressHistory,
-            [date]: pct,
-          },
-        })),
-
-      getDailyProgressPercentage: (date) => {
-        const state = get();
-        return state.dailyProgressHistory[date] ?? null;
-      },
     }),
     {
       name: 'focusforge-daily-goals',
@@ -321,8 +297,6 @@ export const useDailyGoalsStore = create<DailyGoalsState>()(
         notifiedDate: state.notifiedDate,
         dailyXPStart: state.dailyXPStart,
         dailyXPDate: state.dailyXPDate,
-        dailyProgressPercentage: state.dailyProgressPercentage,
-        dailyProgressHistory: state.dailyProgressHistory,
       }),
     }
   )
