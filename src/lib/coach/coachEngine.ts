@@ -1,26 +1,20 @@
 /**
- * Coach Engine — Main Orchestrator
+ * Coach Engine — Main Orchestrator (Phase 3.9.5 Enhanced)
  *
  * Provides the `createCoachEngine()` factory function that accepts CoachInput
- * and returns an object with 8 generation methods. Each method computes its
+ * and returns an object with 12 generation methods. Each method computes its
  * result lazily on first call and caches it for subsequent calls.
  *
  * The engine is the single public entry point for all coach functionality.
- * It delegates to coachRules for rule evaluation and coachUtils for
- * predictions and trend analysis.
+ * It coordinates:
+ * - Deterministic Rule Engine (coachRules.ts)
+ * - Habit Detection Layer (coachHabits.ts)
+ * - Behaviour Trend Analysis (coachTrends.ts)
+ * - Early Risk Detection (coachRisks.ts)
+ * - Timeline Synthesis (coachTimeline.ts)
+ * - Enhanced Predictive Modeling (coachUtils.ts)
  *
  * No React. No JSX. No components. No UI. No store access. No side effects.
- *
- * Dependencies:
- * - coachTypes: all type definitions
- * - coachRules: rule evaluation
- * - coachUtils: prediction, trend, and utility helpers
- *
- * Future consumers:
- * - Dashboard (morning brief, risk alerts)
- * - Analytics (trend detection, predictions panel)
- * - Reports (enhanced recommendations, prediction accuracy)
- * - Notification Center (critical risk push)
  *
  * @module coach/coachEngine
  */
@@ -36,17 +30,26 @@ import type {
   CoachRiskItem,
   AchievementsSummary,
   CoachTrendItem,
+  CoachHabitAnalysis,
+  CoachBehaviourTrends,
+  CoachEarlyRiskReport,
+  CoachTimelineEvent,
 } from './coachTypes';
 import { evaluateAllRules } from './coachRules';
+import { generateCoachHabitAnalysis } from './coachHabits';
+import { generateCoachBehaviourTrends } from './coachTrends';
+import { generateCoachEarlyRiskReport } from './coachRisks';
+import { generateCoachTimeline } from './coachTimeline';
 import {
   detectTrend,
   weightedMovingAverage,
   linearExtrapolate,
-  predictMonthlyValue,
+  enhancedPredictMonthlyValue,
+  calculateSpendingVelocity,
+  calculateFocusMomentum,
   clamp,
   safePercent,
   gradeFromScore,
-  gradeColor,
   calculateStreakRisk,
   getCurrentDayOfMonth,
   getCurrentMonthDays,
@@ -68,7 +71,7 @@ import { format, getWeek, getYear } from 'date-fns';
  * Each method generates a specific coaching output.
  */
 export interface CoachEngine {
-  /** Morning brief with greeting, priorities, risks, streak status */
+  /** Morning brief with greeting, priorities, risks, streak status, prime focus window */
   generateDailyBrief: () => DailyBrief;
   /** Evening review with accomplishments, missed targets, day score */
   generateEveningReview: () => EveningReview;
@@ -76,14 +79,22 @@ export interface CoachEngine {
   generateWeeklyReview: () => WeeklyReview;
   /** Monthly review enriched by coach insights */
   generateMonthlyReview: () => MonthlyReview;
-  /** All fired recommendations sorted by priority */
+  /** All ranked recommendations with explainability */
   generateRecommendations: () => readonly CoachRecommendation[];
-  /** Projected values for current period */
+  /** Projected values for current period with enhanced predictive math */
   generatePredictions: () => CoachPredictions;
   /** Critical and high severity risk items */
   generateRiskAssessment: () => readonly CoachRiskItem[];
   /** Recent achievements and approaching milestones */
   generateAchievementsSummary: () => AchievementsSummary;
+  /** Habit detection: peak weekdays, focus hours, weekend dynamics, procrastination patterns */
+  generateHabitAnalysis: () => CoachHabitAnalysis;
+  /** 5-Facet Behaviour Trend Analysis with momentum scoring */
+  generateBehaviourTrends: () => CoachBehaviourTrends;
+  /** Early risk report evaluating streak, burnout, budget, tasks, and savings */
+  generateEarlyRisks: () => CoachEarlyRiskReport;
+  /** Chronological coach timeline events */
+  generateTimeline: () => readonly CoachTimelineEvent[];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -92,8 +103,6 @@ export interface CoachEngine {
 
 /**
  * Creates a lazy-evaluated, memoized function.
- * The factory function is only called on the first invocation;
- * subsequent calls return the cached result.
  */
 function memoize<T>(factory: () => T): () => T {
   let cached: T | undefined;
@@ -120,11 +129,10 @@ function getGreeting(displayName: string): string {
 
 /**
  * Generates a deterministic motivational message based on performance data.
- * No randomness — the message is selected by current metrics.
  */
 function getMotivation(score: number, streak: number, focusGrowthPct: number): string {
   if (score >= 85 && streak >= 7) {
-    return 'You\'re in the zone — elite-level consistency and performance. Keep pushing!';
+    return "You're in the zone — elite-level consistency and performance. Keep pushing!";
   }
   if (score >= 70) {
     return 'Solid performance! Small improvements compound into major results over time.';
@@ -172,38 +180,29 @@ function buildTrendItem(
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Creates a new Coach Engine instance.
+ * Creates a new Coach Engine instance with full Phase 3.9.5 intelligence.
  *
- * The engine accepts pre-computed data from the analytics and reports engines,
- * plus raw store data for granular rule evaluation. It never duplicates
- * calculations that already exist elsewhere in the application.
- *
- * All methods are lazily computed and memoized — the first call computes
- * the result, subsequent calls return the cached value.
- *
- * @example
- * ```ts
- * const engine = createCoachEngine({
- *   analytics: analyticsResult,
- *   dailyGoalHistory: goalsStore.history,
- *   tasks, focusSessions, expenses, profile,
- *   savingsGoals, events, preferences,
- * });
- *
- * const brief = engine.generateDailyBrief();
- * const risks = engine.generateRiskAssessment();
- * const predictions = engine.generatePredictions();
- * ```
+ * Accepts pre-computed data from analytics/reports plus raw store data.
+ * All 12 methods are lazily computed and memoized internally.
  *
  * @param input - Complete coach input data
- * @returns CoachEngine instance with 8 generation methods
+ * @returns CoachEngine instance with 12 generation methods
  */
 export function createCoachEngine(input: CoachInput): CoachEngine {
   const { analytics, profile, preferences, dailyGoalHistory } = input;
 
-  // ─── Shared lazy computations ────────────────────────────
+  // ─── Shared Lazy Intelligence Computations ───────────────
   const getRecommendations = memoize(() => evaluateAllRules(input));
 
+  const getHabits = memoize(() => generateCoachHabitAnalysis(input));
+
+  const getTrends = memoize(() => generateCoachBehaviourTrends(input));
+
+  const getEarlyRisks = memoize(() => generateCoachEarlyRiskReport(input));
+
+  const getTimeline = memoize(() => generateCoachTimeline(input, getHabits(), getTrends(), getEarlyRisks()));
+
+  // ─── Enhanced Predictions (Task 4) ───────────────────────
   const getPredictions = memoize((): CoachPredictions => {
     const dayOfMonth = getCurrentDayOfMonth();
     const daysInMonth = getCurrentMonthDays();
@@ -213,33 +212,35 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     const dailySpending = extractDailySpendingFromHistory(dailyGoalHistory);
     const dailyProgress = extractDailyProgressFromHistory(dailyGoalHistory);
 
-    // Use WMA-based prediction when we have enough history, fallback to linear extrapolation
-    const expectedMonthlyFocusMinutes = historyCount >= 7
-      ? predictMonthlyValue(dailyFocus, dayOfMonth, daysInMonth)
+    // Calculate dynamic factors
+    const { momentumFactor } = calculateFocusMomentum(dailyFocus, profile.streak);
+    const { velocity, factor: spendVelocityFactor } = calculateSpendingVelocity(dailySpending);
+
+    // Enhanced focus prediction with momentum factor
+    const expectedMonthlyFocusMinutes = historyCount >= 4
+      ? enhancedPredictMonthlyValue(dailyFocus, dayOfMonth, daysInMonth, momentumFactor)
       : linearExtrapolate(analytics.monthlyFocusMin, dayOfMonth, daysInMonth);
 
-    const expectedMonthlySpending = historyCount >= 7
-      ? predictMonthlyValue(dailySpending, dayOfMonth, daysInMonth)
+    // Enhanced spending prediction with velocity multiplier
+    const expectedMonthlySpending = historyCount >= 4
+      ? enhancedPredictMonthlyValue(dailySpending, dayOfMonth, daysInMonth, spendVelocityFactor)
       : analytics.forecast.projectedMonthEndSpend;
 
     const expectedDailyProgress = historyCount >= 3
       ? clamp(Math.round(weightedMovingAverage(dailyProgress, 7)), 0, 100)
       : clamp(analytics.taskCompletionRate, 0, 100);
 
-    // Productivity & financial scores projected from recent trends
+    // Projected productivity score based on focus momentum
     const expectedProductivityScore = clamp(
-      analytics.productivityScore + Math.round(analytics.comparison.focusGrowthPct * 0.1),
-      0, 100
+      Math.round(analytics.productivityScore * (momentumFactor >= 1.0 ? 1.05 : 0.95)),
+      0,
+      100
     );
 
-    const expectedFinancialScore = clamp(
-      analytics.financialScore - Math.round(
-        expectedMonthlySpending > profile.monthly_budget
-          ? ((expectedMonthlySpending - profile.monthly_budget) / Math.max(1, profile.monthly_budget)) * 20
-          : -5
-      ),
-      0, 100
-    );
+    // Projected financial health score based on velocity and budget
+    const budgetExceededRatio = profile.monthly_budget > 0 ? expectedMonthlySpending / profile.monthly_budget : 1.0;
+    const financialPenalty = budgetExceededRatio > 1.0 ? Math.round((budgetExceededRatio - 1.0) * 40) : -5;
+    const expectedFinancialScore = clamp(analytics.financialScore - financialPenalty, 0, 100);
 
     const expectedWeeklyGrade = gradeFromScore(
       Math.round(expectedProductivityScore * 0.5 + expectedFinancialScore * 0.3 + expectedDailyProgress * 0.2)
@@ -248,6 +249,9 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     const expectedMonthlyGrade = gradeFromScore(
       Math.round(expectedProductivityScore * 0.4 + expectedFinancialScore * 0.3 + expectedDailyProgress * 0.3)
     );
+
+    const earlyRisks = getEarlyRisks();
+    const daysUntilBudgetDepleted = earlyRisks.budgetExhaustionRisk.daysUntilExhaustion;
 
     return {
       expectedMonthlyFocusMinutes,
@@ -259,12 +263,16 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
       expectedMonthlyGrade,
       confidence: getPredictionConfidence(historyCount),
       dataPointsUsed: historyCount,
+      daysUntilBudgetDepleted,
+      spendingVelocityFactor: Math.round(spendVelocityFactor * 100) / 100,
+      focusMomentumFactor: Math.round(momentumFactor * 100) / 100,
     };
   });
 
   const getRisks = memoize((): readonly CoachRiskItem[] => {
+    // Combine recommendations with high priority + early risk report items
     const recommendations = getRecommendations();
-    return recommendations
+    const fromRecs = recommendations
       .filter(r => r.priority === 'critical' || r.priority === 'high')
       .map(r => ({
         id: r.id,
@@ -280,19 +288,27 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
           limit: 0,
           unit: '',
         },
+        suggestedAction: r.action,
+        probability: (r.urgency as any) || 'high',
       }));
+
+    const earlyRisks = getEarlyRisks();
+    const uniqueMap = new Map<string, CoachRiskItem>();
+
+    fromRecs.forEach(r => uniqueMap.set(r.id, r));
+    earlyRisks.topCriticalRisks.forEach(r => uniqueMap.set(r.id, r));
+
+    return Array.from(uniqueMap.values());
   });
 
   // ─── Daily Brief ─────────────────────────────────────────
   const generateDailyBrief = memoize((): DailyBrief => {
-    const todayStr = getTodayDateString();
     const yesterdayHistory = dailyGoalHistory.find(h => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       return h.date === format(yesterday, 'yyyy-MM-dd');
     });
 
-    // Top priorities: pending high-priority tasks, sorted by deadline
     const pendingHighPriority = [...input.tasks]
       .filter(t => t.status === 'pending' && t.priority === 'high')
       .sort((a, b) => {
@@ -308,7 +324,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         icon: '🔴',
       }));
 
-    // Fill remaining slots with medium priority if needed
     const pendingMedium = pendingHighPriority.length < 3
       ? [...input.tasks]
           .filter(t => t.status === 'pending' && t.priority === 'medium')
@@ -321,7 +336,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
       : [];
 
     const topPriorities = [...pendingHighPriority, ...pendingMedium];
-
     const riskAlerts = getRisks();
     const streakIsAtRisk = calculateStreakRisk(profile.streak, analytics.todayFocusMin, 0);
 
@@ -332,6 +346,8 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     const dailyBudget = profile.monthly_budget > 0
       ? Math.round((profile.monthly_budget - analytics.monthlySpent) / Math.max(1, getCurrentMonthDays() - getCurrentDayOfMonth() + 1))
       : 0;
+
+    const habits = getHabits();
 
     return {
       greeting: getGreeting(profile.display_name),
@@ -357,6 +373,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         profile.streak,
         analytics.comparison.focusGrowthPct
       ),
+      primeFocusWindow: habits.bestFocusHour.timeWindow,
     };
   });
 
@@ -417,15 +434,12 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
       });
     }
 
-    // Tomorrow priorities: overdue first, then high priority pending
     const tomorrowPriorities = [...input.tasks]
       .filter(t => t.status === 'pending')
       .sort((a, b) => {
-        // Overdue items first
         const aOverdue = a.deadline && a.deadline <= todayStr ? 1 : 0;
         const bOverdue = b.deadline && b.deadline <= todayStr ? 1 : 0;
         if (aOverdue !== bOverdue) return bOverdue - aOverdue;
-        // Then by priority
         const priorityMap = { high: 0, medium: 1, low: 2 };
         return (priorityMap[a.priority] ?? 1) - (priorityMap[b.priority] ?? 1);
       })
@@ -440,7 +454,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         icon: t.deadline && t.deadline <= todayStr ? '🔴' : t.priority === 'high' ? '🟠' : '🟡',
       }));
 
-    // Day score: weighted combination of focus achievement + task completion + budget discipline
     const focusAchievement = safePercent(todayFocus, focusGoal);
     const taskTarget = preferences.default_task_goal || 6;
     const taskAchievement = safePercent(completedToday, taskTarget);
@@ -449,7 +462,8 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
 
     const dayScore = clamp(
       Math.round(focusAchievement * 0.4 + taskAchievement * 0.35 + budgetAchievement * 0.25),
-      0, 100
+      0,
+      100
     );
 
     return {
@@ -475,19 +489,8 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     const yearNum = getYear(now);
     const weekLabel = `Week ${weekNum}, ${yearNum}`;
 
-    const dailyFocus = extractDailyFocusFromHistory(dailyGoalHistory);
-    const dailySpending = extractDailySpendingFromHistory(dailyGoalHistory);
-    const dailyTasks = extractDailyTasksFromHistory(dailyGoalHistory);
+    const trends = getTrends();
 
-    const focusTrendData = detectTrend(dailyFocus, 7);
-    const spendingTrendData = detectTrend(dailySpending, 7);
-    const taskTrendData = detectTrend(dailyTasks, 7);
-
-    const focusTrend = buildTrendItem('Focus Time', focusTrendData.direction, focusTrendData.magnitudePct, 'focus');
-    const spendingTrend = buildTrendItem('Spending', spendingTrendData.direction, spendingTrendData.magnitudePct, 'finance');
-    const taskTrend = buildTrendItem('Task Completion', taskTrendData.direction, taskTrendData.magnitudePct, 'tasks');
-
-    // Wins: positive metrics from this period
     const wins: WeeklyReview['wins'] = [];
     if (analytics.comparison.focusGrowthPct > 10) {
       wins.push({
@@ -521,16 +524,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         color: '#f59e0b',
       });
     }
-    if (analytics.focusConsistencyRate >= 70) {
-      wins.push({
-        title: 'Consistent Focus',
-        description: `Active on ${analytics.focusConsistencyRate}% of days with 30+ minutes of focus.`,
-        icon: '🎯',
-        color: '#a855f7',
-      });
-    }
 
-    // Improvements: areas that need attention
     const improvements: WeeklyReview['improvements'] = [];
     if (analytics.taskCompletionRate < 50 && analytics.totalTasksCount > 0) {
       improvements.push({
@@ -548,29 +542,18 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         color: '#ef4444',
       });
     }
-    if (analytics.budgetHealth === 'Critical') {
-      improvements.push({
-        title: 'Budget Critical',
-        description: `Budget utilization at ${analytics.budgetUtilizationPct}% — spending needs immediate attention.`,
-        icon: '💸',
-        color: '#ef4444',
-      });
-    }
 
     const weekScore = analytics.overallWellnessScore;
     const weekGrade = gradeFromScore(weekScore);
-
-    // Filter recommendations to those most relevant for weekly context
-    const allRecs = getRecommendations();
-    const weeklyRecs = allRecs.slice(0, 5); // Top 5 by priority
+    const weeklyRecs = getRecommendations().slice(0, 5);
 
     return {
       weekLabel,
       wins: wins.slice(0, 5),
       improvements: improvements.slice(0, 5),
-      focusTrend,
-      spendingTrend,
-      taskTrend,
+      focusTrend: trends.focus,
+      spendingTrend: trends.finance,
+      taskTrend: trends.taskCompletion,
       weekScore,
       weekGrade,
       recommendations: weeklyRecs,
@@ -583,13 +566,10 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     const monthLabel = format(now, 'MMMM yyyy');
     const report = input.monthlyReport;
 
-    // If monthly report data is available, leverage it
     const monthScore = report?.overallScore ?? analytics.overallWellnessScore;
     const monthGrade = report?.grade ?? gradeFromScore(monthScore);
 
-    // Build executive summary from report or analytics
     const executiveSummary: string[] = report?.executiveSummary ?? [];
-
     if (executiveSummary.length === 0) {
       executiveSummary.push(
         `This month you focused for ${analytics.totalFocusHours}h, completed ${analytics.completedTasksCount} tasks, and spent ₹${Math.round(analytics.monthlySpent)}.`
@@ -602,7 +582,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
       }
     }
 
-    // Month-level trends
     const dailyFocus = extractDailyFocusFromHistory(dailyGoalHistory);
     const dailySpending = extractDailySpendingFromHistory(dailyGoalHistory);
     const dailyTasks = extractDailyTasksFromHistory(dailyGoalHistory);
@@ -615,7 +594,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     const tasksTrend = detectTrend(dailyTasks, 14);
     trends.push(buildTrendItem('Monthly Task Completion', tasksTrend.direction, tasksTrend.magnitudePct, 'tasks'));
 
-    // Recommendations for next month
     const allRecs = getRecommendations();
     const monthlyRecs = allRecs.filter(r => r.priority !== 'info').slice(0, 6);
 
@@ -634,7 +612,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
   const generateAchievementsSummary = memoize((): AchievementsSummary => {
     const { profile: p, analytics: a } = input;
 
-    // Recent badges (unlocked in the last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const cutoffStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
@@ -648,10 +625,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         unlockedAt: b.unlockedAt,
       }));
 
-    // Approaching milestones based on current metrics
     const milestones: AchievementsSummary['approachingMilestones'] = [];
-
-    // Focus milestone: approaching 100 hours total
     const totalFocusHours = a.totalFocusHours;
     const nextFocusMilestone = Math.ceil(totalFocusHours / 50) * 50;
     if (nextFocusMilestone > 0 && totalFocusHours >= nextFocusMilestone * 0.7) {
@@ -664,7 +638,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
       });
     }
 
-    // Streak milestone: approaching next multiple of 7
     const nextStreakMilestone = Math.ceil((p.streak + 1) / 7) * 7;
     if (p.streak > 0 && p.streak >= nextStreakMilestone - 3) {
       milestones.push({
@@ -676,19 +649,6 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
       });
     }
 
-    // Task milestone: approaching next multiple of 50 completed
-    const nextTaskMilestone = Math.ceil((a.completedTasksCount + 1) / 50) * 50;
-    if (a.completedTasksCount >= nextTaskMilestone * 0.8) {
-      milestones.push({
-        title: `${nextTaskMilestone} Tasks Completed`,
-        description: `Complete ${nextTaskMilestone} total tasks.`,
-        progressPct: safePercent(a.completedTasksCount, nextTaskMilestone),
-        icon: '✅',
-        color: '#10b981',
-      });
-    }
-
-    // Level info
     const currentLevel = Math.floor(p.xp / 100) + 1;
 
     return {
@@ -710,5 +670,9 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     generatePredictions: getPredictions,
     generateRiskAssessment: getRisks,
     generateAchievementsSummary,
+    generateHabitAnalysis: getHabits,
+    generateBehaviourTrends: getTrends,
+    generateEarlyRisks: getEarlyRisks,
+    generateTimeline: getTimeline,
   };
 }

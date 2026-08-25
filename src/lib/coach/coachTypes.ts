@@ -51,12 +51,37 @@ export type CoachCategory =
  */
 export type TrendDirection = 'improving' | 'declining' | 'stable';
 
+/**
+ * Velocity / Acceleration classification.
+ */
+export type VelocityDirection = 'accelerating' | 'stable' | 'decelerating';
+
 // ═══════════════════════════════════════════════════════════════
-// Core Output Types
+// Explainability & Ranking Types
 // ═══════════════════════════════════════════════════════════════
 
 /**
+ * Detailed explainability payload attached to recommendations.
+ */
+export interface CoachExplainability {
+  /** Causal explanation of why this recommendation was generated */
+  readonly why: string;
+  /** Explicit trigger metrics evaluated by the rule */
+  readonly triggerMetrics: ReadonlyArray<{
+    readonly label: string;
+    readonly current: number | string;
+    readonly threshold: number | string;
+    readonly unit: string;
+  }>;
+  /** Concrete estimated improvement if user implements the advice */
+  readonly expectedImprovement: string;
+  /** Associated metric names impacted by this action */
+  readonly relatedMetrics: ReadonlyArray<string>;
+}
+
+/**
  * A single actionable recommendation from the coach.
+ * Enhanced in Phase 3.9.5 with ranking dimensions and explainability.
  *
  * Future consumers: Dashboard (morning brief card), Analytics (recommendations panel),
  * Reports (enhanced AI recommendations section), Notification Center (push alerts).
@@ -85,6 +110,20 @@ export interface CoachRecommendation {
     readonly threshold: number;
     readonly unit: string;
   };
+  /** Estimated impact rating on user productivity/finances */
+  readonly impact?: 'high' | 'medium' | 'low';
+  /** Urgency level of required action */
+  readonly urgency?: 'high' | 'medium' | 'low';
+  /** Confidence score or level in this recommendation */
+  readonly confidence?: 'high' | 'medium' | 'low';
+  /** Human-readable description of estimated benefit */
+  readonly estimatedBenefit?: string;
+  /** Estimated effort required from the user */
+  readonly estimatedEffort?: 'low' | 'medium' | 'high';
+  /** Computed ranking score (0-100) for deterministic ordering */
+  readonly rankingScore?: number;
+  /** Comprehensive explainability metadata */
+  readonly explainability?: CoachExplainability;
 }
 
 /**
@@ -115,6 +154,10 @@ export interface CoachRiskItem {
     readonly limit: number;
     readonly unit: string;
   };
+  /** Suggested immediate mitigation action */
+  readonly suggestedAction?: string;
+  /** Computed probability of occurrence */
+  readonly probability?: 'high' | 'medium' | 'low';
 }
 
 /**
@@ -137,16 +180,179 @@ export interface CoachTrendItem {
   readonly icon: string;
   /** Hex color */
   readonly color: string;
+  /** Baseline value before trend window */
+  readonly baselineValue?: number;
+  /** Current window value */
+  readonly currentValue?: number;
+  /** Confidence rating in trend detection */
+  readonly confidence?: 'high' | 'medium' | 'low';
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Prediction Types
+// Habit Detection Types (Phase 3.9.5 Task 1)
+// ═══════════════════════════════════════════════════════════════
+
+export interface WeekdayPerformance {
+  readonly dayIndex: number; // 0 = Sunday, 1 = Monday, etc.
+  readonly dayName: string;
+  readonly avgFocusMinutes: number;
+  readonly avgTasksCompleted: number;
+  readonly avgSpending: number;
+  readonly sessionCount: number;
+}
+
+export interface FocusHourSlot {
+  readonly hour: number; // 0-23
+  readonly timeWindow: string; // e.g. "09:00 - 10:00"
+  readonly sessionCount: number;
+  readonly totalMinutes: number;
+  readonly avgMinutes: number;
+}
+
+export interface WeekendBehaviour {
+  readonly weekendAvgFocusMin: number;
+  readonly weekdayAvgFocusMin: number;
+  readonly weekendAvgSpend: number;
+  readonly weekdayAvgSpend: number;
+  readonly focusRatioWeekendToWeekday: number;
+  readonly spendRatioWeekendToWeekday: number;
+  readonly pattern: 'productive_weekend' | 'relaxed_weekend' | 'high_spending_weekend' | 'balanced';
+  readonly insight: string;
+}
+
+export interface SpendingHabitAnalysis {
+  readonly topSpendingCategory: string;
+  readonly frequentSmallSpendsCount: number; // Transactions < ₹200
+  readonly largeSpendsCount: number; // Transactions > ₹1000
+  readonly peakSpendingDay: string;
+  readonly impulsiveSpendingDayCount: number; // Spend > 1.5x avg on days with low focus
+  readonly dailySpendVariance: number;
+  readonly summary: string;
+}
+
+export interface ProcrastinationPatternAnalysis {
+  readonly lastMinuteTasksCompleted: number; // Completed within 2 hours of deadline
+  readonly overdueBacklogAgingDays: number; // Average age in days of pending overdue tasks
+  readonly delayFrequencyScore: number; // 0-100 (100 = severe delay habit)
+  readonly tendency: 'proactive' | 'moderate' | 'chronic_delay';
+  readonly patternSummary: string;
+}
+
+export interface CoachHabitAnalysis {
+  readonly bestWeekday: WeekdayPerformance;
+  readonly weakestWeekday: WeekdayPerformance;
+  readonly allWeekdays: ReadonlyArray<WeekdayPerformance>;
+  readonly bestFocusHour: FocusHourSlot;
+  readonly weakestFocusHour: FocusHourSlot;
+  readonly hourlyDistribution: ReadonlyArray<FocusHourSlot>;
+  readonly weekendBehaviour: WeekendBehaviour;
+  readonly spendingHabits: SpendingHabitAnalysis;
+  readonly procrastinationPatterns: ProcrastinationPatternAnalysis;
+  readonly consistencyScore: number; // 0-100
+  readonly consistencyTrend: TrendDirection;
+  readonly primaryHabitStrength: string;
+  readonly primaryHabitLeak: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Behaviour Trend Analysis Types (Phase 3.9.5 Task 2)
+// ═══════════════════════════════════════════════════════════════
+
+export interface CoachBehaviourTrends {
+  readonly productivity: CoachTrendItem;
+  readonly focus: CoachTrendItem;
+  readonly finance: CoachTrendItem;
+  readonly taskCompletion: CoachTrendItem;
+  readonly consistency: CoachTrendItem;
+  readonly overallDirection: TrendDirection;
+  readonly trendMomentumScore: number; // -100 to +100
+  readonly keyInsight: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Early Risk Detection Types (Phase 3.9.5 Task 3)
+// ═══════════════════════════════════════════════════════════════
+
+export interface StreakLossRisk {
+  readonly riskScore: number; // 0-100
+  readonly isImminent: boolean;
+  readonly hoursRemainingToday: number;
+  readonly probability: 'critical' | 'high' | 'medium' | 'low' | 'none';
+  readonly advice: string;
+}
+
+export interface BudgetExhaustionRisk {
+  readonly riskScore: number; // 0-100
+  readonly daysUntilExhaustion: number | null;
+  readonly projectedDeficit: number;
+  readonly velocity: VelocityDirection;
+  readonly probability: 'critical' | 'high' | 'medium' | 'low' | 'none';
+  readonly advice: string;
+}
+
+export interface BurnoutRisk {
+  readonly riskScore: number; // 0-100
+  readonly consecutiveHighFocusDays: number;
+  readonly lateNightSessionCount: number;
+  readonly level: 'low' | 'moderate' | 'high' | 'critical';
+  readonly advice: string;
+}
+
+export interface OverdueTaskRisk {
+  readonly riskScore: number; // 0-100
+  readonly overdueCount: number;
+  readonly imminentCount: number; // Due in < 24 hours
+  readonly highPriorityAtRiskCount: number;
+  readonly advice: string;
+}
+
+export interface SavingsGoalRisk {
+  readonly riskScore: number; // 0-100
+  readonly atRiskGoalsCount: number;
+  readonly totalShortfall: number;
+  readonly advice: string;
+}
+
+export interface CoachEarlyRiskReport {
+  readonly overallRiskLevel: 'critical' | 'high' | 'medium' | 'low' | 'minimal';
+  readonly streakLossRisk: StreakLossRisk;
+  readonly budgetExhaustionRisk: BudgetExhaustionRisk;
+  readonly burnoutRisk: BurnoutRisk;
+  readonly overdueTaskRisk: OverdueTaskRisk;
+  readonly savingsGoalRisk: SavingsGoalRisk;
+  readonly topCriticalRisks: ReadonlyArray<CoachRiskItem>;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Coach Timeline Event (Phase 3.9.5 Task 7)
+// ═══════════════════════════════════════════════════════════════
+
+export interface CoachTimelineEvent {
+  readonly id: string;
+  readonly timestamp: string; // ISO 8601 string or yyyy-MM-dd
+  readonly type:
+    | 'trend_shift'
+    | 'milestone'
+    | 'risk_detected'
+    | 'habit_formed'
+    | 'achievement'
+    | 'goal_projection';
+  readonly category: CoachCategory;
+  readonly title: string;
+  readonly description: string;
+  readonly importance: CoachPriority;
+  readonly icon: string;
+  readonly metadata?: Record<string, string | number | boolean | null>;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Prediction Types (Phase 3.9.5 Task 4 Enhanced)
 // ═══════════════════════════════════════════════════════════════
 
 /**
  * Projected values for the remainder of the current period.
- * All predictions are computed from DailyGoalHistory using weighted moving average
- * and linear extrapolation, then clamped to reasonable bounds.
+ * All predictions are computed using weighted moving average, exponential smoothing,
+ * streak momentum, spending velocity, and activity decay.
  *
  * Future consumers: Analytics (predictions panel), Dashboard (forecast widgets),
  * Reports (prediction accuracy tracking).
@@ -170,6 +376,12 @@ export interface CoachPredictions {
   readonly confidence: 'high' | 'medium' | 'low';
   /** Number of days of historical data used */
   readonly dataPointsUsed: number;
+  /** Estimated days until monthly budget exhaustion */
+  readonly daysUntilBudgetDepleted?: number | null;
+  /** Spending velocity factor (1.0 = normal, >1.0 = accelerating, <1.0 = decelerating) */
+  readonly spendingVelocityFactor?: number;
+  /** Focus momentum factor (1.0 = baseline, >1.0 = upward momentum) */
+  readonly focusMomentumFactor?: number;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -208,6 +420,8 @@ export interface DailyBrief {
   };
   /** One motivational line based on current performance */
   readonly motivation: string;
+  /** Today's prime focus window prediction (e.g. "09:00 - 11:00") */
+  readonly primeFocusWindow?: string;
 }
 
 /**
@@ -380,6 +594,10 @@ export interface CoachOutput {
   readonly predictions: CoachPredictions;
   readonly risks: ReadonlyArray<CoachRiskItem>;
   readonly achievementsSummary: AchievementsSummary;
+  readonly habits: CoachHabitAnalysis;
+  readonly behaviourTrends: CoachBehaviourTrends;
+  readonly earlyRisks: CoachEarlyRiskReport;
+  readonly timeline: ReadonlyArray<CoachTimelineEvent>;
 }
 
 // ═══════════════════════════════════════════════════════════════
