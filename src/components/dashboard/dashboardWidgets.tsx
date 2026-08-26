@@ -13,6 +13,7 @@ import DashboardWidget from './DashboardWidget';
 import KpiCard from './KpiCard';
 import InsightCard from '../analytics/InsightCard';
 import TrendChart from '../analytics/TrendChart';
+import AiCoachWidget from './AiCoachWidget';
 
 // Import Types
 import { Task, RecurringExpense } from '../../store/useStore';
@@ -823,6 +824,13 @@ const QuickContinueWidget: React.FC<WidgetProps> = ({ context }) => {
   );
 };
 
+// -------------------------------------------------------
+// AiCoachDashboardWidget — Phase 3.10A AI Coach Dashboard
+// -------------------------------------------------------
+const AiCoachDashboardWidget: React.FC<WidgetProps> = () => {
+  return <AiCoachWidget />;
+};
+
 // ----------------------------------------------------
 // REGISTRY
 // ----------------------------------------------------
@@ -831,14 +839,15 @@ export const WIDGET_REGISTRY: WidgetConfig[] = [
   { id: 'hero', title: 'Daily Brief', description: 'Smart greeting with daily context', icon: Sparkles, component: HeroWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 0, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
   { id: 'kpiMetrics', title: 'Daily Progress', description: 'Composite daily progress ring', icon: Target, component: DailyProgressRingWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 1, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
   { id: 'snapshot', title: "Today's Snapshot", description: 'Focus, Tasks, Expenses, Budget', icon: Timer, component: SnapshotWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 2, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 2 } },
-  { id: 'quickActions', title: 'Quick Actions', description: 'Command center shortcuts', icon: Zap, component: QuickActionsWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 3, category: 'Overview', defaultVisible: true, minimumSize: { w: 6, h: 1 }, maximumSize: { w: 12, h: 2 } },
-  { id: 'todaysTasks', title: "Today's Tasks", description: 'Task list for today', icon: CheckSquare, component: TodaysTasksWidget, defaultSize: { w: 8, h: 2, colSpan: 8 }, defaultOrder: 4, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'upcomingBills', title: 'Upcoming Bills', description: 'Recurring payment schedule', icon: Calendar, component: UpcomingBillsWidget, defaultSize: { w: 4, h: 2, colSpan: 4 }, defaultOrder: 5, category: 'Finance', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
-  { id: 'goalTracker', title: 'Goal Tracker', description: 'Multi-goal progress overview', icon: Target, component: GoalTrackerWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 6, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
-  { id: 'quickContinue', title: 'Quick Continue', description: 'Resume where you left off', icon: RotateCcw, component: QuickContinueWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 7, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
-  { id: 'focusTrend', title: 'Focus Trend', description: '7-day focus chart', icon: BarChart3, component: FocusTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 8, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'expenseTrend', title: 'Expense Trend', description: '7-day expense chart', icon: TrendingUp, component: ExpenseTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 9, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'aiInsights', title: 'Smart Recommendations', description: 'Prioritized action items', icon: Lightbulb, component: AiInsightsWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 10, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'recentActivity', title: 'Recent Activity', description: 'Event timeline', icon: Activity, component: RecentActivityWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 11, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
-  { id: 'savings', title: 'Savings Progress', description: 'Savings goal tracker', icon: PiggyBank, component: SavingsWidget, defaultSize: { w: 12, h: 2, colSpan: 12 }, defaultOrder: 12, category: 'Finance', defaultVisible: true, minimumSize: { w: 6, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'aiCoach', title: 'Intelligent Insights', description: 'Real-time insights that adapt to your activity', icon: Brain, component: AiCoachDashboardWidget, defaultSize: { w: 12, h: 2, colSpan: 12 }, defaultOrder: 3, category: 'Overview', defaultVisible: true, minimumSize: { w: 12, h: 1 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'quickActions', title: 'Quick Actions', description: 'Command center shortcuts', icon: Zap, component: QuickActionsWidget, defaultSize: { w: 12, h: 1, colSpan: 12 }, defaultOrder: 4, category: 'Overview', defaultVisible: true, minimumSize: { w: 6, h: 1 }, maximumSize: { w: 12, h: 2 } },
+  { id: 'todaysTasks', title: "Today's Tasks", description: 'Task list for today', icon: CheckSquare, component: TodaysTasksWidget, defaultSize: { w: 8, h: 2, colSpan: 8 }, defaultOrder: 5, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'upcomingBills', title: 'Upcoming Bills', description: 'Recurring payment schedule', icon: Calendar, component: UpcomingBillsWidget, defaultSize: { w: 4, h: 2, colSpan: 4 }, defaultOrder: 6, category: 'Finance', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'goalTracker', title: 'Goal Tracker', description: 'Multi-goal progress overview', icon: Target, component: GoalTrackerWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 7, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'quickContinue', title: 'Quick Continue', description: 'Resume where you left off', icon: RotateCcw, component: QuickContinueWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 8, category: 'Productivity', defaultVisible: true, minimumSize: { w: 4, h: 1 }, maximumSize: { w: 6, h: 4 } },
+  { id: 'focusTrend', title: 'Focus Trend', description: '7-day focus chart', icon: BarChart3, component: FocusTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 9, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'expenseTrend', title: 'Expense Trend', description: '7-day expense chart', icon: TrendingUp, component: ExpenseTrendWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 10, category: 'Analytics', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'aiInsights', title: 'Smart Recommendations', description: 'Prioritized action items', icon: Lightbulb, component: AiInsightsWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 11, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'recentActivity', title: 'Recent Activity', description: 'Event timeline', icon: Activity, component: RecentActivityWidget, defaultSize: { w: 6, h: 2, colSpan: 6 }, defaultOrder: 12, category: 'Insights', defaultVisible: true, minimumSize: { w: 4, h: 2 }, maximumSize: { w: 12, h: 4 } },
+  { id: 'savings', title: 'Savings Progress', description: 'Savings goal tracker', icon: PiggyBank, component: SavingsWidget, defaultSize: { w: 12, h: 2, colSpan: 12 }, defaultOrder: 13, category: 'Finance', defaultVisible: true, minimumSize: { w: 6, h: 2 }, maximumSize: { w: 12, h: 4 } },
 ];

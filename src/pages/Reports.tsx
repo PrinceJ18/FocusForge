@@ -21,6 +21,16 @@ import { useEffect } from 'react';
 import WeeklyReport from './WeeklyReport';
 import { CustomTooltip } from '../components/analytics/CustomTooltip';
 import { exportCSV, printReport, shareReport, buildExportData } from '../lib/exportUtils';
+import { useCoach } from '../hooks/useCoach';
+import {
+  ReportsExecutiveIntelligence,
+  ReportsBehaviourAnalysis,
+  ReportsPerformanceOutlook,
+  ReportsStrategicRecommendations,
+  ReportsRiskAssessment,
+  ReportsPerformanceTimeline,
+  ReportsExecutiveClosingSummary,
+} from '../components/reports/ReportsCoachInsights';
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b', transport: '#06b6d4', shopping: '#ec4899',
@@ -31,6 +41,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function Reports() {
   const { expenses, tasks, focusSessions, savingsGoals, profile, setPage } = useStore();
   const { history: goalsHistory } = useDailyGoalsStore();
+  const coach = useCoach();
 
   const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -266,6 +277,9 @@ export default function Reports() {
             ))}
           </ul>
         </div>
+
+        {/* ═══ SECTION 1: Executive Intelligence (Phase 3.10D) ═══ */}
+        <ReportsExecutiveIntelligence coach={coach} />
 
         {/* ═══ SECTION 6 & 7: Wins + Improvements ═══ */}
         {(reportData.wins.length > 0 || reportData.improvements.length > 0) && (
@@ -644,6 +658,24 @@ export default function Reports() {
             </div>
           </div>
         </div>
+
+        {/* ═══ SECTION 2: Behaviour Analysis (Phase 3.10D) ═══ */}
+        <ReportsBehaviourAnalysis coach={coach} />
+
+        {/* ═══ SECTION 3: Performance Outlook (Phase 3.10D) ═══ */}
+        <ReportsPerformanceOutlook coach={coach} />
+
+        {/* ═══ SECTION 4: Strategic Recommendations (Phase 3.10D) ═══ */}
+        <ReportsStrategicRecommendations coach={coach} />
+
+        {/* ═══ SECTION 5: Risk Assessment (Phase 3.10D) ═══ */}
+        <ReportsRiskAssessment coach={coach} />
+
+        {/* ═══ SECTION 6: Performance Timeline (Phase 3.10D) ═══ */}
+        <ReportsPerformanceTimeline coach={coach} />
+
+        {/* ═══ SECTION 7: Executive Closing Summary (Phase 3.10D) ═══ */}
+        <ReportsExecutiveClosingSummary coach={coach} />
       </div>
     );
   }

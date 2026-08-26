@@ -49,10 +49,20 @@ import {
   CATEGORY_COLORS,
 } from '../lib/statistics/analyticsEngine';
 import { generateInsights } from '../lib/insightUtils';
+import { useCoach } from '../hooks/useCoach';
+import {
+  AnalyticsIntelligentSummary,
+  ChartInsightPanel,
+  AnalyticsPredictionsSummary,
+  AnalyticsRiskOverview,
+  AnalyticsBehaviourSummary,
+  AnalyticsTimeline,
+} from '../components/analytics/AnalyticsCoachInsights';
 
 export default function Analytics() {
   const { expenses, focusSessions, tasks, profile, savingsGoals, events, setPage } = useStore();
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
+  const coach = useCoach();
 
   // Compute rich analytics data via memoized engine
   const data = useMemo(() => {
@@ -326,6 +336,9 @@ export default function Analytics() {
         </div>
       </div>
 
+      {/* ═══ SECTION 1: INTELLIGENT INSIGHTS SUMMARY (Phase 3.10C) ═══ */}
+      <AnalyticsIntelligentSummary coach={coach} />
+
       {/* ═══ 3. SMART INSIGHTS & RECOMMENDATIONS ═══ */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -461,6 +474,18 @@ export default function Analytics() {
               color="#f59e0b"
             />
           </div>
+
+          {/* AI Focus Chart Insight */}
+          <ChartInsightPanel
+            insightText={
+              coach.behaviourTrends?.focus.summary ||
+              (coach.habits
+                ? `Your peak focus window is ${coach.habits.bestFocusHour.label} with ${coach.habits.bestWeekday.dayName} being your strongest day.`
+                : 'Focus velocity is pacing steadily across active sessions.')
+            }
+            category="focus"
+            className="mt-2"
+          />
         </div>
 
         {/* Weekly Focus Distribution (1 col) */}
@@ -513,9 +538,21 @@ export default function Analytics() {
             </div>
           </div>
 
-          <div className="p-3 bg-white/2 rounded-xl border border-white/5 text-xs text-slate-300">
-            <span className="font-semibold text-white">Focus Target:</span> 10+ hours per week
-            delivers maximum productivity compound momentum.
+          <div className="space-y-2">
+            <div className="p-3 bg-white/2 rounded-xl border border-white/5 text-xs text-slate-300">
+              <span className="font-semibold text-white">Focus Target:</span> 10+ hours per week
+              delivers maximum productivity compound momentum.
+            </div>
+
+            {/* AI Consistency Chart Insight */}
+            <ChartInsightPanel
+              insightText={
+                coach.habits
+                  ? `Peak consistency on ${coach.habits.bestWeekday.dayName}s (${coach.habits.bestWeekday.avgMinutes}m avg).`
+                  : 'Weekly consistency pace remains stable.'
+              }
+              category="consistency"
+            />
           </div>
         </div>
       </div>
@@ -600,6 +637,17 @@ export default function Analytics() {
               </div>
             </div>
           </div>
+
+          {/* AI Task Chart Insight */}
+          <ChartInsightPanel
+            insightText={
+              coach.habits?.procrastination.summary ||
+              coach.behaviourTrends?.tasks.summary ||
+              'Task completion velocity remains steady across priorities.'
+            }
+            category="tasks"
+            className="mt-2"
+          />
         </div>
 
         {/* Predictive Forecast & Runway */}
@@ -661,6 +709,9 @@ export default function Analytics() {
           </div>
         </div>
       </div>
+
+      {/* ═══ SECTION 3: PREDICTION SUMMARY (Phase 3.10C) ═══ */}
+      <AnalyticsPredictionsSummary coach={coach} />
 
       {/* ═══ 6. FINANCE & EXPENSE INTELLIGENCE ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -747,6 +798,17 @@ export default function Analytics() {
               </span>
             </div>
           </div>
+
+          {/* AI Spending Chart Insight */}
+          <ChartInsightPanel
+            insightText={
+              coach.habits?.spending.summary ||
+              coach.behaviourTrends?.spending.summary ||
+              'Spending trajectory monitored against budget limit.'
+            }
+            category="finance"
+            className="mt-2"
+          />
         </div>
 
         {/* Category Breakdown Donut */}
@@ -810,7 +872,25 @@ export default function Analytics() {
               No categorized expenses logged in this period.
             </div>
           )}
+
+          {/* AI Category Chart Insight */}
+          <ChartInsightPanel
+            insightText={
+              coach.behaviourTrends?.spending.summary ||
+              (data.topCategory.name
+                ? `Primary spending velocity is concentrated in ${data.topCategory.name} (${data.topCategory.percentage}%).`
+                : '')
+            }
+            category="finance"
+            className="mt-2"
+          />
         </div>
+      </div>
+
+      {/* ═══ SECTION 4 & 5: EARLY RISK OVERVIEW & BEHAVIOUR DYNAMICS (Phase 3.10C) ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AnalyticsRiskOverview coach={coach} />
+        <AnalyticsBehaviourSummary coach={coach} />
       </div>
 
       {/* ═══ 7. FOCUS VS SPENDING CORRELATION ═══ */}
@@ -878,6 +958,9 @@ export default function Analytics() {
 
       {/* ═══ 8. FOCUS HEAT MAP (FLAGSHIP CALENDAR FEATURE) ═══ */}
       <FocusHeatMap period={period} />
+
+      {/* ═══ SECTION 6: INTELLIGENCE TIMELINE (Phase 3.10C) ═══ */}
+      <AnalyticsTimeline coach={coach} />
     </div>
   );
 }

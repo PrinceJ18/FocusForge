@@ -25,6 +25,8 @@ interface DashboardWidgetProps {
   icon: LucideIcon;
   /** Widget title */
   title: string;
+  /** Optional subtitle below title */
+  subtitle?: string;
   /** Widget body content */
   children: ReactNode;
   /** Optional count badge next to title */
@@ -64,6 +66,7 @@ function getSizeClass(size?: WidgetSize): string {
 export default function DashboardWidget({
   icon: Icon,
   title,
+  subtitle,
   children,
   badge,
   headerAction,
@@ -92,6 +95,7 @@ export default function DashboardWidget({
     >
       <WidgetHeader
         title={title}
+        subtitle={subtitle}
         icon={Icon}
         badge={badge}
         action={headerAction}
