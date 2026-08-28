@@ -47,7 +47,7 @@ export default function Splits() {
       : 0;
 
   return (
-    <div className="page-enter space-y-6">
+    <div className="page-enter space-y-6 text-left">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="stat-card">

@@ -273,7 +273,7 @@ export default function Finance() {
   }, [calendarDate, recurringExpenses]);
 
   return (
-    <div className="page-enter space-y-6 px-1 sm:px-0">
+    <div className="page-enter space-y-6 text-left">
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         <FinStatCard

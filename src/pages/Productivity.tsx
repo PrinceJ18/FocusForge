@@ -294,7 +294,7 @@ export default function Productivity() {
   const nextPendingTask = todayPending.length > 0 ? todayPending[0].task : null;
 
   return (
-    <div className="page-enter space-y-6">
+    <div className="page-enter space-y-6 text-left">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Timer */}

@@ -175,7 +175,7 @@ export default function Reports() {
 
   if (reportType === 'weekly') {
     return (
-      <div className="page-enter space-y-5">
+      <div className="page-enter space-y-6 text-left">
         {ReportToggle}
         {SectionHeader}
         <WeeklyReport />
@@ -185,7 +185,7 @@ export default function Reports() {
 
   if (reportData) {
     return (
-      <div className="page-enter space-y-5 pb-12">
+      <div className="page-enter space-y-6 text-left pb-12">
         {ReportToggle}
         {SectionHeader}
         {/* Navigation + Export Bar */}
@@ -681,7 +681,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="page-enter space-y-5">
+    <div className="page-enter space-y-6 text-left">
       {ReportToggle}
       {SectionHeader}
 

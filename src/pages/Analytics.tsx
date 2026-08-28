@@ -561,7 +561,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Priority Breakdown */}
         <div className="glass-card p-5 space-y-4">
-          <div className="section-header mb-2">
+          <div className="section-header mb-0">
             <div
               className="section-header-icon"
               style={{ background: 'rgba(16,185,129,0.15)' }}
@@ -652,7 +652,7 @@ export default function Analytics() {
 
         {/* Predictive Forecast & Runway */}
         <div className="glass-card p-5 space-y-4">
-          <div className="section-header mb-2">
+          <div className="section-header mb-0">
             <div
               className="section-header-icon"
               style={{ background: 'rgba(236,72,153,0.15)' }}

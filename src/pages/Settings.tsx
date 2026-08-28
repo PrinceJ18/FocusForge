@@ -163,7 +163,7 @@ export default function Settings() {
   ] as const;
 
   return (
-    <div className="page-enter space-y-6">
+    <div className="page-enter space-y-6 text-left">
       <div className="flex flex-col lg:flex-row gap-6">
 
         {/* TABS SIDEBAR */}

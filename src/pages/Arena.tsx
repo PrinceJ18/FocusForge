@@ -223,7 +223,7 @@ export default function ArenaPage() {
 
   if (loadingArena || loadingLeaderboard) {
     return (
-      <div className="page-enter max-w-6xl mx-auto space-y-6 pb-24">
+      <div className="page-enter max-w-6xl mx-auto space-y-6 text-left pb-16">
         <LeaderboardSkeleton />
       </div>
     );
@@ -231,7 +231,7 @@ export default function ArenaPage() {
 
   if (!activeArena) {
     return (
-      <div className="page-enter max-w-2xl mx-auto space-y-8 pb-24">
+      <div className="page-enter max-w-2xl mx-auto space-y-6 text-left pb-16">
         {/* Hero Onboarding Card */}
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 p-8 md:p-10 shadow-2xl">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
@@ -317,7 +317,7 @@ export default function ArenaPage() {
   };
 
   return (
-    <div className="page-enter space-y-8 max-w-5xl mx-auto pb-24">
+    <div className="page-enter space-y-6 max-w-5xl mx-auto text-left pb-16">
       {/* Header & Tabs */}
       <div className="text-center space-y-6">
         <h1 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
