@@ -203,7 +203,7 @@ export interface Profile {
   };
 }
 
-export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'splits' | 'reports' | 'achievements' | 'settings' | 'friends' | 'arena' | 'arena-activity' | 'arena-hall-of-fame';
+export type Page = 'dashboard' | 'finance' | 'productivity' | 'analytics' | 'splits' | 'reports' | 'achievements' | 'settings' | 'friends' | 'arena' | 'arena-activity' | 'arena-hall-of-fame' | 'notifications' | 'command-center';
 
 export type NotificationType = 'xp' | 'level' | 'badge' | 'challenge' | 'achievement' | 'goal' | 'success' | 'error' | 'info';
 

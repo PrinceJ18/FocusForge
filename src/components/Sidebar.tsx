@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X, BookOpen, Award, Settings } from 'lucide-react';
+import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X, BookOpen, Award, Settings, Bell, Brain } from 'lucide-react';
 import { useStore, type Page } from '../store/useStore';
 import { calculateCurrentLevel, calculateXPProgress } from '../lib/statistics';
 import useRouteChangeCleanup from '../hooks/useRouteChangeCleanup';
@@ -18,6 +18,8 @@ const navItems: Array<{ id: string; label: string; icon: React.ReactNode; badge?
   { id: 'friends', label: 'Friends', icon: <Users size={18} /> },
   { id: 'reports', label: 'Performance Reports', icon: <BookOpen size={18} /> },
   { id: 'achievements', label: 'Achievement Center', icon: <Award size={18} /> },
+  { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
+  { id: 'command-center', label: 'AI Command Center', icon: <Brain size={18} /> },
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {

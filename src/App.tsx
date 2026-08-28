@@ -25,6 +25,8 @@ const Achievements = React.lazy(() => import('./pages/Achievements'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const Friends = React.lazy(() => import('./pages/Friends'));
 const Arena = React.lazy(() => import('./pages/Arena'));
+const Notifications = React.lazy(() => import('./pages/Notifications'));
+const CommandCenter = React.lazy(() => import('./pages/CommandCenter'));
 
 const TAB_TITLES: Record<string, string> = {
   dashboard: 'FocusForge — Dashboard',
@@ -37,6 +39,8 @@ const TAB_TITLES: Record<string, string> = {
   reports: 'FocusForge — Performance Reports',
   achievements: 'FocusForge — Achievement Center',
   settings: 'FocusForge — Settings & Preferences',
+  notifications: 'FocusForge — Notification Center',
+  'command-center': 'FocusForge — AI Command Center',
 };
 
 export default function App() {
@@ -210,6 +214,8 @@ export default function App() {
             {currentPage === 'settings' && <Settings />}
             {currentPage === 'friends' && <Friends />}
             {currentPage === 'arena' && <Arena />}
+            {currentPage === 'notifications' && <Notifications />}
+            {currentPage === 'command-center' && <CommandCenter />}
           </Suspense>
         </PageLayout>
       </main>

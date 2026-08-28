@@ -14,6 +14,8 @@ export const PAGE_TITLES: Record<string, string> = {
   reports: 'Performance Reports',
   achievements: 'Achievement Center',
   settings: 'Personalization & Settings',
+  notifications: 'Notification Center',
+  'command-center': 'AI Command Center',
 };
 
 export interface PageLayoutProps {
