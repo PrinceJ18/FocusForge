@@ -31,6 +31,12 @@ export default function AchievementNotification() {
     if (newItems.length > 0) {
       newItems.forEach(n => processedIds.current.add(n.id));
       setQueue(prev => [...prev, ...newItems]);
+
+      // Prevent unbounded memory growth in long sessions
+      if (processedIds.current.size > 500) {
+        const entries = Array.from(processedIds.current);
+        processedIds.current = new Set(entries.slice(-200));
+      }
     }
   }, [storeNotifications]);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { useStore, loadUserData, checkAndUpdateGuestStreak, applyPreferencesToDOM } from './store/useStore';
 import { useTimerEngine } from './hooks/useTimerEngine';
@@ -44,9 +44,16 @@ const TAB_TITLES: Record<string, string> = {
 };
 
 export default function App() {
-  const { currentPage, setUser, user, dataLoaded, setDataLoaded, preferences } = useStore();
+  // Individual selectors prevent cascade rerenders when unrelated store fields change
+  const currentPage = useStore(s => s.currentPage);
+  const setUser = useStore(s => s.setUser);
+  const user = useStore(s => s.user);
+  const preferences = useStore(s => s.preferences);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Stable callback prevents Sidebar from rerendering when App state changes
+  const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
 
   // Apply user styling preferences to root DOM on value change
   useEffect(() => {
@@ -197,7 +204,7 @@ export default function App() {
       />
 
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
 
       {/* Main content */}
       <main id="main-content" className="main-content relative z-10">

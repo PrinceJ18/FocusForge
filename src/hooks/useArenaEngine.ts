@@ -261,5 +261,7 @@ export function useArenaEngine() {
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
-  }, [profile, tasks, focusSessions, expenses, preferences, events, activeArenaId, user?.id]);
+  }, [profile.streak, profile.xp, tasks.length, focusSessions.length,
+      expenses.length, events.length, preferences.default_daily_focus_goal,
+      activeArenaId, user?.id]);
 }

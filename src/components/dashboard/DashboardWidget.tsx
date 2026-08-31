@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import WidgetHeader from '../ui/WidgetHeader';
@@ -63,7 +64,7 @@ function getSizeClass(size?: WidgetSize): string {
   return `dashboard-widget--${size}`;
 }
 
-export default function DashboardWidget({
+const DashboardWidget = React.memo(function DashboardWidget({
   icon: Icon,
   title,
   subtitle,
@@ -119,3 +120,6 @@ export default function DashboardWidget({
     </div>
   );
 }
+);
+
+export default DashboardWidget;

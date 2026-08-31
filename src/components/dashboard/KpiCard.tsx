@@ -107,7 +107,7 @@ function ProgressRing({
   );
 }
 
-export default function KpiCard({
+const KpiCard = React.memo(function KpiCard({
   icon: Icon,
   title,
   value,
@@ -214,3 +214,6 @@ export default function KpiCard({
     </div>
   );
 }
+);
+
+export default KpiCard;

@@ -71,5 +71,7 @@ export function useDailyProductivityScore() {
       budgetHealth,
       challengeCompleted
     });
-  }, [tasks, focusSessions, profile, expenses, preferences, events]);
+  }, [tasks, tasks.length, focusSessions.length, profile.xp, profile.streak,
+      profile.monthly_budget, expenses, expenses.length,
+      preferences.default_daily_focus_goal, events.length]);
 }

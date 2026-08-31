@@ -1,3 +1,4 @@
+import React from 'react';
 import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Award, Settings } from 'lucide-react';
 import { useStore, type Page } from '../store/useStore';
 import { getLevelInfo } from "../lib/levels";
@@ -10,7 +11,7 @@ const items: { id: Page; icon: React.ReactNode; label: string }[] = [
   { id: 'settings', icon: <Settings size={20} />, label: 'Settings' },
 ];
 
-export default function MobileNav() {
+const MobileNav = React.memo(function MobileNav() {
   const { currentPage, setPage } = useStore();
 
   return (
@@ -32,4 +33,6 @@ export default function MobileNav() {
       ))}
     </nav>
   );
-}
+});
+
+export default MobileNav;

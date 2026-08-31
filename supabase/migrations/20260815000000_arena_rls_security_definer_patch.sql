@@ -49,10 +49,7 @@ DROP POLICY IF EXISTS "arenas_select_policy" ON public.arenas;
 
 CREATE POLICY "arenas_select_policy" ON public.arenas
   FOR SELECT TO authenticated
-  USING (
-    owner_id = auth.uid()
-    OR public.is_arena_member(id, auth.uid())
-  );
+  USING (true);
 
 
 -- 5. ARENA SCORES SELECT POLICY (Visible to members and arena owner)

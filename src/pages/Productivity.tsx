@@ -602,7 +602,7 @@ export default function Productivity() {
         {/* Tasks Management Section */}
         <Card padding="md" className="flex flex-col gap-4" style={{ maxHeight: 'calc(100vh - 8rem)', overflow: 'hidden' }}>
           {/* ═══ ROW 1 — Title + Search + Add Task ═══ */}
-          <div className="flex items-center gap-3 pb-3 border-b border-white/5 flex-shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 pb-3 border-b border-white/5 flex-shrink-0">
             {/* Title */}
             <div className="text-left flex-shrink-0">
               <h3 className="font-bold text-base text-white leading-tight" style={{ fontFamily: 'Space Grotesk' }}>

@@ -180,7 +180,7 @@ export default function Friends() {
         </div>
 
         {/* User's Own Friend Code Widget */}
-        <div className="p-3.5 bg-slate-900/80 rounded-xl border border-purple-500/30 flex items-center justify-between gap-4 shrink-0 shadow-lg shadow-purple-950/20">
+        <div className="w-full md:w-auto p-3.5 bg-slate-900/80 rounded-xl border border-purple-500/30 flex items-center justify-between gap-4 shrink-0 shadow-lg shadow-purple-950/20">
           <div>
             <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Your Friend Code</div>
             <div className="text-base font-black text-purple-300 tracking-widest font-mono mt-0.5">{myFriendCode || '......'}</div>

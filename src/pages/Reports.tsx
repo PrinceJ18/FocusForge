@@ -198,7 +198,7 @@ export default function Reports() {
             <ArrowLeft size={16} /> Back to Report History
           </button>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handleExportCSV} className="py-2 text-xs font-semibold" icon={Download}>
               Export CSV
             </Button>
@@ -246,7 +246,7 @@ export default function Reports() {
             </div>
 
             {/* KPI Mini Cards */}
-            <div className="grid grid-cols-3 gap-3 flex-shrink-0">
+            <div className="grid grid-cols-3 gap-3 flex-shrink-0 w-full sm:w-auto">
               <div className="text-center p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Score</div>
                 <div className="text-lg font-black mt-0.5" style={{ color: reportData.gradeColor, fontFamily: 'Space Grotesk' }}>{reportData.cover.productivityScore}%</div>

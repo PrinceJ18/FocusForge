@@ -167,7 +167,7 @@ export default function Analytics() {
           ))}
         </div>
 
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
           <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
             <span className="text-slate-400">Total Spend:</span>
             <span className="font-bold text-red-400 font-mono">
