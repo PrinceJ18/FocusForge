@@ -4,13 +4,16 @@ import { useStore, loadUserData, checkAndUpdateGuestStreak, applyPreferencesToDO
 import { useTimerEngine } from './hooks/useTimerEngine';
 import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
 import { useArenaEngine } from './hooks/useArenaEngine';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import PageLayout, { PAGE_TITLES } from './components/layout/PageLayout';
 import MobileNav from './components/MobileNav';
 import AchievementNotification from './components/AchievementNotification';
+import PageErrorBoundary from './components/PageErrorBoundary';
 import { processAutoAddRecurringExpenses } from './lib/recurringUtils';
 import { LoadingState, PageSkeleton } from './components/ui/Loading';
+import { WifiOff } from 'lucide-react';
 
 // Lazy loaded pages for code splitting
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -46,9 +49,11 @@ const TAB_TITLES: Record<string, string> = {
 export default function App() {
   // Individual selectors prevent cascade rerenders when unrelated store fields change
   const currentPage = useStore(s => s.currentPage);
+  const setPage = useStore(s => s.setPage);
   const setUser = useStore(s => s.setUser);
   const user = useStore(s => s.user);
   const preferences = useStore(s => s.preferences);
+  const isOnline = useOnlineStatus();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -70,6 +75,20 @@ export default function App() {
   useEffect(() => {
     document.title = TAB_TITLES[currentPage] || 'FocusForge — Operating System';
   }, [currentPage]);
+
+  // Global safety net: catch unhandled promise rejections that slip through
+  // individual try/catch blocks, preventing silent failures in production.
+  useEffect(() => {
+    const handler = (event: PromiseRejectionEvent) => {
+      if (import.meta.env.DEV) {
+        console.error('[FocusForge] Unhandled promise rejection:', event.reason);
+      }
+      // Prevent the browser from logging a noisy default error
+      event.preventDefault();
+    };
+    window.addEventListener('unhandledrejection', handler);
+    return () => window.removeEventListener('unhandledrejection', handler);
+  }, []);
 
   useEffect(() => {
     // Check initial session
@@ -179,6 +198,18 @@ export default function App() {
   }
 
 
+  // Determine which page to render — fallback to dashboard for unknown routes
+  // (protects against persisted state corruption from localStorage)
+  const KNOWN_PAGES = new Set([
+    'dashboard', 'finance', 'productivity', 'analytics', 'splits',
+    'reports', 'achievements', 'settings', 'friends', 'arena',
+    'notifications', 'command-center',
+  ]);
+  const activePage = KNOWN_PAGES.has(currentPage) ? currentPage : 'dashboard';
+
+  // Stable callback for PageErrorBoundary navigation
+  const handleErrorNavigateHome = useCallback(() => setPage('dashboard'), [setPage]);
+
   return (
     <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', position: 'relative' }}>
       {/* Skip to content — keyboard accessibility */}
@@ -189,6 +220,26 @@ export default function App() {
       >
         Skip to content
       </a>
+
+      {/* Offline indicator banner */}
+      {!isOnline && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-center gap-2 text-xs font-medium py-1.5 px-4"
+          style={{
+            background: 'rgba(239,68,68,0.15)',
+            color: '#fca5a5',
+            borderBottom: '1px solid rgba(239,68,68,0.2)',
+            position: 'relative',
+            zIndex: 9999,
+          }}
+        >
+          <WifiOff size={13} />
+          You're offline — changes will sync when connection returns
+        </div>
+      )}
+
       {/* Background effects */}
       <div
         className="ambient-orb"
@@ -209,29 +260,31 @@ export default function App() {
       {/* Main content */}
       <main id="main-content" className="main-content relative z-10">
         <PageLayout onMenuClick={() => setSidebarOpen(true)}>
-          <Suspense fallback={<div className="p-4 md:p-8"><PageSkeleton /></div>}>
-            {currentPage === 'dashboard' && <Dashboard />}
-            {currentPage === 'finance' && <Finance />}
-            {currentPage === 'productivity' && <Productivity />}
-            {currentPage === 'analytics' && <Analytics />}
+          <PageErrorBoundary onNavigateHome={handleErrorNavigateHome}>
+            <Suspense fallback={<div className="p-4 md:p-8"><PageSkeleton /></div>}>
+              {activePage === 'dashboard' && <Dashboard />}
+              {activePage === 'finance' && <Finance />}
+              {activePage === 'productivity' && <Productivity />}
+              {activePage === 'analytics' && <Analytics />}
 
-            {currentPage === 'splits' && <Splits />}
-            {currentPage === 'reports' && <Reports />}
-            {currentPage === 'achievements' && <Achievements />}
-            {currentPage === 'settings' && <Settings />}
-            {currentPage === 'friends' && <Friends />}
-            {currentPage === 'arena' && <Arena />}
-            {currentPage === 'notifications' && <Notifications />}
-            {currentPage === 'command-center' && <CommandCenter />}
-          </Suspense>
+              {activePage === 'splits' && <Splits />}
+              {activePage === 'reports' && <Reports />}
+              {activePage === 'achievements' && <Achievements />}
+              {activePage === 'settings' && <Settings />}
+              {activePage === 'friends' && <Friends />}
+              {activePage === 'arena' && <Arena />}
+              {activePage === 'notifications' && <Notifications />}
+              {activePage === 'command-center' && <CommandCenter />}
+            </Suspense>
+          </PageErrorBoundary>
         </PageLayout>
       </main>
 
       {/* Mobile navigation */}
-      < MobileNav />
+      <MobileNav />
 
       {/* Global achievement notifications */}
       <AchievementNotification />
-    </div >
+    </div>
   );
 }

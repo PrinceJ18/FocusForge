@@ -136,15 +136,44 @@ export default function Settings() {
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.preferences) updatePreferencesLocal(data.preferences);
-        if (data.profile) updateProfile(data.profile);
+        const raw = event.target?.result;
+        if (typeof raw !== 'string') {
+          showNotification({ type: 'error', title: 'Import Failed', message: 'Could not read file contents.' });
+          return;
+        }
 
-        showNotification({ type: 'success', title: 'Import Complete', message: 'Backup data parsed and applied successfully!' });
-        logEvent('backup_restored', 'system', 'json', { success: true });
+        const data = JSON.parse(raw);
+
+        // Structural validation: ensure top-level fields are objects, not primitives
+        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+          showNotification({ type: 'error', title: 'Import Failed', message: 'Backup file must contain a JSON object.' });
+          return;
+        }
+
+        let applied = false;
+
+        if (data.preferences && typeof data.preferences === 'object' && !Array.isArray(data.preferences)) {
+          updatePreferencesLocal(data.preferences);
+          applied = true;
+        }
+
+        if (data.profile && typeof data.profile === 'object' && !Array.isArray(data.profile)) {
+          updateProfile(data.profile);
+          applied = true;
+        }
+
+        if (applied) {
+          showNotification({ type: 'success', title: 'Import Complete', message: 'Backup data parsed and applied successfully!' });
+          logEvent('backup_restored', 'system', 'json', { success: true });
+        } else {
+          showNotification({ type: 'error', title: 'Import Failed', message: 'No valid preferences or profile data found in backup file.' });
+        }
       } catch (err) {
-        showNotification({ type: 'error', title: 'Import Failed', message: 'Invalid backup file structure.' });
+        showNotification({ type: 'error', title: 'Import Failed', message: 'Invalid backup file. Ensure it is valid JSON.' });
       }
+    };
+    reader.onerror = () => {
+      showNotification({ type: 'error', title: 'Import Failed', message: 'Failed to read file. Please try again.' });
     };
     reader.readAsText(file);
   };
