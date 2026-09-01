@@ -17,7 +17,8 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
 import { CustomTooltip } from '../components/analytics/CustomTooltip';
-import { formatCurrency } from '../lib/formatCurrency';
+import { formatCurrency } from '../lib/formatUtils';
+import { getErrorMessage } from '../lib/getErrorMessage';
 import { logEvent } from '../lib/events';
 import {
   calculateBudgetUsage,
@@ -1036,8 +1037,8 @@ export default function Finance() {
               }
               setShowAddExpense(false);
               showNotification({ type: 'success', title: 'Expense Added', message: `Added ${formatCurrency(data.amount)} for ${data.title}` });
-            } catch (error: any) {
-              showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to add expense' });
+            } catch (error: unknown) {
+              showNotification({ type: 'error', title: 'Error', message: getErrorMessage(error) || 'Failed to add expense' });
             }
           }}
         />
@@ -1409,8 +1410,8 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
     setError('');
     try {
       await onAdd({ title: title.trim(), amount: numAmount, category, note: note.trim(), expense_date: date });
-    } catch (err: any) {
-      setError(err.message || 'Failed to add expense');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to add expense');
     } finally {
       setIsSubmitting(false);
     }

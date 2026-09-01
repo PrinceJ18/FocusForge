@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
 import CreateArenaModal from '../components/arena/CreateArenaModal';
 import InviteFriendsModal from '../components/arena/InviteFriendsModal';
+import { getErrorMessage } from '../lib/getErrorMessage';
 
 export default function ArenaPage() {
   const { user, showNotification } = useStore();
@@ -112,9 +113,9 @@ export default function ArenaPage() {
       setActiveArena(prev => prev ? { ...prev, name: renameValue.trim() } : null);
       setRenameValue('');
       showNotification({ type: 'success', title: 'Arena Renamed', message: 'Arena name has been updated.' });
-    } catch (err: any) {
-      setActionError(err?.message || 'Unable to rename arena.');
-      showNotification({ type: 'error', title: 'Rename Failed', message: err?.message || 'Unable to rename arena.' });
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err) || 'Unable to rename arena.');
+      showNotification({ type: 'error', title: 'Rename Failed', message: getErrorMessage(err) || 'Unable to rename arena.' });
     } finally {
       setActionLoading(null);
     }
@@ -129,9 +130,9 @@ export default function ArenaPage() {
       await activityService.logActivity(activeArena.id, user.id, 'member_removed', 'Removed a member', null, { dedupe_key: `remove_${targetUserId}` }).catch(() => {});
       setMembers(prev => prev.filter(m => m.user_id !== targetUserId));
       showNotification({ type: 'info', title: 'Member Removed', message: 'Member was removed from the arena.' });
-    } catch (err: any) {
-      setActionError(err?.message || 'Unable to remove member.');
-      showNotification({ type: 'error', title: 'Action Failed', message: err?.message || 'Unable to remove member.' });
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err) || 'Unable to remove member.');
+      showNotification({ type: 'error', title: 'Action Failed', message: getErrorMessage(err) || 'Unable to remove member.' });
     } finally {
       setActionLoading(null);
     }
@@ -148,9 +149,9 @@ export default function ArenaPage() {
       await activityService.logActivity(activeArena.id, user.id, 'owner_transferred', 'Transferred arena ownership', null, { dedupe_key: `transfer_${activeArena.id}` }).catch(() => {});
       await loadArena();
       showNotification({ type: 'success', title: 'Ownership Transferred', message: 'Arena ownership was successfully transferred.' });
-    } catch (err: any) {
-      setActionError(err?.message || 'Unable to transfer ownership.');
-      showNotification({ type: 'error', title: 'Transfer Failed', message: err?.message || 'Unable to transfer ownership.' });
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err) || 'Unable to transfer ownership.');
+      showNotification({ type: 'error', title: 'Transfer Failed', message: getErrorMessage(err) || 'Unable to transfer ownership.' });
     } finally {
       setActionLoading(null);
     }
@@ -167,9 +168,9 @@ export default function ArenaPage() {
       setActiveArena(null);
       setShowSettings(false);
       showNotification({ type: 'info', title: 'Arena Deleted', message: 'Your arena was deleted.' });
-    } catch (err: any) {
-      setActionError(err?.message || 'Unable to delete arena.');
-      showNotification({ type: 'error', title: 'Delete Failed', message: err?.message || 'Unable to delete arena.' });
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err) || 'Unable to delete arena.');
+      showNotification({ type: 'error', title: 'Delete Failed', message: getErrorMessage(err) || 'Unable to delete arena.' });
     } finally {
       setActionLoading(null);
     }
@@ -187,9 +188,9 @@ export default function ArenaPage() {
       setActiveArena(null);
       setShowSettings(false);
       showNotification({ type: 'info', title: 'Left Arena', message: 'You have left the arena.' });
-    } catch (err: any) {
-      setActionError(err?.message || 'Unable to leave arena.');
-      showNotification({ type: 'error', title: 'Action Failed', message: err?.message || 'Unable to leave arena.' });
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err) || 'Unable to leave arena.');
+      showNotification({ type: 'error', title: 'Action Failed', message: getErrorMessage(err) || 'Unable to leave arena.' });
     } finally {
       setActionLoading(null);
     }

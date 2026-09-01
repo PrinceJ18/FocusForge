@@ -1,6 +1,6 @@
 import { subDays, parseISO, isAfter, format, startOfWeek, subWeeks, addDays, isToday, isThisWeek, isThisMonth } from 'date-fns';
 import type { FocusSession, Task, Expense, Profile } from '../../store/useStore';
-import { formatCurrency } from '../formatCurrency';
+import { formatCurrency } from '../formatUtils';
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b', transport: '#06b6d4', shopping: '#ec4899',

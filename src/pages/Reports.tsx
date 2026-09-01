@@ -2,8 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
 import { calculateMonthlyReportData } from '../lib/statistics';
-import { formatCurrency } from '../lib/formatCurrency';
-import { formatFocusTime } from '../lib/formatUtils';
+import { formatFocusTime, formatCurrency } from '../lib/formatUtils';
 import {
   Brain, CheckSquare, Wallet, Target, Trophy, Flame, TrendingUp,
   ArrowLeft, ArrowUpRight, Award, Zap, BookOpen, Share2, Download,

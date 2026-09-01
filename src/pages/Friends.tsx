@@ -13,6 +13,7 @@ import { format, parseISO } from 'date-fns';
 import { LoadingState, FriendGridSkeleton } from '../components/ui/Loading';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
+import { getErrorMessage } from '../lib/getErrorMessage';
 
 export default function Friends() {
   const { user, profile, showNotification } = useStore();
@@ -102,8 +103,8 @@ export default function Friends() {
     try {
       await sendRequest(targetUserId);
       showNotification({ type: 'success', title: 'Request Sent', message: 'Friend request sent successfully!' });
-    } catch (err: any) {
-      showNotification({ type: 'error', title: 'Action Failed', message: err.message || 'Failed to send friend request' });
+    } catch (err: unknown) {
+      showNotification({ type: 'error', title: 'Action Failed', message: getErrorMessage(err) || 'Failed to send friend request' });
     } finally {
       setActionUserId(null);
     }
@@ -120,8 +121,8 @@ export default function Friends() {
         title: status === 'accepted' ? 'Friend Added' : 'Request Declined', 
         message: status === 'accepted' ? 'Friend request accepted!' : 'Friend request declined.' 
       });
-    } catch (err: any) {
-      showNotification({ type: 'error', title: 'Action Failed', message: err.message || 'Failed to respond to request' });
+    } catch (err: unknown) {
+      showNotification({ type: 'error', title: 'Action Failed', message: getErrorMessage(err) || 'Failed to respond to request' });
     } finally {
       setActionUserId(null);
     }
@@ -133,8 +134,8 @@ export default function Friends() {
     try {
       await cancelRequest(requestId);
       showNotification({ type: 'info', title: 'Request Cancelled', message: 'Outgoing friend request cancelled.' });
-    } catch (err: any) {
-      showNotification({ type: 'error', title: 'Action Failed', message: err.message || 'Failed to cancel request' });
+    } catch (err: unknown) {
+      showNotification({ type: 'error', title: 'Action Failed', message: getErrorMessage(err) || 'Failed to cancel request' });
     } finally {
       setActionUserId(null);
     }
@@ -148,8 +149,8 @@ export default function Friends() {
       await removeFriend(selectedFriendForRemoval.id);
       showNotification({ type: 'info', title: 'Friend Removed', message: 'Friend removed successfully.' });
       setSelectedFriendForRemoval(null);
-    } catch (err: any) {
-      showNotification({ type: 'error', title: 'Action Failed', message: err.message || 'Failed to remove friend' });
+    } catch (err: unknown) {
+      showNotification({ type: 'error', title: 'Action Failed', message: getErrorMessage(err) || 'Failed to remove friend' });
     } finally {
       setIsRemoving(false);
     }

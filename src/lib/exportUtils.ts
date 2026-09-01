@@ -1,5 +1,5 @@
 import type { MonthlyReportData } from './statistics/reports';
-import { formatCurrency } from './formatCurrency';
+import { formatCurrency } from './formatUtils';
 
 // ============================================================
 // Export Utilities — Phase 3.8

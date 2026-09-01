@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, X, Users, TrendingDown, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { format } from 'date-fns';
-import { formatCurrency } from '../lib/formatCurrency';
+import { formatCurrency } from '../lib/formatUtils';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';

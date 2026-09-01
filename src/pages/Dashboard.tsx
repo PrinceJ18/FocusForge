@@ -9,8 +9,7 @@ import {
 import { useStore, type Page, type Task, completeTask, uncompleteTask, deleteTask, updateTask, markTaskWontDo } from '../store/useStore';
 import { saveDailySnapshot, type DailySnapshotData } from '../services/dailySnapshotService';
 import { format, parseISO, isToday, differenceInDays } from 'date-fns';
-import { formatCurrency } from '../lib/formatCurrency';
-import { formatFocusTime } from '../lib/formatUtils';
+import { formatFocusTime, formatCurrency } from '../lib/formatUtils';
 import { getLevelInfo } from '../lib/levels';
 import { calculateDashboardStatistics } from '../lib/statistics';
 import { calculateProductivityScore } from '../lib/scoreUtils';
@@ -379,7 +378,7 @@ export default function Dashboard() {
       } else {
         await completeTask(task, date, user?.id || 'local');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to toggle task:', err);
     }
   };

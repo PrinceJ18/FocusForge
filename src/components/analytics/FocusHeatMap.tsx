@@ -25,7 +25,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useStore, type FocusSession, type Task, type Expense } from '../../store/useStore';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatCurrency } from '../../lib/formatUtils';
 import { formatFocusTime } from '../../lib/formatUtils';
 import type { AnalyticsPeriod } from '../../lib/statistics/analyticsEngine';
 import Modal from '../ui/Modal';

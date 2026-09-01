@@ -1,6 +1,6 @@
 import { Task, FocusSession, Expense, Profile } from '../store/useStore';
 import type { AppEvent } from './events';
-import { formatCurrency } from './formatCurrency';
+import { formatCurrency, formatFocusTime } from './formatUtils';
 import { startOfWeek, subWeeks, endOfWeek, isThisMonth, parseISO } from 'date-fns';
 
 export interface Insight {

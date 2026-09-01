@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useStore } from '../store/useStore';
-import { formatCurrency } from '../lib/formatCurrency';
-import { formatFocusTime } from '../lib/formatUtils';
+import { formatFocusTime, formatCurrency } from '../lib/formatUtils';
 import { calculateProductivityScore } from '../lib/scoreUtils';
 import { generateInsights } from '../lib/insightUtils';
 import InsightCard from '../components/analytics/InsightCard';

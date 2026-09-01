@@ -41,8 +41,7 @@ import InsightCard from '../components/analytics/InsightCard';
 import FocusHeatMap from '../components/analytics/FocusHeatMap';
 import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
-import { formatCurrency } from '../lib/formatCurrency';
-import { formatFocusTime } from '../lib/formatUtils';
+import { formatFocusTime, formatCurrency } from '../lib/formatUtils';
 import {
   calculateAnalyticsEngineData,
   AnalyticsPeriod,

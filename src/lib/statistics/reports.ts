@@ -2,7 +2,7 @@ import { parseISO, format, getDaysInMonth, startOfMonth, endOfMonth, eachDayOfIn
 import { useStore, type FocusSession, type Task, type Expense, type SavingsGoal, type Profile } from '../../store/useStore';
 import type { DailyGoalHistory } from '../../store/useDailyGoalsStore';
 import { getEarnedBadgeIds, ALL_BADGES } from '../statsUtils';
-import { formatCurrency } from '../formatCurrency';
+import { formatCurrency } from '../formatUtils';
 import { calculateProductivityScore } from '../scoreUtils';
 
 export interface MonthlyReportData {

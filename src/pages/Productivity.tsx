@@ -45,6 +45,7 @@ import {
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
+import { getErrorMessage } from '../lib/getErrorMessage';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -199,8 +200,8 @@ export default function Productivity() {
       });
       setShowAddTask(false);
       showNotification({ type: 'success', title: 'Task Created', message: 'Task added successfully.' });
-    } catch (error: any) {
-      showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to create task' });
+    } catch (error: unknown) {
+      showNotification({ type: 'error', title: 'Error', message: getErrorMessage(error) || 'Failed to create task' });
     }
   };
 
@@ -214,8 +215,8 @@ export default function Productivity() {
       });
       setEditingTask(null);
       showNotification({ type: 'success', title: 'Task Updated', message: 'Task updated successfully.' });
-    } catch (error: any) {
-      showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to update task' });
+    } catch (error: unknown) {
+      showNotification({ type: 'error', title: 'Error', message: getErrorMessage(error) || 'Failed to update task' });
     }
   };
 
@@ -227,8 +228,8 @@ export default function Productivity() {
         description: `Deleted task: ${task.title}`,
       });
       showNotification({ type: 'info', title: 'Task Deleted', message: 'Task was deleted.' });
-    } catch (error: any) {
-      showNotification({ type: 'error', title: 'Error', message: error.message || 'Failed to delete task' });
+    } catch (error: unknown) {
+      showNotification({ type: 'error', title: 'Error', message: getErrorMessage(error) || 'Failed to delete task' });
     }
   };
 
@@ -241,9 +242,9 @@ export default function Productivity() {
       } else {
         await completeTask(task, date, user?.id || 'local');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to toggle task:', err);
-      showNotification({ type: 'error', title: 'Error', message: err.message || 'Failed to update task status' });
+      showNotification({ type: 'error', title: 'Error', message: getErrorMessage(err) || 'Failed to update task status' });
     }
   };
 
@@ -252,9 +253,9 @@ export default function Productivity() {
     try {
       await markTaskWontDo(task, date, user?.id || 'local');
       showNotification({ type: 'info', title: 'Task Marked', message: "Task marked as Won't Do" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to mark task as wont do:', err);
-      showNotification({ type: 'error', title: 'Error', message: err.message || 'Failed to update task status' });
+      showNotification({ type: 'error', title: 'Error', message: getErrorMessage(err) || 'Failed to update task status' });
     }
   };
 

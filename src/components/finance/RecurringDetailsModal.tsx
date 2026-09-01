@@ -4,7 +4,7 @@ import {
   Trash2, Edit2, AlertCircle 
 } from 'lucide-react';
 import { type RecurringExpense } from '../../store/useStore';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatCurrency } from '../../lib/formatUtils';
 import { format, parseISO } from 'date-fns';
 import { payRecurringExpense, skipRecurringExpense } from '../../lib/recurringUtils';
 import Modal from '../ui/Modal';

@@ -6,7 +6,7 @@ import {
   Wallet, Target, Plus, Play, XCircle, ArrowRight, RotateCcw, AlertTriangle, Star
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatCurrency } from '../../lib/formatUtils';
 import { formatFocusTime } from '../../lib/formatUtils';
 
 import DashboardWidget from './DashboardWidget';
