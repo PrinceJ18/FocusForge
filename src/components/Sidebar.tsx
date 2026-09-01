@@ -42,6 +42,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
@@ -66,6 +67,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             onClick={onClose}
             className="md:hidden p-1 rounded-lg"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Close navigation"
           >
             <X size={16} />
           </button>
@@ -89,7 +91,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
               <div className="text-xs font-bold gradient-text">{profile.xp} XP</div>
             </div>
-            <div className="progress-bar" style={{ height: 4 }}>
+            <div
+              className="progress-bar"
+              style={{ height: 4 }}
+              role="progressbar"
+              aria-valuenow={xpProgress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Level progress: ${Math.round(xpProgress)}%`}
+            >
               <div className="progress-fill xp-bar-fill" style={{ width: `${xpProgress}%` }} />
             </div>
           </div>
@@ -111,6 +121,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <span
                     className="ml-auto text-xs px-2 py-0.5 rounded-full"
                     style={{ background: 'rgba(168,85,247,0.2)', color: 'var(--purple-primary)' }}
+                    aria-label={`${item.badge} new`}
                   >
                     {item.badge}
                   </span>

@@ -283,9 +283,37 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
 
+  /* Disable ALL decorative and transitional animations */
   .animate-fadeIn,
-  .animate-scaleIn {
+  .animate-scaleIn,
+  .page-enter,
+  .glow-pulse,
+  .float-animation,
+  .notif-pop,
+  .modal-enter,
+  .animate-pulse,
+  .achievement-notification {
     animation: none !important;
+  }
+
+  /* Disable shimmer skeleton loading animation */
+  .bg-\[length\:200\%_100\%\] {
+    animation: none !important;
+    background-size: 100% 100% !important;
+  }
+
+  /* Reduce all transitions to near-instant */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  /* Keep loading spinners functional but minimal */
+  .loading-spinner {
+    animation: spinLoad 0.8s linear infinite !important;
   }
 }
 

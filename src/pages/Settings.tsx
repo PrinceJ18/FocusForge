@@ -344,8 +344,9 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Pomodoro Minutes</label>
+                  <label htmlFor="settings-pomodoro" className="font-semibold text-slate-400 mb-1 block">Pomodoro Minutes</label>
                   <input
+                    id="settings-pomodoro"
                     type="number"
                     value={preferences.default_pomodoro}
                     onChange={(e) => {
@@ -359,8 +360,9 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Short Break Minutes</label>
+                  <label htmlFor="settings-short-break" className="font-semibold text-slate-400 mb-1 block">Short Break Minutes</label>
                   <input
+                    id="settings-short-break"
                     type="number"
                     value={preferences.default_short_break}
                     onChange={(e) => {
@@ -374,8 +376,9 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Long Break Minutes</label>
+                  <label htmlFor="settings-long-break" className="font-semibold text-slate-400 mb-1 block">Long Break Minutes</label>
                   <input
+                    id="settings-long-break"
                     type="number"
                     value={preferences.default_long_break}
                     onChange={(e) => {
@@ -459,8 +462,9 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Default Daily Focus Target (Minutes)</label>
+                  <label htmlFor="settings-focus-goal" className="font-semibold text-slate-400 mb-1 block">Default Daily Focus Target (Minutes)</label>
                   <input
+                    id="settings-focus-goal"
                     type="number"
                     value={preferences.default_daily_focus_goal}
                     onChange={(e) => handleUpdatePref('default_daily_focus_goal', parseInt(e.target.value) || 120)}
@@ -468,8 +472,9 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Default Daily Tasks Count Target</label>
+                  <label htmlFor="settings-task-goal" className="font-semibold text-slate-400 mb-1 block">Default Daily Tasks Count Target</label>
                   <input
+                    id="settings-task-goal"
                     type="number"
                     value={preferences.default_task_goal}
                     onChange={(e) => handleUpdatePref('default_task_goal', parseInt(e.target.value) || 5)}
@@ -477,8 +482,9 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Default Daily XP Target</label>
+                  <label htmlFor="settings-xp-goal" className="font-semibold text-slate-400 mb-1 block">Default Daily XP Target</label>
                   <input
+                    id="settings-xp-goal"
                     type="number"
                     value={preferences.default_xp_goal}
                     onChange={(e) => handleUpdatePref('default_xp_goal', parseInt(e.target.value) || 100)}
@@ -486,8 +492,9 @@ export default function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Default Monthly Budget Target</label>
+                  <label htmlFor="settings-budget-goal" className="font-semibold text-slate-400 mb-1 block">Default Monthly Budget Target</label>
                   <input
+                    id="settings-budget-goal"
                     type="number"
                     value={preferences.default_budget_goal}
                     onChange={(e) => handleUpdatePref('default_budget_goal', parseFloat(e.target.value) || 10000)}
@@ -564,8 +571,9 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Preferred Currency Symbol</label>
+                  <label htmlFor="settings-currency" className="font-semibold text-slate-400 mb-1 block">Preferred Currency Symbol</label>
                   <select
+                    id="settings-currency"
                     value={preferences.currency}
                     onChange={(e) => handleUpdatePref('currency', e.target.value)}
                     className="input-glass w-full px-3 py-2 text-white"
@@ -578,8 +586,9 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Week Starts On</label>
+                  <label htmlFor="settings-week-start" className="font-semibold text-slate-400 mb-1 block">Week Starts On</label>
                   <select
+                    id="settings-week-start"
                     value={preferences.week_start_day}
                     onChange={(e) => handleUpdatePref('week_start_day', e.target.value)}
                     className="input-glass w-full px-3 py-2 text-white"
@@ -602,8 +611,9 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Preferred Time Format</label>
+                  <label htmlFor="settings-time-format" className="font-semibold text-slate-400 mb-1 block">Preferred Time Format</label>
                   <select
+                    id="settings-time-format"
                     value={preferences.preferred_time_format}
                     onChange={(e) => handleUpdatePref('preferred_time_format', e.target.value)}
                     className="input-glass w-full px-3 py-2 text-white"
@@ -614,8 +624,9 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-400 mb-1 block">Preferred Date Format</label>
+                  <label htmlFor="settings-date-format" className="font-semibold text-slate-400 mb-1 block">Preferred Date Format</label>
                   <select
+                    id="settings-date-format"
                     value={preferences.preferred_date_format}
                     onChange={(e) => handleUpdatePref('preferred_date_format', e.target.value)}
                     className="input-glass w-full px-3 py-2 text-white"
@@ -724,8 +735,9 @@ export default function Settings() {
               <div className="space-y-4 text-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="font-semibold text-slate-400 mb-1 block">Display Name</label>
+                    <label htmlFor="settings-display-name" className="font-semibold text-slate-400 mb-1 block">Display Name</label>
                     <input
+                      id="settings-display-name"
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
@@ -735,8 +747,9 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <label className="font-semibold text-slate-400 mb-1 block">Avatar URL</label>
+                    <label htmlFor="settings-avatar-url" className="font-semibold text-slate-400 mb-1 block">Avatar URL</label>
                     <input
+                      id="settings-avatar-url"
                       type="text"
                       value={avatarUrl}
                       onChange={(e) => setAvatarUrl(e.target.value)}
