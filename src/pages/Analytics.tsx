@@ -640,8 +640,8 @@ export default function Analytics() {
           {/* AI Task Chart Insight */}
           <ChartInsightPanel
             insightText={
-              coach.habits?.procrastination.summary ||
-              coach.behaviourTrends?.tasks.summary ||
+              coach.habits?.procrastinationPatterns?.patternSummary ||
+              coach.behaviourTrends?.taskCompletion?.summary ||
               'Task completion velocity remains steady across priorities.'
             }
             category="tasks"
@@ -801,8 +801,8 @@ export default function Analytics() {
           {/* AI Spending Chart Insight */}
           <ChartInsightPanel
             insightText={
-              coach.habits?.spending.summary ||
-              coach.behaviourTrends?.spending.summary ||
+              coach.habits?.spendingHabits?.summary ||
+              coach.behaviourTrends?.finance?.summary ||
               'Spending trajectory monitored against budget limit.'
             }
             category="finance"
@@ -875,7 +875,7 @@ export default function Analytics() {
           {/* AI Category Chart Insight */}
           <ChartInsightPanel
             insightText={
-              coach.behaviourTrends?.spending.summary ||
+              coach.behaviourTrends?.finance?.summary ||
               (data.topCategory.name
                 ? `Primary spending velocity is concentrated in ${data.topCategory.name} (${data.topCategory.percentage}%).`
                 : '')

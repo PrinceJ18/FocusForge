@@ -73,12 +73,12 @@ export const ReportsExecutiveIntelligence: React.FC<ReportsExecutiveIntelligence
       'Weekend expenditure velocity outpaces weekday allocation.';
 
     const bestHabit = habits
-      ? `Consistent ${habits.bestWeekday.avgMinutes}m focus on ${habits.bestWeekday.dayName}s during ${habits.bestFocusHour.label}.`
+      ? `Consistent ${habits.bestWeekday.avgFocusMinutes}m focus on ${habits.bestWeekday.dayName}s during ${habits.bestFocusHour.timeWindow}.`
       : 'Morning deep work block delivers peak attention.';
 
     const primaryOpportunity =
       recommendations[0]?.title ||
-      habits?.procrastination.actionableAdvice ||
+      habits?.procrastinationPatterns?.patternSummary ||
       'Resolve pending high-priority task backlog early in the week.';
 
     const cards = [
@@ -190,22 +190,22 @@ export const ReportsBehaviourAnalysis: React.FC<ReportsBehaviourAnalysisProps> =
         icon: Calendar,
         label: 'Best Weekday',
         value: habits.bestWeekday.dayName,
-        sub: `${habits.bestWeekday.avgMinutes}m focus average`,
+        sub: `${habits.bestWeekday.avgFocusMinutes}m focus average`,
         color: '#a855f7',
       },
       {
         icon: Clock,
         label: 'Best Focus Window',
-        value: habits.bestFocusHour.label,
+        value: habits.bestFocusHour.timeWindow,
         sub: 'Optimal flow state window',
         color: '#06b6d4',
       },
       {
         icon: Wallet,
         label: 'Weekend Dynamics',
-        value: `${habits.weekendDynamics.spendingMultiplier}x Weekday Spend`,
-        sub: habits.weekendDynamics.isWeekendSpike ? 'Weekend spending surge' : 'Balanced spending',
-        color: habits.weekendDynamics.isWeekendSpike ? '#f59e0b' : '#10b981',
+        value: `${habits.weekendBehaviour.spendRatioWeekendToWeekday}x Weekday Spend`,
+        sub: habits.weekendBehaviour.pattern === 'high_spending_weekend' ? 'Weekend spending surge' : 'Balanced spending',
+        color: habits.weekendBehaviour.pattern === 'high_spending_weekend' ? '#f59e0b' : '#10b981',
       },
       {
         icon: Target,

@@ -45,6 +45,12 @@ const TAB_TITLES: Record<string, string> = {
   'command-center': 'FocusForge — AI Command Center',
 };
 
+const KNOWN_PAGES = new Set([
+  'dashboard', 'finance', 'productivity', 'analytics', 'splits',
+  'reports', 'achievements', 'settings', 'friends', 'arena',
+  'notifications', 'command-center',
+]);
+
 export default function App() {
   // Individual selectors prevent cascade rerenders when unrelated store fields change
   const currentPage = useStore(s => s.currentPage);
@@ -58,6 +64,8 @@ export default function App() {
 
   // Stable callback prevents Sidebar from rerendering when App state changes
   const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
+  // Stable callback for PageErrorBoundary navigation
+  const handleErrorNavigateHome = useCallback(() => setPage('dashboard'), [setPage]);
 
   // Apply user styling preferences to root DOM on value change
   useEffect(() => {
@@ -199,15 +207,7 @@ export default function App() {
 
   // Determine which page to render — fallback to dashboard for unknown routes
   // (protects against persisted state corruption from localStorage)
-  const KNOWN_PAGES = new Set([
-    'dashboard', 'finance', 'productivity', 'analytics', 'splits',
-    'reports', 'achievements', 'settings', 'friends', 'arena',
-    'notifications', 'command-center',
-  ]);
   const activePage = KNOWN_PAGES.has(currentPage) ? currentPage : 'dashboard';
-
-  // Stable callback for PageErrorBoundary navigation
-  const handleErrorNavigateHome = useCallback(() => setPage('dashboard'), [setPage]);
 
   return (
     <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', position: 'relative' }}>

@@ -748,14 +748,14 @@ const BehaviourDiscoveries: React.FC<SectionProps> = memo(function BehaviourDisc
       icon: Calendar,
       label: 'Best Focus Weekday',
       value: habits.bestWeekday.dayName,
-      detail: `${habits.bestWeekday.avgMinutes}m average focus on ${habits.bestWeekday.dayName}s.`,
+      detail: `${habits.bestWeekday.avgFocusMinutes}m average focus on ${habits.bestWeekday.dayName}s.`,
       color: '#a855f7',
     },
     {
       id: 'habit-focus-window',
       icon: Clock,
       label: 'Peak Focus Window',
-      value: habits.bestFocusHour.label,
+      value: habits.bestFocusHour.timeWindow,
       detail: 'Highest sustained flow-state block identified.',
       color: '#06b6d4',
     },
@@ -763,11 +763,11 @@ const BehaviourDiscoveries: React.FC<SectionProps> = memo(function BehaviourDisc
       id: 'habit-weekend',
       icon: Wallet,
       label: 'Weekend Dynamics',
-      value: `${habits.weekendDynamics.spendingMultiplier}x Weekday Spend`,
-      detail: habits.weekendDynamics.isWeekendSpike
+      value: `${habits.weekendBehaviour.spendRatioWeekendToWeekday}x Weekday Spend`,
+      detail: habits.weekendBehaviour.pattern === 'high_spending_weekend'
         ? 'Spending increases significantly on weekends.'
         : 'Weekend spending remains balanced with weekday patterns.',
-      color: habits.weekendDynamics.isWeekendSpike ? '#f59e0b' : '#10b981',
+      color: habits.weekendBehaviour.pattern === 'high_spending_weekend' ? '#f59e0b' : '#10b981',
     },
     {
       id: 'habit-consistency',
