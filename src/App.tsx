@@ -62,10 +62,23 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Desktop sidebar collapse — persisted in localStorage (UI-only preference)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
+  });
+
   // Stable callback prevents Sidebar from rerendering when App state changes
   const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
   // Stable callback for PageErrorBoundary navigation
   const handleErrorNavigateHome = useCallback(() => setPage('dashboard'), [setPage]);
+  // Stable callback for sidebar collapse toggle
+  const handleToggleCollapse = useCallback(() => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('sidebar-collapsed', String(next)); } catch { /* quota exceeded or SSR */ }
+      return next;
+    });
+  }, []);
 
   // Apply user styling preferences to root DOM on value change
   useEffect(() => {
@@ -210,7 +223,10 @@ export default function App() {
   const activePage = KNOWN_PAGES.has(currentPage) ? currentPage : 'dashboard';
 
   return (
-    <div style={{ background: 'var(--bg-primary)', minHeight: '100vh', position: 'relative' }}>
+    <div
+      style={{ background: 'var(--bg-primary)', minHeight: '100vh', position: 'relative' }}
+      {...(sidebarCollapsed ? { 'data-sidebar-collapsed': '' } : {})}
+    >
       {/* Skip to content — keyboard accessibility */}
       <a
         href="#main-content"
@@ -254,7 +270,7 @@ export default function App() {
       />
 
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
+      <Sidebar isOpen={sidebarOpen} onClose={handleSidebarClose} collapsed={sidebarCollapsed} onToggleCollapse={handleToggleCollapse} />
 
       {/* Main content */}
       <main id="main-content" className="main-content relative z-10">

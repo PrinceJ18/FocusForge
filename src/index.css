@@ -49,7 +49,8 @@
   /* Spacing System */
   --density-padding: 1.25rem;
   --density-gap: 1.5rem;
-  --sidebar-width: 260px;
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 84px;
 
   /* Radius System */
   --radius-sm: 4px;
@@ -479,9 +480,31 @@ h4 {
   display: flex;
   flex-direction: column;
   z-index: 100;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, width 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
+/* ── Collapsed Sidebar ─────────────────────────── */
+[data-sidebar-collapsed] .sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+
+/* Hide text elements in collapsed state */
+.sidebar-label {
+  opacity: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 200ms ease, max-width 250ms ease;
+  max-width: 200px;
+}
+
+[data-sidebar-collapsed] .sidebar-label {
+  opacity: 0;
+  max-width: 0;
+  pointer-events: none;
+}
+
+/* Nav items */
 .nav-item {
   display: flex;
   align-items: center;
@@ -495,6 +518,22 @@ h4 {
   font-weight: 500;
   border: 1px solid transparent;
   text-decoration: none;
+  position: relative;
+}
+
+[data-sidebar-collapsed] .nav-item {
+  justify-content: center;
+  padding: 12px;
+  gap: 0;
+}
+
+/* Collapsed active item — accent left line + glow */
+[data-sidebar-collapsed] .nav-item.active {
+  box-shadow: inset 3px 0 0 var(--purple-primary), 0 0 12px rgba(168, 85, 247, 0.15);
+}
+
+[data-sidebar-collapsed] .nav-item.active .nav-icon {
+  filter: brightness(1.3);
 }
 
 .nav-item:hover {
@@ -512,11 +551,150 @@ h4 {
   color: var(--purple-primary);
 }
 
+/* ── Sidebar Tooltip (collapsed hover) ──────────── */
+.sidebar-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(15, 15, 25, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  color: #f1f0ff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 8px rgba(168, 85, 247, 0.1);
+  font-family: 'Inter', sans-serif;
+}
+
+.sidebar-tooltip::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: rgba(15, 15, 25, 0.92);
+  border-left: 1px solid rgba(168, 85, 247, 0.25);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+[data-sidebar-collapsed] .nav-item:hover .sidebar-tooltip,
+[data-sidebar-collapsed] .sidebar-tool-btn:hover .sidebar-tooltip {
+  opacity: 1;
+}
+
+/* ── Collapse Toggle Button ─────────────────────── */
+.sidebar-collapse-btn {
+  position: absolute;
+  top: 28px;
+  right: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: none; /* hidden on mobile, shown via md+ */
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 15, 25, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 102;
+  transition: transform 150ms ease, background 200ms ease, box-shadow 200ms ease, color 200ms ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-collapse-btn:hover {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: var(--text-primary);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.25), 0 2px 8px rgba(0, 0, 0, 0.3);
+  transform: scale(1.1);
+}
+
+.sidebar-collapse-btn:active {
+  transform: scale(0.92);
+}
+
+.sidebar-collapse-btn:focus-visible {
+  outline: 2px solid var(--purple-primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 769px) {
+  .sidebar-collapse-btn {
+    display: flex;
+  }
+}
+
+/* ── Collapsed Profile Section ──────────────────── */
+[data-sidebar-collapsed] .sidebar-profile {
+  padding: 8px;
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+[data-sidebar-collapsed] .sidebar-profile-avatar {
+  margin: 0 auto;
+}
+
+/* ── Collapsed Tools Section ────────────────────── */
+[data-sidebar-collapsed] .sidebar-tool-btn {
+  padding: 10px;
+  justify-content: center;
+}
+
+[data-sidebar-collapsed] .sidebar-tool-btn .sidebar-tool-icon {
+  margin-right: 0;
+}
+
+/* ── Light Theme Overrides ──────────────────────── */
+.theme-light .sidebar-collapse-btn {
+  background: rgba(250, 250, 250, 0.95);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #525252;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .sidebar-collapse-btn:hover {
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.3);
+  color: #7c3aed;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .sidebar-tooltip {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #171717;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.theme-light .sidebar-tooltip::before {
+  background: rgba(255, 255, 255, 0.96);
+  border-left-color: rgba(0, 0, 0, 0.1);
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
 /* Main content */
 .main-content {
   margin-left: var(--sidebar-width);
   min-height: 100vh;
   padding: 0;
+  transition: margin-left 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-sidebar-collapsed] .main-content {
+  margin-left: var(--sidebar-collapsed-width);
 }
 
 /* Sticky Header */
