@@ -50,7 +50,11 @@ interface DayAggregate {
 const WEEKDAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 export default function FocusHeatMap({ period }: FocusHeatMapProps) {
-  const { focusSessions, tasks, taskCompletions, expenses, events } = useStore();
+  const focusSessions = useStore(s => s.focusSessions);
+  const tasks = useStore(s => s.tasks);
+  const taskCompletions = useStore(s => s.taskCompletions);
+  const expenses = useStore(s => s.expenses);
+  const events = useStore(s => s.events);
 
   const [monthOffset, setMonthOffset] = useState<number>(0);
   const [hoveredDay, setHoveredDay] = useState<{
@@ -134,11 +138,11 @@ export default function FocusHeatMap({ period }: FocusHeatMapProps) {
     });
 
     // XP Events
-    events.forEach((ev) => {
-      if (ev.timestamp && ev.details?.xp) {
+    events.forEach(ev => {
+      if (ev.timestamp && ev.metadata?.xpEarned) {
         const dStr = ev.timestamp.slice(0, 10);
         const record = getOrCreate(dStr);
-        record.xpEarned += Number(ev.details.xp) || 0;
+        record.xpEarned += Number(ev.metadata.xpEarned) || 0;
       }
     });
 

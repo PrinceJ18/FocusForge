@@ -26,11 +26,12 @@ import { supabase } from '../lib/supabase';
 export function useDailyGoalWatcher() {
   const prevProgressRef = useRef<Map<string, boolean>>(new Map());
 
-  // Subscribe to relevant slices from both stores
-  const focusSessions = useStore((s) => s.focusSessions);
-  const tasks = useStore((s) => s.tasks);
-  const expenses = useStore((s) => s.expenses);
-  const profile = useStore((s) => s.profile);
+  // Subscribe to scalar proxies — the effect reads fresh arrays from getState()
+  const focusSessionsLength = useStore((s) => s.focusSessions.length);
+  const tasksLength = useStore((s) => s.tasks.length);
+  const expensesLength = useStore((s) => s.expenses.length);
+  const profileXp = useStore((s) => s.profile.xp);
+  const profileStreak = useStore((s) => s.profile.streak);
   const user = useStore((s) => s.user);
 
   const goalConfigs = useDailyGoalsStore((s) => s.goalConfigs);
@@ -72,11 +73,11 @@ export function useDailyGoalWatcher() {
       const enabled = goalsState.goalConfigs.filter((g) => g.enabled);
 
       if (enabled.length > 0) {
-        const progressParams = {
-          focusSessions,
-          tasks,
-          expenses,
-          profile,
+      const progressParams = {
+          focusSessions: useStore.getState().focusSessions,
+          tasks: useStore.getState().tasks,
+          expenses: useStore.getState().expenses,
+          profile: useStore.getState().profile,
           customGoalProgress: goalsState.customGoalProgress,
           dailyXPStart: goalsState.dailyXPStart,
           dailyXPDate: goalsState.dailyXPDate,
@@ -122,10 +123,10 @@ export function useDailyGoalWatcher() {
     if (!notificationsEnabled) return;
 
     const progressParams = {
-      focusSessions,
-      tasks,
-      expenses,
-      profile,
+      focusSessions: useStore.getState().focusSessions,
+      tasks: useStore.getState().tasks,
+      expenses: useStore.getState().expenses,
+      profile: useStore.getState().profile,
       customGoalProgress,
       dailyXPStart,
       dailyXPDate,
@@ -217,10 +218,11 @@ export function useDailyGoalWatcher() {
     }
     prevProgressRef.current = newMap;
   }, [
-    focusSessions,
-    tasks,
-    expenses,
-    profile,
+    focusSessionsLength,
+    tasksLength,
+    expensesLength,
+    profileXp,
+    profileStreak,
     goalConfigs,
     customGoalProgress,
     notifiedGoalIds,

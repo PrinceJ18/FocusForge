@@ -164,7 +164,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
     dailyBrief.motivation,
     dailyBrief.streakStatus.message,
     dailyBrief.primeFocusWindow ? `Prime focus window: ${dailyBrief.primeFocusWindow}` : null,
-  ].filter((s): s is string => Boolean(s) && s.length > 0);
+  ].filter((s): s is string => Boolean(s) && (s as string).length > 0);
 
   // Selected forecast metadata builder
   const forecastDetails = useMemo(() => {
@@ -174,11 +174,10 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
       case 'productivity':
         return {
           title: 'Productivity Outlook',
-          currentVal: `${dailyBrief.dayScore ?? 0}/100 today`,
+          currentVal: `Current trajectory`,
           predictedVal: `${predictions.expectedProductivityScore}/100 expected`,
           confidence: predictions.confidence,
           reasoning:
-            predictions.reasoning?.productivityReason ||
             'Calculated via exponentially weighted moving averages of task completions and focus velocity.',
         };
       case 'grade':
@@ -188,7 +187,6 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
           predictedVal: `Grade ${predictions.expectedWeeklyGrade}`,
           confidence: predictions.confidence,
           reasoning:
-            predictions.reasoning?.weeklyGradeReason ||
             'Based on consistency score, goal adherence, and streak sustainability across 7 days.',
         };
       case 'budget':
@@ -201,7 +199,6 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
           predictedVal: `Burn rate: ₹${Math.round(predictions.expectedMonthlySpending / 30)}/day`,
           confidence: predictions.confidence,
           reasoning:
-            predictions.reasoning?.financialReason ||
             'Analyzed from daily spending velocity and remaining calendar days in billing cycle.',
         };
       case 'focus':
@@ -213,10 +210,9 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
           predictedVal: `${Math.round(predictions.expectedMonthlyFocusMinutes / 60)}h month-end projected`,
           confidence: predictions.confidence,
           reasoning:
-            predictions.reasoning?.focusReason ||
-            (habits?.bestFocusHour
-              ? `Your peak productivity hour is ${habits.bestFocusHour.label}. Maintaining this routine maximizes focus velocity.`
-              : 'Computed via decay-weighted moving averages of daily pomodoro sessions.'),
+            habits?.bestFocusHour
+              ? `Your peak productivity hour is ${habits.bestFocusHour.timeWindow}. Maintaining this routine maximizes focus velocity.`
+              : 'Computed via decay-weighted moving averages of daily pomodoro sessions.',
         };
       default:
         return null;
@@ -364,7 +360,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                                 key={idx}
                                 className="px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px]"
                               >
-                                {tm}
+                                {tm.label}: {tm.current}{tm.unit}
                               </span>
                             ))}
                           </div>
@@ -380,11 +376,11 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                             </span>
                           </div>
                         )}
-                        {(currentRec.explainability.estimatedEffort || currentRec.estimatedTimeMinutes) && (
+                        {(currentRec.estimatedEffort || currentRec.estimatedBenefit) && (
                           <div>
                             <span className="text-[10px] text-slate-400 block">Estimated Effort</span>
                             <span className="font-semibold text-slate-200 text-xs capitalize">
-                              {currentRec.explainability.estimatedEffort || `${currentRec.estimatedTimeMinutes} mins`}
+                              {currentRec.estimatedEffort || currentRec.estimatedBenefit}
                             </span>
                           </div>
                         )}
@@ -495,12 +491,12 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                               <span>Probability: <strong className="text-slate-200">{risk.probability || 'High'}</strong></span>
                             </div>
                             <p className="text-slate-300 leading-relaxed">{risk.description}</p>
-                            {risk.action && (
+                            {risk.suggestedAction && (
                               <div className="pt-1.5 border-t border-white/5">
                                 <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">
                                   Mitigation Strategy
                                 </span>
-                                <span className="text-emerald-400 font-semibold">{risk.action}</span>
+                                <span className="text-emerald-400 font-semibold">{risk.suggestedAction}</span>
                               </div>
                             )}
                           </div>

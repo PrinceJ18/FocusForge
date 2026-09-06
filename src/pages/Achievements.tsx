@@ -51,7 +51,14 @@ const XP_EVENT_MAP: Record<string, string> = {
 };
 
 export default function Achievements() {
-  const { expenses, tasks, focusSessions, savingsGoals, profile, user, events, addXP } = useStore();
+  const expenses = useStore(s => s.expenses);
+  const tasks = useStore(s => s.tasks);
+  const focusSessions = useStore(s => s.focusSessions);
+  const savingsGoals = useStore(s => s.savingsGoals);
+  const profile = useStore(s => s.profile);
+  const user = useStore(s => s.user);
+  const events = useStore(s => s.events);
+  const addXP = useStore(s => s.addXP);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');

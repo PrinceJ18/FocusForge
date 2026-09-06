@@ -432,9 +432,9 @@ const TodaysPriority: React.FC<SectionProps> = memo(function TodaysPriority({
                 {topRec.explainability.triggerMetrics.map((tm, idx) => (
                   <span
                     key={idx}
-                    className="px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px]"
+                    className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300 text-[11px]"
                   >
-                    {tm}
+                    {tm.label}: {tm.current}{tm.unit}
                   </span>
                 ))}
               </div>
@@ -449,9 +449,9 @@ const TodaysPriority: React.FC<SectionProps> = memo(function TodaysPriority({
               </div>
             )}
             <div>
-              <span className="text-[10px] text-slate-400 block">Confidence Level</span>
-              <span className="font-semibold text-cyan-400 capitalize">
-                {topRec.explainability.confidence} Confidence
+              <span className="text-[10px] text-slate-500 block mb-0.5">Confidence Level</span>
+              <span className="font-semibold text-cyan-400 text-[11px] capitalize">
+                {topRec.confidence || 'Medium'} Confidence
               </span>
             </div>
           </div>
@@ -474,7 +474,6 @@ const CriticalAlerts: React.FC<SectionProps> = memo(function CriticalAlerts({
   const [expandedRiskId, setExpandedRiskId] = useState<string | null>(null);
   const risks = coach.riskAssessment.slice(0, 5);
 
-  // Don't render the section if all items are dismissed
   const visibleRisks = risks.filter(r => getReadState(`risk-${r.id}`) !== 'dismissed');
   if (visibleRisks.length === 0 && risks.length === 0) return null;
 
@@ -575,17 +574,17 @@ const CriticalAlerts: React.FC<SectionProps> = memo(function CriticalAlerts({
                       </div>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                        Impact
+                      <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
+                        Impact Assessment
                       </span>
-                      <p className="text-slate-200 leading-relaxed">{risk.impact || risk.description}</p>
+                      <p className="text-slate-300 text-[11px] leading-relaxed">{risk.description}</p>
                     </div>
-                    {risk.action && (
+                    {risk.suggestedAction && (
                       <div className="pt-2 border-t border-white/5">
-                        <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-0.5">
+                        <span className="text-[10px] uppercase font-bold text-emerald-500 block mb-1">
                           Suggested Mitigation
                         </span>
-                        <p className="text-slate-100 font-semibold">{risk.action}</p>
+                        <p className="text-slate-200 text-[11px] font-semibold">{risk.suggestedAction}</p>
                       </div>
                     )}
                   </div>
@@ -649,7 +648,6 @@ const AchievementsSection: React.FC<SectionProps> = memo(function AchievementsSe
         </div>
       </div>
 
-      {/* Recent Achievement Cards */}
       {visibleAchs.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
@@ -683,7 +681,6 @@ const AchievementsSection: React.FC<SectionProps> = memo(function AchievementsSe
         </div>
       )}
 
-      {/* Approaching Milestones */}
       {visibleMilestones.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
@@ -973,7 +970,6 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
 
   if (events.length === 0) return null;
 
-  // Group events by day bucket: Today / Yesterday / Earlier
   const grouped = useMemo(() => {
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
@@ -989,8 +985,7 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
     ];
 
     events.forEach((evt) => {
-      // Use timeframe or fallback to "Earlier"
-      const tf = evt.timeframe?.toLowerCase() || '';
+      const tf = evt.timestamp?.toLowerCase() || '';
       if (tf.includes('today') || tf.includes('this morning') || tf.includes('this afternoon')) {
         groups[0].events.push(evt);
       } else if (tf.includes('yesterday')) {
@@ -1061,10 +1056,10 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <UnreadDot state={state} />
-                        <span className="font-bold text-white truncate">{evt.title}</span>
+                        <span className="font-semibold text-white truncate group-hover:text-purple-400 transition-colors">{evt.title}</span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-slate-500">{evt.timeframe}</span>
+                        <span className="text-[10px] text-slate-500 shrink-0 whitespace-nowrap">{evt.timestamp}</span>
                         <NotifActions
                           id={notifId}
                           state={state}

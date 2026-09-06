@@ -168,7 +168,7 @@ export function useCoach(): UseCoachReturn {
 
       return createCoachEngine(context);
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.NODE_ENV === 'development') {
         console.warn('[useCoach] Failed to create coach engine:', err);
       }
       return null;
@@ -235,7 +235,7 @@ export function useCoach(): UseCoachReturn {
         },
       };
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.NODE_ENV === 'development') {
         console.warn('[useCoach] Failed to generate coach outputs:', err);
       }
       return {

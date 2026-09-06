@@ -273,7 +273,7 @@ export default function Friends() {
                 const level = f.profile?.level || 1;
                 const xp = f.profile?.xp || 0;
                 const streak = f.profile?.streak || 0;
-                const arenaScore = f.profile?.arena_score || 0;
+                const arenaScore = (f.profile as any)?.arena_score || 0;
                 const friendSince = f.created_at ? format(parseISO(f.created_at), 'MMM d, yyyy') : 'Recent';
 
                 return (

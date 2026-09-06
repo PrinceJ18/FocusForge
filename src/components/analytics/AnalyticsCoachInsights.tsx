@@ -56,26 +56,26 @@ export const AnalyticsIntelligentSummary: React.FC<AnalyticsIntelligentSummaryPr
 
     // 1. Strongest Improvement
     const strongestImprovement =
-      weeklyReview?.wins?.[0] ||
+      weeklyReview?.wins?.[0]?.description ||
       (dailyBrief?.yesterdaySummary
         ? dailyBrief.yesterdaySummary
         : 'Focus endurance is scaling consistently across work sessions.');
 
     // 2. Biggest Friction / Decline Point
     const biggestDecline =
-      weeklyReview?.improvements?.[0] ||
+      weeklyReview?.improvements?.[0]?.description ||
       (earlyRisks?.topCriticalRisks?.[0]?.description ??
         'Weekend expenditures occasionally outpace weekday budget thresholds.');
 
     // 3. Best Habit Discovered
     const bestHabit = habits
-      ? `Peak cadence on ${habits.bestWeekday.dayName}s with prime focus at ${habits.bestFocusHour.label}.`
+      ? `Peak cadence on ${habits.bestWeekday.dayName}s with prime focus at ${habits.bestFocusHour.timeWindow}.`
       : 'Morning work blocks yield the lowest distraction rate.';
 
     // 4. Biggest Opportunity
     const biggestOpportunity =
       recommendations[0]?.title ||
-      habits?.procrastination.actionableAdvice ||
+      habits?.procrastinationPatterns.patternSummary ||
       'Complete high-priority backlog tasks early in the daily cycle.';
 
     const summaryCards = [
@@ -414,12 +414,12 @@ export const AnalyticsRiskOverview: React.FC<AnalyticsRiskOverviewProps> = memo(
                         <p className="text-slate-200 leading-relaxed">{risk.description}</p>
                       </div>
 
-                      {risk.action && (
+                      {risk.suggestedAction && (
                         <div className="pt-2 border-t border-white/5">
                           <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-0.5">
                             Suggested Action
                           </span>
-                          <p className="text-slate-100 font-semibold">{risk.action}</p>
+                          <p className="text-slate-100 font-semibold">{risk.suggestedAction}</p>
                         </div>
                       )}
                     </div>
@@ -462,22 +462,22 @@ export const AnalyticsBehaviourSummary: React.FC<AnalyticsBehaviourSummaryProps>
         icon: Calendar,
         label: 'Best Weekday',
         value: habits.bestWeekday.dayName,
-        sub: `${habits.bestWeekday.avgMinutes}m average focus`,
+        sub: `${habits.bestWeekday.avgFocusMinutes}m average focus`,
         color: '#a855f7',
       },
       {
         icon: Clock,
         label: 'Best Focus Hour',
-        value: habits.bestFocusHour.label,
+        value: habits.bestFocusHour.timeWindow,
         sub: 'Highest flow-state block',
         color: '#06b6d4',
       },
       {
         icon: Wallet,
         label: 'Weekend Dynamics',
-        value: `${habits.weekendDynamics.spendingMultiplier}x Weekday Spend`,
-        sub: habits.weekendDynamics.isWeekendSpike ? 'Weekend spending surge' : 'Balanced spending',
-        color: habits.weekendDynamics.isWeekendSpike ? '#f59e0b' : '#10b981',
+        value: `${habits.weekendBehaviour.spendRatioWeekendToWeekday}x Weekday Spend`,
+        sub: habits.weekendBehaviour.pattern === 'high_spending_weekend' ? 'Weekend spending surge' : 'Balanced spending',
+        color: habits.weekendBehaviour.pattern === 'high_spending_weekend' ? '#f59e0b' : '#10b981',
       },
       {
         icon: Flame,
@@ -580,7 +580,7 @@ export const AnalyticsTimeline: React.FC<AnalyticsTimelineProps> = memo(function
             <div className="flex-1 min-w-0 bg-white/[0.02] border border-white/5 p-3 rounded-xl">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="font-bold text-white truncate">{evt.title}</span>
-                <span className="text-[10px] text-slate-500 shrink-0">{evt.timeframe}</span>
+                <span className="text-[10px] text-slate-500 shrink-0">{evt.timestamp}</span>
               </div>
               <p className="text-slate-300 text-[11px] leading-relaxed">{evt.description}</p>
             </div>

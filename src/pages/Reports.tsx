@@ -38,7 +38,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function Reports() {
-  const { expenses, tasks, focusSessions, savingsGoals, profile, setPage } = useStore();
+  const expenses = useStore(s => s.expenses);
+  const tasks = useStore(s => s.tasks);
+  const focusSessions = useStore(s => s.focusSessions);
+  const savingsGoals = useStore(s => s.savingsGoals);
+  const profile = useStore(s => s.profile);
+  const setPage = useStore(s => s.setPage);
   const { history: goalsHistory } = useDailyGoalsStore();
   const coach = useCoach();
 

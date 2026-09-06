@@ -79,6 +79,8 @@ export default function App() {
       return next;
     });
   }, []);
+  // Stable callback for opening sidebar (prevents PageLayout + Header re-renders)
+  const handleMenuClick = useCallback(() => setSidebarOpen(true), []);
 
   // Apply user styling preferences to root DOM on value change
   useEffect(() => {
@@ -274,7 +276,7 @@ export default function App() {
 
       {/* Main content */}
       <main id="main-content" className="main-content relative z-10">
-        <PageLayout onMenuClick={() => setSidebarOpen(true)}>
+        <PageLayout onMenuClick={handleMenuClick}>
           <PageErrorBoundary onNavigateHome={handleErrorNavigateHome}>
             <Suspense fallback={<div className="p-4 md:p-8"><PageSkeleton /></div>}>
               {activePage === 'dashboard' && <Dashboard />}

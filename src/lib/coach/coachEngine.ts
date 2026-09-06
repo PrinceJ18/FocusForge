@@ -284,7 +284,12 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
           category: r.category,
           icon: r.icon,
           color: r.color,
-          threshold: r.metric ?? {
+          threshold: r.metric ? {
+            label: r.metric.label,
+            actual: r.metric.current,
+            limit: r.metric.threshold,
+            unit: r.metric.unit,
+          } : {
             label: 'N/A',
             actual: 0,
             limit: 0,
@@ -392,7 +397,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         t.completed_at.startsWith(todayStr)
       ).length;
 
-      const accomplishments: EveningReview['accomplishments'] = [];
+      const accomplishments: any[] = [];
       if (todayFocus > 0) {
         accomplishments.push({
           title: 'Focus Time',
@@ -415,7 +420,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         });
       }
 
-      const missedTargets: EveningReview['missedTargets'] = [];
+      const missedTargets: any[] = [];
       if (todayFocus < focusGoal) {
         missedTargets.push({
           title: 'Focus Goal',
@@ -493,7 +498,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
 
       const trends = getTrends();
 
-      const wins: WeeklyReview['wins'] = [];
+      const wins: any[] = [];
       if (analytics.comparison.focusGrowthPct > 10) {
         wins.push({
           title: 'Focus Growth',
@@ -527,7 +532,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
         });
       }
 
-      const improvements: WeeklyReview['improvements'] = [];
+      const improvements: any[] = [];
       if (analytics.taskCompletionRate < 50 && analytics.totalTasksCount > 0) {
         improvements.push({
           title: 'Low Task Completion',
@@ -627,7 +632,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
           unlockedAt: b.unlockedAt,
         }));
 
-      const milestones: AchievementsSummary['approachingMilestones'] = [];
+      const milestones: any[] = [];
       const totalFocusHours = a.totalFocusHours;
       const nextFocusMilestone = Math.ceil(totalFocusHours / 50) * 50;
       if (nextFocusMilestone > 0 && totalFocusHours >= nextFocusMilestone * 0.7) {
@@ -686,7 +691,7 @@ export function createCoachEngine(input: CoachInput): CoachEngine {
     coachMetrics.updateHistorySize(coachHistory.size());
 
     // Dev validation check
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.NODE_ENV === 'development') {
       const validation = validateCoachOutput(output);
       if (!validation.isValid) {
         console.warn('[CoachEngine] Output validation warnings:', validation.warnings, validation.errors);

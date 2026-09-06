@@ -62,12 +62,27 @@ const getTaskXP = (priority: string) => {
 };
 
 export default function Productivity() {
-  const {
-    tasks, focusSessions, profile, user,
-    timerSeconds, timerRunning, timerMode, pomodoroMinutes, breakMinutes, longBreakMinutes,
-    setTimerSeconds, setTimerRunning, setTimerMode, setPomodoroMinutes,
-    addTaskLocal, updateTaskLocal, removeTaskLocal, addXP: addXPLocal, taskCompletions, taskSections, showNotification
-  } = useStore();
+  const tasks = useStore(s => s.tasks);
+  const focusSessions = useStore(s => s.focusSessions);
+  const profile = useStore(s => s.profile);
+  const user = useStore(s => s.user);
+  const timerSeconds = useStore(s => s.timerSeconds);
+  const timerRunning = useStore(s => s.timerRunning);
+  const timerMode = useStore(s => s.timerMode);
+  const pomodoroMinutes = useStore(s => s.pomodoroMinutes);
+  const breakMinutes = useStore(s => s.breakMinutes);
+  const longBreakMinutes = useStore(s => s.longBreakMinutes);
+  const setTimerSeconds = useStore(s => s.setTimerSeconds);
+  const setTimerRunning = useStore(s => s.setTimerRunning);
+  const setTimerMode = useStore(s => s.setTimerMode);
+  const setPomodoroMinutes = useStore(s => s.setPomodoroMinutes);
+  const addTaskLocal = useStore(s => s.addTaskLocal);
+  const updateTaskLocal = useStore(s => s.updateTaskLocal);
+  const removeTaskLocal = useStore(s => s.removeTaskLocal);
+  const addXPLocal = useStore(s => s.addXP);
+  const taskCompletions = useStore(s => s.taskCompletions);
+  const taskSections = useStore(s => s.taskSections);
+  const showNotification = useStore(s => s.showNotification);
 
   const [completedSession, setCompletedSession] = useState(false);
 

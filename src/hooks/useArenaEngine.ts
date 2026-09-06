@@ -13,7 +13,13 @@ import { isSameWeek, isSameMonth, parseISO, startOfWeek, startOfMonth, format, i
  * arena_members — no hardcoded arena ID needed.
  */
 export function useArenaEngine() {
-  const { user, profile, tasks, focusSessions, expenses, preferences, events } = useStore();
+  const user = useStore(s => s.user);
+  const profile = useStore(s => s.profile);
+  const tasks = useStore(s => s.tasks);
+  const focusSessions = useStore(s => s.focusSessions);
+  const expenses = useStore(s => s.expenses);
+  const preferences = useStore(s => s.preferences);
+  const events = useStore(s => s.events);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeArenaId, setActiveArenaId] = useState<string | null>(null);
 

@@ -399,7 +399,7 @@ export function calculateMonthlyReportData(params: {
     ? monthExpenses.reduce((max, e) => e.amount > max.amount ? e : max, monthExpenses[0])
     : null;
   const largestExpense = largestExpenseItem
-    ? { amount: largestExpenseItem.amount, category: largestExpenseItem.category, description: largestExpenseItem.description || '' }
+    ? { amount: largestExpenseItem.amount, category: largestExpenseItem.category, description: largestExpenseItem.note || '' }
     : { amount: 0, category: 'N/A', description: '' };
 
   // ═══════════════════════════════════════════════════

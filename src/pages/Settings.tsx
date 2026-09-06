@@ -19,7 +19,19 @@ const ACCENT_COLORS = [
 ];
 
 export default function Settings() {
-  const { preferences, updatePreferencesLocal, user, profile, updateProfile, expenses, tasks, focusSessions, savingsGoals, customCategories, events, recurringExpenses, showNotification } = useStore();
+  const preferences = useStore(s => s.preferences);
+  const updatePreferencesLocal = useStore(s => s.updatePreferencesLocal);
+  const user = useStore(s => s.user);
+  const profile = useStore(s => s.profile);
+  const updateProfile = useStore(s => s.updateProfile);
+  const expenses = useStore(s => s.expenses);
+  const tasks = useStore(s => s.tasks);
+  const focusSessions = useStore(s => s.focusSessions);
+  const savingsGoals = useStore(s => s.savingsGoals);
+  const customCategories = useStore(s => s.customCategories);
+  const events = useStore(s => s.events);
+  const recurringExpenses = useStore(s => s.recurringExpenses);
+  const showNotification = useStore(s => s.showNotification);
   const [activeTab, setActiveTab] = useState<'appearance' | 'focus' | 'goals' | 'notifications' | 'finance' | 'analytics' | 'accessibility' | 'backup' | 'account' | 'about'>('appearance');
 
   const [displayName, setDisplayName] = useState(profile.display_name || '');

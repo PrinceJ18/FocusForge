@@ -59,7 +59,13 @@ import {
 } from '../components/analytics/AnalyticsCoachInsights';
 
 export default function Analytics() {
-  const { expenses, focusSessions, tasks, profile, savingsGoals, events, setPage } = useStore();
+  const expenses = useStore(s => s.expenses);
+  const focusSessions = useStore(s => s.focusSessions);
+  const tasks = useStore(s => s.tasks);
+  const profile = useStore(s => s.profile);
+  const savingsGoals = useStore(s => s.savingsGoals);
+  const events = useStore(s => s.events);
+  const setPage = useStore(s => s.setPage);
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
   const coach = useCoach();
 
@@ -97,7 +103,7 @@ export default function Analytics() {
           description="Complete a few focus sessions, check off tasks, or log expenses to unlock intelligent productivity insights and financial health tracking."
           action={{
             label: 'Start Focus Session',
-            onClick: () => setPage('focus'),
+            onClick: () => setPage('productivity'),
             icon: Play,
           }}
         />
@@ -113,7 +119,7 @@ export default function Analytics() {
                 Measure daily focus volume, session endurance, and peak hours.
               </p>
               <button
-                onClick={() => setPage('focus')}
+                onClick={() => setPage('productivity')}
                 className="text-xs font-semibold text-purple-400 hover:text-purple-300 mt-2 inline-flex items-center gap-1"
               >
                 Launch Focus Clock →
@@ -479,7 +485,7 @@ export default function Analytics() {
             insightText={
               coach.behaviourTrends?.focus.summary ||
               (coach.habits
-                ? `Your peak focus window is ${coach.habits.bestFocusHour.label} with ${coach.habits.bestWeekday.dayName} being your strongest day.`
+                ? `Your peak focus window is ${coach.habits.bestFocusHour.timeWindow} with ${coach.habits.bestWeekday.dayName} being your strongest day.`
                 : 'Focus velocity is pacing steadily across active sessions.')
             }
             category="focus"
@@ -547,7 +553,7 @@ export default function Analytics() {
             <ChartInsightPanel
               insightText={
                 coach.habits
-                  ? `Peak consistency on ${coach.habits.bestWeekday.dayName}s (${coach.habits.bestWeekday.avgMinutes}m avg).`
+                  ? `Peak consistency on ${coach.habits.bestWeekday.dayName}s (${coach.habits.bestWeekday.avgFocusMinutes}m avg).`
                   : 'Weekly consistency pace remains stable.'
               }
               category="consistency"

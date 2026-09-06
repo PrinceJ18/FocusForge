@@ -54,11 +54,21 @@ const isDateThisMonth = (dateStr: string) => {
 };
 
 export default function Finance() {
-  const {
-    expenses, savingsGoals, customCategories, profile, user,
-    addExpenseLocal, removeExpenseLocal, updateProfile, setSavingsGoals, setCustomCategories,
-    recurringExpenses, addRecurringExpenseLocal, updateRecurringExpenseLocal, removeRecurringExpenseLocal, showNotification
-  } = useStore();
+  const expenses = useStore(s => s.expenses);
+  const savingsGoals = useStore(s => s.savingsGoals);
+  const customCategories = useStore(s => s.customCategories);
+  const profile = useStore(s => s.profile);
+  const user = useStore(s => s.user);
+  const addExpenseLocal = useStore(s => s.addExpenseLocal);
+  const removeExpenseLocal = useStore(s => s.removeExpenseLocal);
+  const updateProfile = useStore(s => s.updateProfile);
+  const setSavingsGoals = useStore(s => s.setSavingsGoals);
+  const setCustomCategories = useStore(s => s.setCustomCategories);
+  const recurringExpenses = useStore(s => s.recurringExpenses);
+  const addRecurringExpenseLocal = useStore(s => s.addRecurringExpenseLocal);
+  const updateRecurringExpenseLocal = useStore(s => s.updateRecurringExpenseLocal);
+  const removeRecurringExpenseLocal = useStore(s => s.removeRecurringExpenseLocal);
+  const showNotification = useStore(s => s.showNotification);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'expenses' | 'recurring' | 'savings' | 'categories'>('overview');
 

@@ -61,11 +61,33 @@ const getTaskXP = (priority: string) => {
 };
 
 export default function Dashboard() {
-  const {
-    expenses, tasks, focusSessions, savingsGoals, profile, user, setPage,
-    timerSeconds, timerRunning, timerMode, setTimerSeconds, setTimerRunning, setTimerMode,
-    preferences, events, recurringExpenses, addExpenseLocal, addTaskLocal, updateTaskLocal, removeTaskLocal, removeRecurringExpenseLocal, addXP, taskCompletions, taskSections, updatePreferencesLocal, showNotification
-  } = useStore();
+  // Individual selectors — each only triggers re-render when its value changes
+  const expenses = useStore(s => s.expenses);
+  const tasks = useStore(s => s.tasks);
+  const focusSessions = useStore(s => s.focusSessions);
+  const savingsGoals = useStore(s => s.savingsGoals);
+  const profile = useStore(s => s.profile);
+  const user = useStore(s => s.user);
+  const setPage = useStore(s => s.setPage);
+  const timerSeconds = useStore(s => s.timerSeconds);
+  const timerRunning = useStore(s => s.timerRunning);
+  const timerMode = useStore(s => s.timerMode);
+  const setTimerSeconds = useStore(s => s.setTimerSeconds);
+  const setTimerRunning = useStore(s => s.setTimerRunning);
+  const setTimerMode = useStore(s => s.setTimerMode);
+  const preferences = useStore(s => s.preferences);
+  const events = useStore(s => s.events);
+  const recurringExpenses = useStore(s => s.recurringExpenses);
+  const addExpenseLocal = useStore(s => s.addExpenseLocal);
+  const addTaskLocal = useStore(s => s.addTaskLocal);
+  const updateTaskLocal = useStore(s => s.updateTaskLocal);
+  const removeTaskLocal = useStore(s => s.removeTaskLocal);
+  const removeRecurringExpenseLocal = useStore(s => s.removeRecurringExpenseLocal);
+  const addXP = useStore(s => s.addXP);
+  const taskCompletions = useStore(s => s.taskCompletions);
+  const taskSections = useStore(s => s.taskSections);
+  const updatePreferencesLocal = useStore(s => s.updatePreferencesLocal);
+  const showNotification = useStore(s => s.showNotification);
 
   const [showQuickAddExpense, setShowQuickAddExpense] = useState(false);
   const [showQuickAddTask, setShowQuickAddTask] = useState(false);

@@ -209,7 +209,7 @@ export function buildCoachContext(
       period,
     });
   } catch (err) {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.NODE_ENV === 'development') {
       console.warn('[Coach] Analytics computation failed, using safe defaults:', err);
     }
     // Return a minimal safe AnalyticsEngineResult
@@ -231,7 +231,7 @@ export function buildCoachContext(
         yearMonth,
       });
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.NODE_ENV === 'development') {
         console.warn('[Coach] Monthly report computation failed:', err);
       }
       monthlyReport = undefined;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X, BookOpen, Award, Settings, Bell, Brain, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore, type Page } from '../store/useStore';
 import { calculateCurrentLevel, calculateXPProgress } from '../lib/statistics';
@@ -26,8 +26,11 @@ const navItems: Array<{ id: string; label: string; icon: React.ReactNode }> = [
   { id: 'command-center', label: 'AI Command Center', icon: <Brain size={18} /> },
 ];
 
-export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
-  const { currentPage, setPage, profile, user } = useStore();
+const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }: SidebarProps) {
+  const currentPage = useStore(s => s.currentPage);
+  const setPage = useStore(s => s.setPage);
+  const profile = useStore(s => s.profile);
+  const user = useStore(s => s.user);
   const levelInfo = calculateCurrentLevel(profile.xp);
 
   const xpLevel = levelInfo.level;
@@ -64,7 +67,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }
           aria-controls="sidebar-nav"
           type="button"
         >
-          {collapsed ? <ChevronRight size={16} strokeWidth={2.5} /> : <ChevronLeft size={16} strokeWidth={2.5} />}
+          {collapsed ? <ChevronRight size={20} strokeWidth={2.5} /> : <ChevronLeft size={20} strokeWidth={2.5} />}
         </button>
 
         {/* Inner container — clips overflow for content but button stays visible */}
@@ -192,4 +195,6 @@ export default function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }
       </aside>
     </>
   );
-}
+});
+
+export default Sidebar;

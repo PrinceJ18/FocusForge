@@ -61,15 +61,15 @@ export const ReportsExecutiveIntelligence: React.FC<ReportsExecutiveIntelligence
     const { weeklyReview, monthlyReview, habits, recommendations, earlyRisks, dailyBrief } = coach;
 
     const biggestAchievement =
-      monthlyReview?.highlights?.[0] ||
-      weeklyReview?.wins?.[0] ||
+      monthlyReview?.executiveSummary?.[0] ||
+      weeklyReview?.wins?.[0]?.description ||
       (dailyBrief?.yesterdaySummary
         ? dailyBrief.yesterdaySummary
         : 'High-volume focus momentum maintained across work cycles.');
 
     const biggestConcern =
       earlyRisks?.topCriticalRisks?.[0]?.description ||
-      weeklyReview?.improvements?.[0] ||
+      weeklyReview?.improvements?.[0]?.description ||
       'Weekend expenditure velocity outpaces weekday allocation.';
 
     const bestHabit = habits
@@ -210,9 +210,9 @@ export const ReportsBehaviourAnalysis: React.FC<ReportsBehaviourAnalysisProps> =
       {
         icon: Target,
         label: 'Procrastination Risk',
-        value: `${habits.procrastination.procrastinationScore}/100`,
-        sub: `${habits.procrastination.overdueTaskCount} overdue items`,
-        color: habits.procrastination.procrastinationScore > 50 ? '#ef4444' : '#10b981',
+        value: `${habits.procrastinationPatterns.delayFrequencyScore}/100`,
+        sub: `${habits.procrastinationPatterns.overdueBacklogAgingDays} overdue items`,
+        color: habits.procrastinationPatterns.delayFrequencyScore > 50 ? '#ef4444' : '#10b981',
       },
       {
         icon: Flame,
@@ -224,8 +224,8 @@ export const ReportsBehaviourAnalysis: React.FC<ReportsBehaviourAnalysisProps> =
       {
         icon: TrendingUp,
         label: 'Spending Behaviour',
-        value: habits.spending.topCategory || 'Disciplined',
-        sub: `${habits.spending.spendingConsistencyScore}% discipline score`,
+        value: habits.spendingHabits.topSpendingCategory || 'Disciplined',
+        sub: `${habits.spendingHabits.dailySpendVariance}% deviation`,
         color: '#3b82f6',
       },
     ];
@@ -477,7 +477,7 @@ export const ReportsStrategicRecommendations: React.FC<ReportsStrategicRecommend
                               key={idx}
                               className="px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px]"
                             >
-                              {tm}
+                              {tm.label}: {tm.current}{tm.unit}
                             </span>
                           ))}
                         </div>
@@ -496,7 +496,7 @@ export const ReportsStrategicRecommendations: React.FC<ReportsStrategicRecommend
                       <div>
                         <span className="text-[10px] text-slate-400 block">Confidence Level</span>
                         <span className="font-semibold text-cyan-400 text-xs capitalize">
-                          {rec.explainability.confidence} Confidence
+                          {rec.confidence || 'Medium'} Confidence
                         </span>
                       </div>
                     </div>
@@ -619,15 +619,15 @@ export const ReportsRiskAssessment: React.FC<ReportsRiskAssessmentProps> = memo(
                         <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
                           Impact Assessment
                         </span>
-                        <p className="text-slate-200 leading-relaxed">{risk.impact || risk.description}</p>
+                        <p className="text-slate-200 leading-relaxed">{risk.description}</p>
                       </div>
 
-                      {risk.action && (
+                      {risk.suggestedAction && (
                         <div className="pt-2 border-t border-white/5">
                           <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-0.5">
                             Suggested Mitigation
                           </span>
-                          <p className="text-slate-100 font-semibold">{risk.action}</p>
+                          <p className="text-slate-100 font-semibold">{risk.suggestedAction}</p>
                         </div>
                       )}
                     </div>
@@ -691,7 +691,7 @@ export const ReportsPerformanceTimeline: React.FC<ReportsPerformanceTimelineProp
               <div className="flex-1 min-w-0 bg-white/[0.02] border border-white/5 p-3 rounded-xl">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="font-bold text-white truncate">{evt.title}</span>
-                  <span className="text-[10px] text-slate-500 shrink-0">{evt.timeframe}</span>
+                  <span className="text-[10px] text-slate-500 shrink-0">{evt.timestamp}</span>
                 </div>
                 <p className="text-slate-300 text-xs leading-relaxed">{evt.description}</p>
               </div>
@@ -715,18 +715,18 @@ export const ReportsExecutiveClosingSummary: React.FC<ReportsExecutiveClosingSum
   function ReportsExecutiveClosingSummary({ coach }) {
     const { predictions, weeklyReview, recommendations, habits, dailyBrief } = coach;
 
-    const overallGrade = predictions?.expectedWeeklyGrade || weeklyReview?.grade || 'A';
+    const overallGrade = predictions?.expectedWeeklyGrade || 'A';
     const momentum = predictions?.focusMomentumFactor
       ? `${Math.round(predictions.focusMomentumFactor * 100)}%`
       : '100%';
-    const primaryFocusArea = habits?.bestFocusHour.label || 'Deep Work Execution';
+    const primaryFocusArea = habits?.bestFocusHour.timeWindow || 'Deep Work Execution';
     const nextBestAction =
       recommendations[0]?.action ||
       recommendations[0]?.title ||
       'Maintain daily focus consistency and protect momentum.';
     const motivation =
       dailyBrief?.motivation ||
-      weeklyReview?.motivation ||
+      weeklyReview?.wins?.[0]?.description ||
       'Consistent execution over time compounds into exceptional performance.';
 
     return (

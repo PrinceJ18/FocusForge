@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { Menu, Bell, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
@@ -29,8 +29,10 @@ const PAGE_SUBTITLES: Record<string, string> = {
   settings: 'Personalize colors, theme overrides, layout variables, and target goals',
 };
 
-export default function Header({ onMenuClick, title, subtitle, headerActions }: HeaderProps) {
-  const { user, profile, currentPage } = useStore();
+const Header = memo(function Header({ onMenuClick, title, subtitle, headerActions }: HeaderProps) {
+  const user = useStore(s => s.user);
+  const profile = useStore(s => s.profile);
+  const currentPage = useStore(s => s.currentPage);
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -240,7 +242,6 @@ function LoginButton({ onClick }: { onClick: () => void }) {
       Sign In
     </Button>
   );
-}
+});
 
-
-
+export default Header;

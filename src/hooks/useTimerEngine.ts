@@ -84,7 +84,7 @@ export function useTimerEngine() {
           const remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
           state.setTimerSeconds(remaining);
         }
-      }, 200); // Polling frequently ensures extremely precise UI ticking
+      }, 1000); // 1s interval — deadline-based timing ensures accuracy regardless of interval
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

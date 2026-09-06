@@ -16,7 +16,10 @@ import GoalSettingsModal from './GoalSettingsModal';
 // ============================================================
 
 export default function TodaysGoalsCard() {
-  const { focusSessions, tasks, expenses, profile } = useStore();
+  const focusSessions = useStore(s => s.focusSessions);
+  const tasks = useStore(s => s.tasks);
+  const expenses = useStore(s => s.expenses);
+  const profile = useStore(s => s.profile);
   const {
     goalConfigs,
     customGoalProgress,
