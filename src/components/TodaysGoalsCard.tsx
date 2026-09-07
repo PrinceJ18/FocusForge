@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Settings, ChevronDown, ChevronUp, Minus, Plus, Check } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
@@ -15,7 +15,7 @@ import GoalSettingsModal from './GoalSettingsModal';
 // Today's Goals Card — Dashboard Integration
 // ============================================================
 
-export default function TodaysGoalsCard() {
+const TodaysGoalsCard = memo(function TodaysGoalsCard() {
   const focusSessions = useStore(s => s.focusSessions);
   const tasks = useStore(s => s.tasks);
   const expenses = useStore(s => s.expenses);
@@ -288,7 +288,7 @@ export default function TodaysGoalsCard() {
       {showSettings && <GoalSettingsModal onClose={() => setShowSettings(false)} />}
     </>
   );
-}
+});
 
 // ============================================================
 // Individual Goal Row
@@ -411,6 +411,8 @@ function GoalRow({
     </div>
   );
 }
+
+export default TodaysGoalsCard;
 
 // ============================================================
 // Helpers

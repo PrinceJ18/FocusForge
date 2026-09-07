@@ -224,8 +224,7 @@ const Header = memo(function Header({ onMenuClick, title, subtitle, headerAction
 
     </header>
   );
-}
-
+});
 
 function LoginButton({ onClick }: { onClick: () => void }) {
   return (
@@ -242,6 +241,6 @@ function LoginButton({ onClick }: { onClick: () => void }) {
       Sign In
     </Button>
   );
-});
+}
 
 export default Header;

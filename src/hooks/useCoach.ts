@@ -31,12 +31,13 @@
  * @module hooks/useCoach
  */
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useStore } from '../store/useStore';
 import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
 import { buildCoachContext } from '../lib/coach/coachContext';
 import { createCoachEngine } from '../lib/coach/coachEngine';
 import type { CoachEngine } from '../lib/coach/coachEngine';
+import { coachScheduler } from '../lib/coach/coachScheduler';
 import type {
   DailyBrief,
   EveningReview,
@@ -149,24 +150,37 @@ export function useCoach(): UseCoachReturn {
   const events = useStore(s => s.events);
   const dailyGoalHistory = useDailyGoalsStore(s => s.history);
 
-  // ─── Build engine (memoized) ─────────────────────────
+  // ─── Cached engine ref (survives across useMemo invalidations) ──
+  const cachedEngineRef = useRef<CoachEngine | null>(null);
+
+  // ─── Build engine (memoized + scheduler-guarded) ─────
   const engine = useMemo((): CoachEngine | null => {
     try {
+      const contextInput = {
+        tasks,
+        focusSessions,
+        expenses,
+        savingsGoals,
+        profile,
+        preferences,
+        events,
+        dailyGoalHistory,
+      };
+
       const context = buildCoachContext(
-        {
-          tasks,
-          focusSessions,
-          expenses,
-          savingsGoals,
-          profile,
-          preferences,
-          events,
-          dailyGoalHistory,
-        },
+        contextInput,
         { period: '30d', includeMonthlyReport: false }
       );
 
-      return createCoachEngine(context);
+      // Use scheduler dirty-checking to skip redundant engine creation
+      if (cachedEngineRef.current && !coachScheduler.needsRefresh(context)) {
+        return cachedEngineRef.current;
+      }
+
+      const newEngine = createCoachEngine(context);
+      coachScheduler.markComputed(context);
+      cachedEngineRef.current = newEngine;
+      return newEngine;
     } catch (err) {
       if (import.meta.env.NODE_ENV === 'development') {
         console.warn('[useCoach] Failed to create coach engine:', err);

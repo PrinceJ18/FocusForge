@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import {
   format,
   parseISO,
@@ -49,7 +49,7 @@ interface DayAggregate {
 
 const WEEKDAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-export default function FocusHeatMap({ period }: FocusHeatMapProps) {
+const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
   const focusSessions = useStore(s => s.focusSessions);
   const tasks = useStore(s => s.tasks);
   const taskCompletions = useStore(s => s.taskCompletions);
@@ -686,4 +686,6 @@ export default function FocusHeatMap({ period }: FocusHeatMapProps) {
       )}
     </div>
   );
-}
+});
+
+export default FocusHeatMap;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, RotateCcw } from 'lucide-react';
 import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
 import type { DailyGoalConfig, GoalDifficulty, GoalUnit } from '../store/useDailyGoalsStore';
@@ -41,7 +41,7 @@ interface GoalSettingsModalProps {
   onClose: () => void;
 }
 
-export default function GoalSettingsModal({ onClose }: GoalSettingsModalProps) {
+const GoalSettingsModal = memo(function GoalSettingsModal({ onClose }: GoalSettingsModalProps) {
   const {
     goalConfigs,
     difficulty,
@@ -292,7 +292,7 @@ export default function GoalSettingsModal({ onClose }: GoalSettingsModalProps) {
         </div>
     </Modal>
   );
-}
+});
 
 // ============================================================
 // Built-in Goal Editor
@@ -605,6 +605,8 @@ function ToggleSwitch({
     </button>
   );
 }
+
+export default GoalSettingsModal;
 
 // ============================================================
 // Helpers

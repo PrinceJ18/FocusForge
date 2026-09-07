@@ -56,7 +56,7 @@ export function useDailyGoalWatcher() {
 
     // If today differs from the last XP snapshot date, capture today's starting XP
     if (dailyXPDate !== today) {
-      useDailyGoalsStore.getState().updateDailyXPStart(profile.xp, today);
+      useDailyGoalsStore.getState().updateDailyXPStart(profileXp, today);
     }
 
     // If we haven't snapshotted yesterday and there's a previous date, do it
