@@ -37,79 +37,50 @@ export function useArenaActivity(arenaId: string | null) {
     fetchInitial();
   }, [fetchInitial]);
 
-  // Realtime subscription with exponential backoff
+  // Realtime subscription (reconnection is handled natively by Supabase)
   useEffect(() => {
     if (!arenaId) return;
 
-    let retryTimeout: ReturnType<typeof setTimeout>;
-    let retryCount = 0;
-    const maxRetries = 5;
-    const baseDelay = 1000;
-    
-    let channel: any = null;
+    const channel = supabase
+      .channel(`arena_activity_${arenaId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'arena_activity', filter: `arena_id=eq.${arenaId}` },
+        async (payload) => {
+          const { data: actData, error: actErr } = await supabase
+            .from('arena_activity')
+            .select('*')
+            .eq('id', payload.new.id)
+            .single();
 
-    const setupSubscription = () => {
-      channel = supabase
-        .channel(`arena_activity_${arenaId}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'arena_activity', filter: `arena_id=eq.${arenaId}` },
-          async (payload) => {
-            const { data: actData, error: actErr } = await supabase
-              .from('arena_activity')
-              .select('*')
-              .eq('id', payload.new.id)
-              .single();
-
-            if (!actErr && actData) {
-              let profileData = null;
-              if (actData.user_id) {
-                const { data: prof } = await supabase
-                  .from('profiles')
-                  .select('display_name, avatar_url')
-                  .eq('id', actData.user_id)
-                  .maybeSingle();
-                profileData = prof;
-              }
-
-              const newActivity: ArenaActivity = {
-                ...actData,
-                profile: profileData || { display_name: null, avatar_url: null },
-              } as ArenaActivity;
-
-              setActivities(prev => {
-                if (prev.some(a => a.id === newActivity.id)) return prev;
-                return [newActivity, ...prev];
-              });
-              notificationService.processIncomingActivities([newActivity]);
+          if (!actErr && actData) {
+            let profileData = null;
+            if (actData.user_id) {
+              const { data: prof } = await supabase
+                .from('profiles')
+                .select('display_name, avatar_url')
+                .eq('id', actData.user_id)
+                .maybeSingle();
+              profileData = prof;
             }
-          }
-        )
-        .subscribe((status, err) => {
-          if (status === 'SUBSCRIBED') {
-            retryCount = 0; // Reset on success
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            if (retryCount < maxRetries) {
-              const delay = baseDelay * Math.pow(2, retryCount);
-              console.warn(`Realtime disconnected. Retrying in ${delay}ms (Attempt ${retryCount + 1}/${maxRetries})`);
-              retryTimeout = setTimeout(() => {
-                retryCount++;
-                setupSubscription();
-              }, delay);
-            } else {
-              console.error('Realtime subscription failed after maximum retries.');
-            }
-          }
-        });
-    };
 
-    setupSubscription();
+            const newActivity: ArenaActivity = {
+              ...actData,
+              profile: profileData || { display_name: null, avatar_url: null },
+            } as ArenaActivity;
+
+            setActivities(prev => {
+              if (prev.some(a => a.id === newActivity.id)) return prev;
+              return [newActivity, ...prev];
+            });
+            notificationService.processIncomingActivities([newActivity]);
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
-      clearTimeout(retryTimeout);
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      supabase.removeChannel(channel);
     };
   }, [arenaId]);
 

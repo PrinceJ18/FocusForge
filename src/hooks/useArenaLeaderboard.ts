@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
 
 export function useArenaLeaderboard(arenaId: string | null, periodType: 'weekly' | 'monthly') {
-  const { user } = useStore();
+  const user = useStore(s => s.user);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
