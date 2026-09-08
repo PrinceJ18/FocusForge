@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState, useMemo } from 'react';
 import { Menu, Bell, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
@@ -8,6 +8,7 @@ import Button from './ui/Button';
 import Badge from './ui/Badge';
 import { getLevelInfo } from "../lib/levels";
 import useRouteChangeCleanup from '../hooks/useRouteChangeCleanup';
+import { useCoach } from '../hooks/useCoach';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -33,10 +34,27 @@ const Header = memo(function Header({ onMenuClick, title, subtitle, headerAction
   const user = useStore(s => s.user);
   const profile = useStore(s => s.profile);
   const currentPage = useStore(s => s.currentPage);
+  const setPage = useStore(s => s.setPage);
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const coach = useCoach();
+
+  const totalUnread = useMemo(() => {
+    let count = 0;
+    if (coach.recommendations.length > 0) count++;
+    count += coach.riskAssessment.length;
+    if (coach.achievementsSummary) {
+      count += coach.achievementsSummary.recentAchievements.length;
+      count += coach.achievementsSummary.approachingMilestones.length;
+    }
+    if (coach.predictions) count += 2;
+    if (coach.habits) count += 4;
+    count += Math.min(coach.timeline.length, 20);
+    return count;
+  }, [coach]);
 
   useRouteChangeCleanup(() => setDropdownOpen(false), dropdownOpen);
 
@@ -111,6 +129,31 @@ const Header = memo(function Header({ onMenuClick, title, subtitle, headerAction
             <span className="text-sm">🔥</span>
             <span>{profile.streak}d</span>
           </Badge>
+        )}
+
+        {/* Notification Bell */}
+        {user && (
+          <button
+            onClick={() => setPage('notifications')}
+            className="relative flex items-center justify-center rounded-12 transition-all h-[44px] w-[44px]"
+            aria-label="Notifications"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid var(--border-color)',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+          >
+            <Bell size={20} style={{ color: 'var(--text-primary)' }} />
+            {totalUnread > 0 && (
+              <span 
+                className="absolute -top-1 -right-1 flex items-center justify-center text-[10px] font-bold text-white rounded-full px-1 min-w-[18px] h-[18px]"
+                style={{ background: 'var(--brand-primary)', boxShadow: '0 0 0 2px var(--bg-primary)' }}
+              >
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </span>
+            )}
+          </button>
         )}
 
         {/* User menu */}

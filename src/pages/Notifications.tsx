@@ -117,59 +117,12 @@ export default function Notifications() {
     [readIds, dismissedIds]
   );
 
-  // Aggregate notification count for badge
-  const totalUnread = useMemo(() => {
-    let count = 0;
-    if (coach.recommendations.length > 0) count++;
-    count += coach.riskAssessment.length;
-    if (coach.achievementsSummary) {
-      count += coach.achievementsSummary.recentAchievements.length;
-      count += coach.achievementsSummary.approachingMilestones.length;
-    }
-    if (coach.predictions) count += 2;
-    if (coach.habits) count += 4;
-    count += Math.min(coach.timeline.length, 20);
-    // Subtract reads and dismissals
-    return Math.max(0, count - readIds.size - dismissedIds.size);
-  }, [coach, readIds.size, dismissedIds.size]);
 
   const showSection = (filter: NotificationFilter) =>
     activeFilter === 'all' || activeFilter === filter;
 
   return (
     <div className="page-enter space-y-6 text-left pb-16">
-      {/* ═══ HEADER ═══ */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
-            >
-              <Bell size={20} className="text-white" />
-            </div>
-            <div>
-              <h1
-                className="text-xl font-black text-slate-100 tracking-tight"
-                style={{ fontFamily: 'Space Grotesk' }}
-              >
-                Notification Center
-              </h1>
-              <p className="text-xs text-slate-400">
-                Your intelligent inbox for insights, risks, achievements, and recommendations.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {totalUnread > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-bold text-purple-400 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20">
-              {totalUnread} unread
-            </span>
-          </div>
-        )}
-      </div>
 
       {/* ═══ SECTION 7: NOTIFICATION FILTERS ═══ */}
       <NotificationFilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />
