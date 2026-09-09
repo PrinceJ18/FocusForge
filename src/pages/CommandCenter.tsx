@@ -135,26 +135,6 @@ export default function CommandCenter() {
 
   return (
     <div className="page-enter space-y-6 text-left pb-16">
-      {/* ═══ PAGE HEADER ═══ */}
-      <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'linear-gradient(135deg, #a855f7, #06b6d4)' }}
-        >
-          <Brain size={20} className="text-white" />
-        </div>
-        <div>
-          <h1
-            className="text-xl font-black text-slate-100 tracking-tight"
-            style={{ fontFamily: 'Space Grotesk' }}
-          >
-            AI Command Center
-          </h1>
-          <p className="text-xs text-slate-400">
-            Executive intelligence cockpit — unified AI-driven performance overview.
-          </p>
-        </div>
-      </div>
 
       {/* SECTION 1: Executive Brief */}
       <ExecutiveBrief coach={coach} />
