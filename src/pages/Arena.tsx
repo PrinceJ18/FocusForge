@@ -244,7 +244,7 @@ export default function ArenaPage() {
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-3xl font-black text-white tracking-tight">Productivity Arena</h1>
+              <h2 className="text-3xl font-black text-white tracking-tight">Productivity Arena</h2>
               <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
                 Compete with friends on focus time, tasks completed, and daily challenges. Create an arena and start climbing the leaderboard.
               </p>
@@ -321,9 +321,9 @@ export default function ArenaPage() {
     <div className="page-enter space-y-6 max-w-5xl mx-auto text-left pb-16">
       {/* Header & Tabs */}
       <div className="text-center space-y-6">
-        <h1 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+        <h2 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
           {activeArena.name}
-        </h1>
+        </h2>
 
         {/* Arena metadata sub-header */}
         <div className="flex items-center justify-center gap-3 flex-wrap text-sm text-slate-400">

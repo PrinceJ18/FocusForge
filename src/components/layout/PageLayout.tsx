@@ -10,10 +10,10 @@ export const PAGE_TITLES: Record<string, string> = {
   analytics: 'Analytics & Trends',
   friends: 'Friends & Community',
   arena: 'Productivity Arena',
-  splits: 'Group Splits',
+  splits: 'Expense Buddy',
   reports: 'Performance Reports',
   achievements: 'Achievement Center',
-  settings: 'Personalization & Settings',
+  settings: 'Settings',
   notifications: 'Notification Center',
   'command-center': 'AI Command Center',
 };

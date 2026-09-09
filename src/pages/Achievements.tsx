@@ -351,9 +351,9 @@ export default function Achievements() {
               </div>
             </div>
             <div>
-              <h1 className="text-3xl font-black gradient-text tracking-tight mb-1" style={{ fontFamily: 'Space Grotesk' }}>
+              <h2 className="text-3xl font-black gradient-text tracking-tight mb-1" style={{ fontFamily: 'Space Grotesk' }}>
                 {profile.display_name || user?.email?.split('@')[0] || 'Explorer'}
-              </h1>
+              </h2>
               <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
                 Member Since: {joinDate}
               </p>

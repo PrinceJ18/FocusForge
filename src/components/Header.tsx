@@ -24,10 +24,10 @@ const PAGE_SUBTITLES: Record<string, string> = {
   analytics: 'Insights & data visualization',
   arena: 'Compete with friends, climb the leaderboard, and celebrate your productivity journey',
   friends: 'Connect with friends, build your productivity network, and grow together',
-  splits: 'Track and settle shared expenses with anyone',
+  splits: 'Track shared expenses, split bills, and settle balances with friends and groups.',
   reports: 'Analyze your productivity, focus sessions, task completion, and financial performance',
   achievements: 'Unlock badges, track milestones, and view your complete journey',
-  settings: 'Personalize colors, theme overrides, layout variables, and target goals',
+  settings: 'Personalize themes, colors, layouts, preferences, and productivity goals.',
   'command-center': 'Executive intelligence cockpit — unified AI-driven performance overview.',
 };
 

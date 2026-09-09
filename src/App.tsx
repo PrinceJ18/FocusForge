@@ -37,10 +37,10 @@ const TAB_TITLES: Record<string, string> = {
   analytics: 'FocusForge — Analytics Intelligence',
   friends: 'FocusForge — Friends & Social',
   arena: 'FocusForge — Productivity Arena',
-  splits: 'FocusForge — Split Expenses',
+  splits: 'FocusForge — Expense Buddy',
   reports: 'FocusForge — Performance Reports',
   achievements: 'FocusForge — Achievement Center',
-  settings: 'FocusForge — Settings & Preferences',
+  settings: 'FocusForge — Settings',
   notifications: 'FocusForge — Notification Center',
   'command-center': 'FocusForge — AI Command Center',
 };

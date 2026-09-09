@@ -163,25 +163,11 @@ export default function Reports() {
     </div>
   );
 
-  // ═══ Level 2: Section Header (changes per view) ═══
-  const SectionHeader = (
-    <div className="flex-shrink-0 pb-1">
-      <h2 className="text-base font-bold text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
-        {reportType === 'weekly' ? 'Weekly Performance' : 'Monthly Performance'}
-      </h2>
-      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-        {reportType === 'weekly'
-          ? 'Review productivity trends, focus sessions, completed tasks, and spending insights for the selected week.'
-          : 'Review productivity trends, focus sessions, completed tasks, financial performance, and monthly progress for the selected month.'}
-      </p>
-    </div>
-  );
 
   if (reportType === 'weekly') {
     return (
       <div className="page-enter space-y-6 text-left">
         {ReportToggle}
-        {SectionHeader}
         <WeeklyReport />
       </div>
     );
@@ -191,7 +177,6 @@ export default function Reports() {
     return (
       <div className="page-enter space-y-6 text-left pb-12">
         {ReportToggle}
-        {SectionHeader}
         {/* Navigation + Export Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
           <button
@@ -241,9 +226,9 @@ export default function Reports() {
               <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase inline-block mb-2" style={{ background: `${reportData.gradeColor}15`, color: reportData.gradeColor, border: `1px solid ${reportData.gradeColor}25` }}>
                 Monthly Performance Report
               </span>
-              <h1 className="text-3xl sm:text-4xl font-black tracking-tight" style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)' }}>
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight" style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)' }}>
                 {reportData.monthName}
-              </h1>
+              </h2>
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                 Overall Score: <span className="font-bold" style={{ color: reportData.gradeColor }}>{reportData.overallScore}/100</span>
               </p>
@@ -687,7 +672,6 @@ export default function Reports() {
   return (
     <div className="page-enter space-y-6 text-left">
       {ReportToggle}
-      {SectionHeader}
 
       {/* History Grid */}
       <div className="glass-card p-5">

@@ -170,7 +170,7 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
                 </div>
                 <div className="sidebar-label text-left flex-1 min-w-0 overflow-hidden">
                   <div className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors truncate">Expense Buddy</div>
-                  <div className="text-[9px] text-slate-400 truncate">AI-powered assistant</div>
+                  <div className="text-[9px] text-slate-400 truncate">Track shared expenses, split bills, and settle balances with friends and groups.</div>
                 </div>
                 <span className="sidebar-tooltip" aria-hidden="true">Expense Buddy</span>
               </button>
@@ -184,7 +184,7 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
                 </div>
                 <div className="sidebar-label text-left flex-1 min-w-0 overflow-hidden">
                   <div className="text-xs font-bold text-white transition-colors truncate">Settings</div>
-                  <div className="text-[9px] text-slate-400 truncate">Preferences & config</div>
+                  <div className="text-[9px] text-slate-400 truncate">Personalize themes, colors, layouts, preferences, and productivity goals.</div>
                 </div>
                 <span className="sidebar-tooltip" aria-hidden="true">Settings</span>
               </button>

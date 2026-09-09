@@ -168,18 +168,8 @@ export default function Friends() {
 
   return (
     <div className="page-enter space-y-6 text-left">
-      {/* HEADER & FRIEND CODE CONTAINER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-5 sm:p-6">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
-              <Users size={18} />
-            </div>
-            <h2 className="text-xl font-bold text-slate-100">Friends & Community</h2>
-          </div>
-          <p className="text-xs text-slate-400">Connect with friends, build your productivity network, and grow together through healthy competition.</p>
-        </div>
-
+      {/* FRIEND CODE CONTAINER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4 glass-card p-5 sm:p-6">
         {/* User's Own Friend Code Widget */}
         <div className="w-full md:w-auto p-3.5 bg-slate-900/80 rounded-xl border border-purple-500/30 flex items-center justify-between gap-4 shrink-0 shadow-lg shadow-purple-950/20">
           <div>
