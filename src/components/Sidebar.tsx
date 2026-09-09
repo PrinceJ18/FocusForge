@@ -54,7 +54,7 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
 
       <aside
         className={`sidebar ${isOpen ? 'open' : ''}`}
-        style={{ zIndex: 101, height: '100vh' }}
+        style={{ zIndex: 101 }}
         aria-label="Main navigation"
       >
         {/* Collapse toggle button — desktop only, floats outside sidebar */}
@@ -163,7 +163,7 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
               <button
                 title="Expense Buddy"
                 onClick={() => handleNav('splits')}
-                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-all duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(168,85,247,0.15)] relative ${currentPage === 'splits' ? 'border-purple-500/50 bg-purple-500/10' : ''}`}
+                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-colors transition-transform transition-shadow duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(168,85,247,0.15)] relative ${currentPage === 'splits' ? 'border-purple-500/50 bg-purple-500/10' : ''}`}
               >
                 <div className="sidebar-tool-icon w-8 h-8 shrink-0 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200">
                   <Users size={16} />
@@ -177,7 +177,7 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
               <button
                 title="Settings"
                 onClick={() => handleNav('settings')}
-                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-slate-500/30 transition-all duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)] relative ${currentPage === 'settings' ? 'border-slate-500/50 bg-slate-500/10' : ''}`}
+                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-slate-500/30 transition-colors transition-transform transition-shadow duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)] relative ${currentPage === 'settings' ? 'border-slate-500/50 bg-slate-500/10' : ''}`}
               >
                 <div className="sidebar-tool-icon w-8 h-8 shrink-0 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200 group-hover:rotate-45">
                   <Settings size={16} />
