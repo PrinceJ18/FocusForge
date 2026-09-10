@@ -3,6 +3,7 @@ import { LayoutDashboard, Wallet, Timer, BarChart3, Trophy, Users, Zap, X, BookO
 import { useStore, type Page } from '../store/useStore';
 import { calculateCurrentLevel, calculateXPProgress } from '../lib/statistics';
 import useRouteChangeCleanup from '../hooks/useRouteChangeCleanup';
+import { UserAvatar } from './ui/UserAvatar';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -109,12 +110,7 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
               }}
             >
               <div className="sidebar-profile-inner flex items-center gap-3 mb-2">
-                <div
-                  className="sidebar-profile-avatar w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}
-                >
-                  {(profile.display_name || user.email || 'U')[0].toUpperCase()}
-                </div>
+                <UserAvatar profile={profile} email={user.email} size="sm" className="sidebar-profile-avatar" />
                 <div className="sidebar-label flex-1 min-w-0">
                   <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                     {profile.display_name || user.email?.split('@')[0] || 'User'}

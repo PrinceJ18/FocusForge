@@ -14,6 +14,7 @@ import KpiCard from './KpiCard';
 import InsightCard from '../analytics/InsightCard';
 import TrendChart from '../analytics/TrendChart';
 import AiCoachWidget from './AiCoachWidget';
+import { UserAvatar } from '../ui/UserAvatar';
 
 // Import Types
 import { Task, RecurringExpense } from '../../store/useStore';
@@ -161,17 +162,12 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
         {/* Greeting + Profile row */}
         <div className="flex items-center gap-4">
           <div
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl font-black"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 text-xl font-black relative"
             style={{
-              background: 'linear-gradient(135deg, #a855f7, #ec4899)',
               boxShadow: '0 0 24px rgba(168,85,247,0.3)',
-              color: 'white',
             }}
           >
-            {profile.avatar_url
-              ? <img src={profile.avatar_url} alt="avatar" className="w-full h-full rounded-2xl object-cover" />
-              : displayName.charAt(0).toUpperCase()
-            }
+            <UserAvatar profile={profile} size="lg" className="!w-full !h-full rounded-2xl" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>

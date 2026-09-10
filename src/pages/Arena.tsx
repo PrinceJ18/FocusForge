@@ -15,6 +15,7 @@ import clsx from 'clsx';
 import CreateArenaModal from '../components/arena/CreateArenaModal';
 import InviteFriendsModal from '../components/arena/InviteFriendsModal';
 import { getErrorMessage } from '../lib/getErrorMessage';
+import { UserAvatar } from '../components/ui/UserAvatar';
 
 export default function ArenaPage() {
   const { user, showNotification } = useStore();
@@ -402,13 +403,7 @@ export default function ArenaPage() {
           <div className="flex flex-col items-center animate-fade-in-up" style={{ animationDelay: '100ms' }}>
             {getRankBadge(2)}
             <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300 shadow-[0_0_15px_rgba(209,213,219,0.3)] bg-gray-800">
-              {top3[1].profile?.avatar_url ? (
-                <img src={top3[1].profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xl font-bold">
-                  {(top3[1].profile?.display_name || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <UserAvatar profile={top3[1].profile} fallbackId={top3[1].user_id} size="lg" className="!w-full !h-full" />
             </div>
             <div className="mt-4 bg-gradient-to-b from-gray-300/20 to-transparent w-24 h-24 rounded-t-lg border-t-2 border-gray-300/50 flex flex-col items-center pt-2">
               <span className="font-bold text-white truncate w-full text-center px-1 text-sm">{top3[1].profile?.display_name}</span>
@@ -422,13 +417,7 @@ export default function ArenaPage() {
           <div className="flex flex-col items-center animate-fade-in-up z-10" style={{ animationDelay: '0ms' }}>
             {getRankBadge(1)}
             <div className="mt-2 w-20 h-20 rounded-full overflow-hidden border-4 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.5)] bg-gray-800 relative">
-              {top3[0].profile?.avatar_url ? (
-                <img src={top3[0].profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-yellow-400 text-2xl font-bold">
-                  {(top3[0].profile?.display_name || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <UserAvatar profile={top3[0].profile} fallbackId={top3[0].user_id} size="xl" className="!w-full !h-full" />
             </div>
             <div className="mt-4 bg-gradient-to-b from-yellow-400/30 to-transparent w-28 h-32 rounded-t-lg border-t-4 border-yellow-400 flex flex-col items-center pt-3">
               <span className="font-bold text-white truncate w-full text-center px-1">{top3[0].profile?.display_name}</span>
@@ -442,13 +431,7 @@ export default function ArenaPage() {
           <div className="flex flex-col items-center animate-fade-in-up" style={{ animationDelay: '200ms' }}>
             {getRankBadge(3)}
             <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border-2 border-amber-600 shadow-[0_0_15px_rgba(217,119,6,0.3)] bg-gray-800">
-              {top3[2].profile?.avatar_url ? (
-                <img src={top3[2].profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-amber-600 text-xl font-bold">
-                  {(top3[2].profile?.display_name || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <UserAvatar profile={top3[2].profile} fallbackId={top3[2].user_id} size="lg" className="!w-full !h-full" />
             </div>
             <div className="mt-4 bg-gradient-to-b from-amber-600/20 to-transparent w-24 h-20 rounded-t-lg border-t-2 border-amber-600/50 flex flex-col items-center pt-2">
               <span className="font-bold text-white truncate w-full text-center px-1 text-sm">{top3[2].profile?.display_name}</span>
@@ -491,13 +474,7 @@ export default function ArenaPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
-                          {entry.profile?.avatar_url ? (
-                            <img src={entry.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
-                              {(entry.profile?.display_name || 'U').charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          <UserAvatar profile={entry.profile} fallbackId={entry.user_id} size="sm" className="!w-full !h-full" />
                         </div>
                         <span className={clsx("font-medium truncate max-w-[120px] sm:max-w-[200px]", isMe ? "text-white" : "text-gray-200")}>
                           {entry.profile?.display_name || 'Unknown User'}
@@ -550,13 +527,7 @@ export default function ArenaPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
-                            {myEntry.profile?.avatar_url ? (
-                              <img src={myEntry.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-xs font-bold text-accent">
-                                {(myEntry.profile?.display_name || 'U').charAt(0).toUpperCase()}
-                              </div>
-                            )}
+                            <UserAvatar profile={myEntry.profile} fallbackId={myEntry.user_id} size="sm" className="!w-full !h-full" />
                           </div>
                           <span className="font-medium text-white truncate max-w-[120px] sm:max-w-[200px]">
                             {myEntry.profile?.display_name || 'Unknown User'}
@@ -602,13 +573,12 @@ export default function ArenaPage() {
           
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)] bg-gray-800 flex-shrink-0">
-              {latestChampion.avatar_url_snapshot ? (
-                <img src={latestChampion.avatar_url_snapshot} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-yellow-400">
-                  {(latestChampion.display_name_snapshot || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <UserAvatar 
+                 profile={{ display_name: latestChampion.display_name_snapshot, avatar_url: latestChampion.avatar_url_snapshot }} 
+                 fallbackId={latestChampion.champion_user_id} 
+                 className="!w-full !h-full" 
+                 size="xl" 
+              />
             </div>
             
             <div className="flex-1 text-center md:text-left space-y-2">
@@ -655,14 +625,13 @@ export default function ArenaPage() {
               {history.map((entry) => (
                 <div key={entry.id} className="w-72 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-colors flex flex-col space-y-4 shadow-lg">
                   <div className="flex justify-between items-start">
-                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-600 bg-gray-800">
-                      {entry.avatar_url_snapshot ? (
-                        <img src={entry.avatar_url_snapshot} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-400">
-                          {(entry.display_name_snapshot || 'U').charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-600 bg-gray-800 flex-shrink-0 mb-4 mx-auto">
+                      <UserAvatar 
+                         profile={{ display_name: entry.display_name_snapshot, avatar_url: entry.avatar_url_snapshot }} 
+                         fallbackId={entry.champion_user_id} 
+                         className="!w-full !h-full" 
+                         size="lg" 
+                      />
                     </div>
                     <div className="text-right">
                       <div className="text-xs text-gray-500 font-medium">{entry.period_start}</div>
@@ -723,13 +692,7 @@ export default function ArenaPage() {
               {activities.map((activity) => (
                 <div key={activity.id} className="p-4 hover:bg-white/5 transition-colors flex items-start space-x-4">
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-600 bg-gray-800 flex-shrink-0">
-                    {activity.profile?.avatar_url ? (
-                      <img src={activity.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-gray-400">
-                        {(activity.profile?.display_name || 'U').charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <UserAvatar profile={activity.profile} fallbackId={activity.user_id} size="sm" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm">
@@ -857,13 +820,7 @@ export default function ArenaPage() {
                 return (
                   <div key={member.id} className="px-6 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0 border border-gray-600">
-                      {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-400">
-                          {(profile?.display_name || 'U').charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <UserAvatar profile={profile} fallbackId={member.user_id} size="sm" className="!w-full !h-full" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-white truncate block">

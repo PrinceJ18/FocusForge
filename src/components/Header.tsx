@@ -9,6 +9,7 @@ import Badge from './ui/Badge';
 import { getLevelInfo } from "../lib/levels";
 import useRouteChangeCleanup from '../hooks/useRouteChangeCleanup';
 import { useCoach } from '../hooks/useCoach';
+import { UserAvatar } from './ui/UserAvatar';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -173,12 +174,7 @@ const Header = memo(function Header({ onMenuClick, title, subtitle, headerAction
                 color: 'var(--text-primary)',
               }}
             >
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}
-              >
-                {displayName[0].toUpperCase()}
-              </div>
+              <UserAvatar profile={profile} email={user.email} size="xs" />
               <span className="hidden sm:block text-sm font-medium">{displayName}</span>
               <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
             </button>

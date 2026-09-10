@@ -7,6 +7,7 @@ import { arenaService, ArenaMember } from '../../services/arenaService';
 import { supabase } from '../../lib/supabase';
 import { activityService } from '../../services/activityService';
 import { FriendWithProfile } from '../../types/friend';
+import { UserAvatar } from '../ui/UserAvatar';
 
 interface InviteFriendsModalProps {
   isOpen: boolean;
@@ -216,13 +217,7 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
                 >
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-700 flex-shrink-0 border border-slate-600">
-                    {friend.profile?.avatar_url ? (
-                      <img src={friend.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-400">
-                        {(friend.profile?.display_name || '?').charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <UserAvatar profile={friend.profile} fallbackId={friend.friendUserId} size="md" className="!w-full !h-full" />
                   </div>
 
                   {/* Name + Level */}
