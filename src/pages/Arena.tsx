@@ -305,18 +305,10 @@ export default function ArenaPage() {
   // Empty state handling is now inline below the header.
 
   const top3 = leaderboard.slice(0, 3);
-  const others = leaderboard.slice(3);
   
   // Check if current user is in top 10
   const isCurrentUserInTop10 = currentUserRank !== null && currentUserRank <= 10;
   const showCurrentUserPinned = currentUserRank !== null && !isCurrentUserInTop10;
-
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) return <span className="text-2xl" title="Gold">🥇</span>;
-    if (rank === 2) return <span className="text-2xl" title="Silver">🥈</span>;
-    if (rank === 3) return <span className="text-2xl" title="Bronze">🥉</span>;
-    return <span className="text-lg font-bold text-gray-400">#{rank}</span>;
-  };
 
   return (
     <div className="page-enter space-y-6 max-w-5xl mx-auto text-left pb-16">
@@ -397,13 +389,12 @@ export default function ArenaPage() {
       ) : (
         <>
           {/* TOP 3 PODIUM */}
-      <div className="flex justify-center items-end space-x-4 md:space-x-8 mt-12 mb-16">
+      <div className="flex justify-center items-end gap-3 sm:gap-6 md:gap-8 mt-12 mb-16">
         {/* Silver (Rank 2) */}
         {top3[1] && (
           <div className="flex flex-col items-center animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-            {getRankBadge(2)}
-            <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300 shadow-[0_0_15px_rgba(209,213,219,0.3)] bg-gray-800">
-              <UserAvatar profile={top3[1].profile} fallbackId={top3[1].user_id} size="lg" className="!w-full !h-full" />
+            <div className="w-12 h-12 rounded-full border-2 border-gray-300 bg-gray-300/10 text-gray-200 flex items-center justify-center font-black shadow-[0_0_15px_rgba(209,213,219,0.2)]" aria-label="Second place">
+              #2
             </div>
             <div className="mt-4 bg-gradient-to-b from-gray-300/20 to-transparent w-24 h-24 rounded-t-lg border-t-2 border-gray-300/50 flex flex-col items-center pt-2">
               <span className="font-bold text-white truncate w-full text-center px-1 text-sm">{top3[1].profile?.display_name}</span>
@@ -415,9 +406,8 @@ export default function ArenaPage() {
         {/* Gold (Rank 1) */}
         {top3[0] && (
           <div className="flex flex-col items-center animate-fade-in-up z-10" style={{ animationDelay: '0ms' }}>
-            {getRankBadge(1)}
-            <div className="mt-2 w-20 h-20 rounded-full overflow-hidden border-4 border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.5)] bg-gray-800 relative">
-              <UserAvatar profile={top3[0].profile} fallbackId={top3[0].user_id} size="xl" className="!w-full !h-full" />
+            <div className="w-16 h-16 rounded-full border-4 border-yellow-400 bg-yellow-400/10 text-yellow-300 flex items-center justify-center shadow-[0_0_25px_rgba(250,204,21,0.35)]" aria-label="First place">
+              <Crown className="w-8 h-8" />
             </div>
             <div className="mt-4 bg-gradient-to-b from-yellow-400/30 to-transparent w-28 h-32 rounded-t-lg border-t-4 border-yellow-400 flex flex-col items-center pt-3">
               <span className="font-bold text-white truncate w-full text-center px-1">{top3[0].profile?.display_name}</span>
@@ -429,9 +419,8 @@ export default function ArenaPage() {
         {/* Bronze (Rank 3) */}
         {top3[2] && (
           <div className="flex flex-col items-center animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            {getRankBadge(3)}
-            <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border-2 border-amber-600 shadow-[0_0_15px_rgba(217,119,6,0.3)] bg-gray-800">
-              <UserAvatar profile={top3[2].profile} fallbackId={top3[2].user_id} size="lg" className="!w-full !h-full" />
+            <div className="w-12 h-12 rounded-full border-2 border-amber-600 bg-amber-600/10 text-amber-400 flex items-center justify-center font-black shadow-[0_0_15px_rgba(217,119,6,0.2)]" aria-label="Third place">
+              #3
             </div>
             <div className="mt-4 bg-gradient-to-b from-amber-600/20 to-transparent w-24 h-20 rounded-t-lg border-t-2 border-amber-600/50 flex flex-col items-center pt-2">
               <span className="font-bold text-white truncate w-full text-center px-1 text-sm">{top3[2].profile?.display_name}</span>
@@ -572,13 +561,8 @@ export default function ArenaPage() {
           </div>
           
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)] bg-gray-800 flex-shrink-0">
-              <UserAvatar 
-                 profile={{ display_name: latestChampion.display_name_snapshot, avatar_url: latestChampion.avatar_url_snapshot }} 
-                 fallbackId={latestChampion.champion_user_id} 
-                 className="!w-full !h-full" 
-                 size="xl" 
-              />
+            <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl border border-yellow-400/40 bg-yellow-400/10 text-yellow-300 flex items-center justify-center shadow-[0_0_20px_rgba(250,204,21,0.18)] flex-shrink-0" aria-hidden="true">
+              <Crown className="w-10 h-10 md:w-12 md:h-12" />
             </div>
             
             <div className="flex-1 text-center md:text-left space-y-2">
@@ -625,13 +609,8 @@ export default function ArenaPage() {
               {history.map((entry) => (
                 <div key={entry.id} className="w-72 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-colors flex flex-col space-y-4 shadow-lg">
                   <div className="flex justify-between items-start">
-                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-600 bg-gray-800 flex-shrink-0 mb-4 mx-auto">
-                      <UserAvatar 
-                         profile={{ display_name: entry.display_name_snapshot, avatar_url: entry.avatar_url_snapshot }} 
-                         fallbackId={entry.champion_user_id} 
-                         className="!w-full !h-full" 
-                         size="lg" 
-                      />
+                    <div className="w-10 h-10 rounded-xl border border-yellow-400/20 bg-yellow-400/10 text-yellow-400 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                      <Trophy className="w-5 h-5" />
                     </div>
                     <div className="text-right">
                       <div className="text-xs text-gray-500 font-medium">{entry.period_start}</div>
@@ -691,8 +670,13 @@ export default function ArenaPage() {
             <div className="divide-y divide-white/5">
               {activities.map((activity) => (
                 <div key={activity.id} className="p-4 hover:bg-white/5 transition-colors flex items-start space-x-4">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-600 bg-gray-800 flex-shrink-0">
-                    <UserAvatar profile={activity.profile} fallbackId={activity.user_id} size="sm" />
+                  <div className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    {activity.activity_type.includes('champion') && <Crown className="w-5 h-5 text-yellow-400" />}
+                    {activity.activity_type.includes('focus') && <Clock className="w-5 h-5 text-accent" />}
+                    {activity.activity_type.includes('task') && <CheckCircle2 className="w-5 h-5 text-green-400" />}
+                    {activity.activity_type.includes('level') && <Trophy className="w-5 h-5 text-amber-500" />}
+                    {activity.activity_type.includes('friend') && <UserPlus className="w-5 h-5 text-blue-400" />}
+                    {!['champion', 'focus', 'task', 'level', 'friend'].some(type => activity.activity_type.includes(type)) && <Activity className="w-5 h-5 text-slate-400" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm">
@@ -705,13 +689,6 @@ export default function ArenaPage() {
                     <div className="text-xs text-gray-500 mt-2 font-medium">
                       {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                     </div>
-                  </div>
-                  <div className="flex-shrink-0 pt-1">
-                    {activity.activity_type.includes('champion') && <Crown className="w-5 h-5 text-yellow-400" />}
-                    {activity.activity_type.includes('focus') && <Clock className="w-5 h-5 text-accent" />}
-                    {activity.activity_type.includes('task') && <CheckCircle2 className="w-5 h-5 text-green-400" />}
-                    {activity.activity_type.includes('level') && <Trophy className="w-5 h-5 text-amber-500" />}
-                    {activity.activity_type.includes('friend') && <UserPlus className="w-5 h-5 text-blue-400" />}
                   </div>
                 </div>
               ))}

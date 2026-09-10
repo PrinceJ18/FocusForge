@@ -9,8 +9,6 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Ensure RLS is enabled on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Avatars are publicly accessible
 CREATE POLICY "Avatar images are publicly accessible."
