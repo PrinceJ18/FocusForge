@@ -75,20 +75,20 @@
 
 /* Theme definitions */
 .theme-light {
-  --bg-primary: #fafafa;
+  --bg-primary: #f1f5f9;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-hover: #fcfcfc;
-  --border-color: rgba(0, 0, 0, 0.08);
+  --bg-card-hover: #f8fafc;
+  --border-color: rgba(15, 23, 42, 0.08);
   --border-glow: rgba(168, 85, 247, 0.15);
 
-  --text-primary: #171717;
-  --text-secondary: #525252;
-  --text-muted: #737373;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
 
-  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
-  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.03);
-  --elevation-3: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --elevation-1: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --elevation-2: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+  --elevation-3: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
 
   color-scheme: light;
 }
