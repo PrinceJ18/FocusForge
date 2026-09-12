@@ -222,7 +222,7 @@ function NotifActions({
             e.stopPropagation();
             onRead(id);
           }}
-          className="p-1 rounded-md hover:bg-white/5 text-slate-400 hover:text-slate-200 transition-colors"
+          className="p-1 rounded-md hover:bg-background-card-hover text-text-muted hover:text-text-primary transition-colors"
           title="Mark as read"
           aria-label="Mark as read"
         >
@@ -234,7 +234,7 @@ function NotifActions({
           e.stopPropagation();
           onDismiss(id);
         }}
-        className="p-1 rounded-md hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors"
+        className="p-1 rounded-md hover:bg-background-card-hover text-text-muted hover:text-text-secondary transition-colors"
         title="Dismiss"
         aria-label="Dismiss notification"
       >
@@ -277,7 +277,7 @@ const NotificationFilterBar: React.FC<{
             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border ${
               isActive
                 ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
-                : 'bg-white/[0.02] text-slate-400 border-white/5 hover:bg-white/[0.04] hover:text-slate-200'
+                : 'bg-white/[0.02] text-text-muted border-border hover:bg-white/[0.04] hover:text-text-primary'
             }`}
           >
             <Icon size={13} />
@@ -321,11 +321,11 @@ const TodaysPriority: React.FC<SectionProps> = memo(function TodaysPriority({
               className="section-header-icon"
               style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
             >
-              <Target size={16} className="text-white" />
+              <Target size={16} className="text-text-primary" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Today's Priority</h3>
-              <p className="text-[11px] text-slate-400">Your highest-leverage action right now.</p>
+              <p className="text-[11px] text-text-muted">Your highest-leverage action right now.</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -347,12 +347,12 @@ const TodaysPriority: React.FC<SectionProps> = memo(function TodaysPriority({
             <span className="text-2xl shrink-0">{topRec.icon}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <h4 className="text-sm font-bold text-white truncate">{topRec.title}</h4>
+                <h4 className="text-sm font-bold text-text-primary truncate">{topRec.title}</h4>
                 <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
                   {topRec.priority}
                 </span>
               </div>
-              <p className="text-xs text-slate-300">{topRec.description}</p>
+              <p className="text-xs text-text-secondary">{topRec.description}</p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0 text-purple-400 text-xs font-semibold">
               <HelpCircle size={14} />
@@ -367,13 +367,13 @@ const TodaysPriority: React.FC<SectionProps> = memo(function TodaysPriority({
       {expanded && topRec.explainability && (
         <div
           id="priority-details"
-          className="p-5 bg-slate-900/90 border-t border-white/5 space-y-3 text-xs animate-fadeIn"
+          className="p-5 bg-slate-900/90 border-t border-border space-y-3 text-xs animate-fadeIn"
         >
           <div>
             <span className="text-[10px] uppercase font-bold text-purple-400 tracking-wider block mb-0.5">
               Causal Reason
             </span>
-            <p className="text-slate-200 leading-relaxed">{topRec.explainability.why}</p>
+            <p className="text-text-primary leading-relaxed">{topRec.explainability.why}</p>
           </div>
 
           {topRec.explainability.triggerMetrics.length > 0 && (
@@ -385,7 +385,7 @@ const TodaysPriority: React.FC<SectionProps> = memo(function TodaysPriority({
                 {topRec.explainability.triggerMetrics.map((tm, idx) => (
                   <span
                     key={idx}
-                    className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300 text-[11px]"
+                    className="px-2 py-0.5 rounded bg-background-card-hover border border-border text-text-secondary text-[11px]"
                   >
                     {tm.label}: {tm.current}{tm.unit}
                   </span>
@@ -394,15 +394,15 @@ const TodaysPriority: React.FC<SectionProps> = memo(function TodaysPriority({
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
             {topRec.explainability.expectedImprovement && (
               <div>
-                <span className="text-[10px] text-slate-400 block">Expected Improvement</span>
+                <span className="text-[10px] text-text-muted block">Expected Improvement</span>
                 <span className="font-semibold text-emerald-400">{topRec.explainability.expectedImprovement}</span>
               </div>
             )}
             <div>
-              <span className="text-[10px] text-slate-500 block mb-0.5">Confidence Level</span>
+              <span className="text-[10px] text-text-muted block mb-0.5">Confidence Level</span>
               <span className="font-semibold text-cyan-400 text-[11px] capitalize">
                 {topRec.confidence || 'Medium'} Confidence
               </span>
@@ -442,12 +442,12 @@ const CriticalAlerts: React.FC<SectionProps> = memo(function CriticalAlerts({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Critical Alerts</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Active risks detected by the Early Risk Engine.
             </p>
           </div>
         </div>
-        <span className="text-[10px] text-slate-500 font-semibold">
+        <span className="text-[10px] text-text-muted font-semibold">
           {visibleRisks.length} active
         </span>
       </div>
@@ -471,7 +471,7 @@ const CriticalAlerts: React.FC<SectionProps> = memo(function CriticalAlerts({
               <div
                 key={risk.id}
                 className={`rounded-xl border bg-white/[0.02] overflow-hidden transition-all ${
-                  state === 'unread' ? 'border-red-500/20' : 'border-white/5'
+                  state === 'unread' ? 'border-red-500/20' : 'border-border'
                 }`}
               >
                 <button
@@ -488,23 +488,23 @@ const CriticalAlerts: React.FC<SectionProps> = memo(function CriticalAlerts({
                     <span className="text-base shrink-0">{risk.icon}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h5 className="text-xs font-bold text-white truncate">{risk.title}</h5>
+                        <h5 className="text-xs font-bold text-text-primary truncate">{risk.title}</h5>
                         <span
                           className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full border ${severityStyle}`}
                         >
                           {risk.severity}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-300 truncate mt-0.5">{risk.description}</p>
+                      <p className="text-[11px] text-text-secondary truncate mt-0.5">{risk.description}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <NotifActions id={notifId} state={state} onRead={onRead} onDismiss={onDismiss} />
                     {isExpanded ? (
-                      <ChevronUp size={14} className="text-slate-400" />
+                      <ChevronUp size={14} className="text-text-muted" />
                     ) : (
-                      <ChevronDown size={14} className="text-slate-400" />
+                      <ChevronDown size={14} className="text-text-muted" />
                     )}
                   </div>
                 </button>
@@ -512,32 +512,32 @@ const CriticalAlerts: React.FC<SectionProps> = memo(function CriticalAlerts({
                 {isExpanded && (
                   <div
                     id={`notif-risk-${risk.id}`}
-                    className="p-4 bg-slate-900/90 border-t border-white/5 space-y-2 text-xs animate-fadeIn"
+                    className="p-4 bg-slate-900/90 border-t border-border space-y-2 text-xs animate-fadeIn"
                   >
-                    <div className="grid grid-cols-2 gap-2 pb-2 border-b border-white/5">
+                    <div className="grid grid-cols-2 gap-2 pb-2 border-b border-border">
                       <div>
-                        <span className="text-slate-500 block text-[10px]">Severity:</span>
+                        <span className="text-text-muted block text-[10px]">Severity:</span>
                         <span className="font-bold text-red-400 capitalize">{risk.severity}</span>
                       </div>
                       <div>
-                        <span className="text-slate-500 block text-[10px]">Probability:</span>
+                        <span className="text-text-muted block text-[10px]">Probability:</span>
                         <span className="font-bold text-amber-400 capitalize">
                           {risk.probability || 'High'}
                         </span>
                       </div>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
+                      <span className="text-[10px] uppercase font-bold text-text-muted block mb-1">
                         Impact Assessment
                       </span>
-                      <p className="text-slate-300 text-[11px] leading-relaxed">{risk.description}</p>
+                      <p className="text-text-secondary text-[11px] leading-relaxed">{risk.description}</p>
                     </div>
                     {risk.suggestedAction && (
-                      <div className="pt-2 border-t border-white/5">
+                      <div className="pt-2 border-t border-border">
                         <span className="text-[10px] uppercase font-bold text-emerald-500 block mb-1">
                           Suggested Mitigation
                         </span>
-                        <p className="text-slate-200 text-[11px] font-semibold">{risk.suggestedAction}</p>
+                        <p className="text-text-primary text-[11px] font-semibold">{risk.suggestedAction}</p>
                       </div>
                     )}
                   </div>
@@ -550,7 +550,7 @@ const CriticalAlerts: React.FC<SectionProps> = memo(function CriticalAlerts({
             <ShieldCheck size={18} className="text-emerald-400 shrink-0" />
             <div>
               <span className="text-xs font-bold text-emerald-400 block">All Clear</span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-text-muted">
                 No critical risks or performance anomalies detected.
               </span>
             </div>
@@ -595,7 +595,7 @@ const AchievementsSection: React.FC<SectionProps> = memo(function AchievementsSe
         </div>
         <div>
           <h3 className="text-base font-bold text-slate-100">Achievements & Milestones</h3>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-text-muted">
             Recent unlocks and approaching personal milestones.
           </p>
         </div>
@@ -603,7 +603,7 @@ const AchievementsSection: React.FC<SectionProps> = memo(function AchievementsSe
 
       {visibleAchs.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+          <h4 className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
             Recent Unlocks
           </h4>
           {visibleAchs.map((ach) => {
@@ -615,15 +615,15 @@ const AchievementsSection: React.FC<SectionProps> = memo(function AchievementsSe
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                   state === 'unread'
                     ? 'bg-amber-500/5 border-amber-500/20'
-                    : 'bg-white/[0.02] border-white/5'
+                    : 'bg-white/[0.02] border-border'
                 }`}
                 onClick={() => state === 'unread' && onRead(notifId)}
               >
                 <UnreadDot state={state} />
                 <span className="text-xl shrink-0">{ach.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <h5 className="text-xs font-bold text-white truncate">{ach.name}</h5>
-                  <p className="text-[10px] text-slate-400 truncate">
+                  <h5 className="text-xs font-bold text-text-primary truncate">{ach.name}</h5>
+                  <p className="text-[10px] text-text-muted truncate">
                     Unlocked {ach.unlockedAt}
                   </p>
                 </div>
@@ -636,7 +636,7 @@ const AchievementsSection: React.FC<SectionProps> = memo(function AchievementsSe
 
       {visibleMilestones.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+          <h4 className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
             Approaching Milestones
           </h4>
           {visibleMilestones.map((ms, idx) => {
@@ -645,14 +645,14 @@ const AchievementsSection: React.FC<SectionProps> = memo(function AchievementsSe
             return (
               <div
                 key={idx}
-                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5"
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-border"
                 onClick={() => state === 'unread' && onRead(notifId)}
               >
                 <UnreadDot state={state} />
                 <span className="text-xl shrink-0">{ms.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <h5 className="text-xs font-bold text-white truncate">{ms.title}</h5>
-                  <p className="text-[10px] text-slate-400">{ms.description}</p>
+                  <h5 className="text-xs font-bold text-text-primary truncate">{ms.title}</h5>
+                  <p className="text-[10px] text-text-muted">{ms.description}</p>
                   <div className="w-full bg-slate-800/80 h-1.5 rounded-full mt-1.5 overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
@@ -743,7 +743,7 @@ const BehaviourDiscoveries: React.FC<SectionProps> = memo(function BehaviourDisc
         </div>
         <div>
           <h3 className="text-base font-bold text-slate-100">Behaviour Discoveries</h3>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-text-muted">
             Patterns discovered across focus windows, weekday trends, and spending.
           </p>
         </div>
@@ -759,7 +759,7 @@ const BehaviourDiscoveries: React.FC<SectionProps> = memo(function BehaviourDisc
               className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
                 state === 'unread'
                   ? 'bg-cyan-500/5 border-cyan-500/15'
-                  : 'bg-white/[0.02] border-white/5'
+                  : 'bg-white/[0.02] border-border'
               }`}
               onClick={() => state === 'unread' && onRead(disc.id)}
             >
@@ -772,7 +772,7 @@ const BehaviourDiscoveries: React.FC<SectionProps> = memo(function BehaviourDisc
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
                     {disc.label}
                   </span>
                 </div>
@@ -782,7 +782,7 @@ const BehaviourDiscoveries: React.FC<SectionProps> = memo(function BehaviourDisc
                 >
                   {disc.value}
                 </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">{disc.detail}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">{disc.detail}</p>
               </div>
               <NotifActions id={disc.id} state={state} onRead={onRead} onDismiss={onDismiss} />
             </div>
@@ -862,7 +862,7 @@ const PredictionAlerts: React.FC<SectionProps> = memo(function PredictionAlerts(
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Prediction Alerts</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Deterministic forecasts from the Prediction Engine.
             </p>
           </div>
@@ -882,7 +882,7 @@ const PredictionAlerts: React.FC<SectionProps> = memo(function PredictionAlerts(
               className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
                 state === 'unread'
                   ? 'bg-purple-500/5 border-purple-500/15'
-                  : 'bg-white/[0.02] border-white/5'
+                  : 'bg-white/[0.02] border-border'
               }`}
               onClick={() => state === 'unread' && onRead(alert.id)}
             >
@@ -894,8 +894,8 @@ const PredictionAlerts: React.FC<SectionProps> = memo(function PredictionAlerts(
                 <Icon size={14} />
               </div>
               <div className="flex-1 min-w-0">
-                <h5 className="text-xs font-bold text-white truncate">{alert.title}</h5>
-                <p className="text-[10px] text-slate-300 mt-0.5 leading-relaxed">
+                <h5 className="text-xs font-bold text-text-primary truncate">{alert.title}</h5>
+                <p className="text-[10px] text-text-secondary mt-0.5 leading-relaxed">
                   {alert.description}
                 </p>
               </div>
@@ -971,7 +971,7 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
         </div>
         <div>
           <h3 className="text-base font-bold text-slate-100">Intelligence Timeline</h3>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-text-muted">
             Chronological log of milestones, trend shifts, and risk detections.
           </p>
         </div>
@@ -979,10 +979,10 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
 
       {visibleGrouped.map((group) => (
         <div key={group.label} className="space-y-2.5">
-          <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider pl-1">
+          <h4 className="text-[10px] uppercase font-bold text-text-muted tracking-wider pl-1">
             {group.label}
           </h4>
-          <div className="space-y-2 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
+          <div className="space-y-2 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-background-card-hover">
             {group.events.map((evt) => {
               const notifId = `tl-${evt.id}`;
               const state = getReadState(notifId);
@@ -1003,16 +1003,16 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
                     className={`flex-1 min-w-0 p-3 rounded-xl border transition-all ${
                       state === 'unread'
                         ? 'bg-purple-500/5 border-purple-500/15'
-                        : 'bg-white/[0.02] border-white/5'
+                        : 'bg-white/[0.02] border-border'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <UnreadDot state={state} />
-                        <span className="font-semibold text-white truncate group-hover:text-purple-400 transition-colors">{evt.title}</span>
+                        <span className="font-semibold text-text-primary truncate group-hover:text-purple-400 transition-colors">{evt.title}</span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-slate-500 shrink-0 whitespace-nowrap">{evt.timestamp}</span>
+                        <span className="text-[10px] text-text-muted shrink-0 whitespace-nowrap">{evt.timestamp}</span>
                         <NotifActions
                           id={notifId}
                           state={state}
@@ -1021,7 +1021,7 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
                         />
                       </div>
                     </div>
-                    <p className="text-slate-300 text-[11px] leading-relaxed">{evt.description}</p>
+                    <p className="text-text-secondary text-[11px] leading-relaxed">{evt.description}</p>
                   </div>
                 </div>
               );

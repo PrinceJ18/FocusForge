@@ -103,11 +103,11 @@ export default function WeeklyReport() {
     <div className="space-y-6 pb-12">
       {/* Week Navigator */}
       <div className="flex items-center justify-end">
-        <div className="flex items-center gap-4 bg-white/5 rounded-lg p-1 border border-white/10">
+        <div className="flex items-center gap-4 bg-background-card-hover rounded-lg p-1 border border-border">
           <button 
             disabled={!reportData.hasPrevWeek}
             onClick={() => setWeekOffset(o => o + 1)}
-            className="px-3 py-1 text-xs font-semibold text-slate-300 hover:text-white disabled:opacity-30 transition"
+            className="px-3 py-1 text-xs font-semibold text-text-secondary hover:text-text-primary disabled:opacity-30 transition"
           >
             &larr; Prev Week
           </button>
@@ -115,7 +115,7 @@ export default function WeeklyReport() {
           <button 
             disabled={!reportData.hasNextWeek}
             onClick={() => setWeekOffset(o => o - 1)}
-            className="px-3 py-1 text-xs font-semibold text-slate-300 hover:text-white disabled:opacity-30 transition"
+            className="px-3 py-1 text-xs font-semibold text-text-secondary hover:text-text-primary disabled:opacity-30 transition"
           >
             Next Week &rarr;
           </button>
@@ -124,33 +124,33 @@ export default function WeeklyReport() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
         <div className="glass-card p-4">
-          <span className="text-[10px] text-slate-500 block uppercase font-semibold">Total Focus</span>
+          <span className="text-[10px] text-text-muted block uppercase font-semibold">Total Focus</span>
           <span className="text-2xl font-black text-purple-400 mt-1 block">{formatFocusTime(reportData.totalMinutes)}</span>
         </div>
         <div className="glass-card p-4">
-          <span className="text-[10px] text-slate-500 block uppercase font-semibold">Tasks Completed</span>
+          <span className="text-[10px] text-text-muted block uppercase font-semibold">Tasks Completed</span>
           <span className="text-2xl font-black text-cyan-400 mt-1 block">{reportData.completedTasks}</span>
         </div>
         <div className="glass-card p-4">
-          <span className="text-[10px] text-slate-500 block uppercase font-semibold">Weekly Spend</span>
+          <span className="text-[10px] text-text-muted block uppercase font-semibold">Weekly Spend</span>
           <span className="text-2xl font-black text-pink-400 mt-1 block">{formatCurrency(reportData.totalSpent)}</span>
         </div>
         <div className="glass-card p-4">
-          <span className="text-[10px] text-slate-500 block uppercase font-semibold">Productivity Score</span>
+          <span className="text-[10px] text-text-muted block uppercase font-semibold">Productivity Score</span>
           <span className="text-2xl font-black text-green-400 mt-1 block">{reportData.prodScore}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 glass-card p-5">
-          <h3 className="font-bold text-sm text-white flex items-center gap-2 mb-4">
+          <h3 className="font-bold text-sm text-text-primary flex items-center gap-2 mb-4">
             <TrendingUp size={16} className="text-purple-400"/> Focus Trend
           </h3>
           <TrendChart data={reportData.focusTrendData} xKey="name" yKey="focus" color="#a855f7" height={250} />
         </div>
 
         <div className="glass-card p-5">
-          <h3 className="font-bold text-sm text-white flex items-center gap-2 mb-4">
+          <h3 className="font-bold text-sm text-text-primary flex items-center gap-2 mb-4">
             <Wallet size={16} className="text-pink-400"/> Expenses Breakdown
           </h3>
           <CategoryPieChart data={reportData.categoryData} height={250} />
@@ -158,10 +158,10 @@ export default function WeeklyReport() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-bold text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>Weekly AI Insights</h2>
+        <h2 className="text-lg font-bold text-text-primary tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>Weekly AI Insights</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {reportData.smartInsights.length === 0 ? (
-            <p className="text-sm text-slate-500">Not enough data to generate insights for this week.</p>
+            <p className="text-sm text-text-muted">Not enough data to generate insights for this week.</p>
           ) : (
             reportData.smartInsights.map(insight => (
               <InsightCard key={insight.id} insight={insight} />

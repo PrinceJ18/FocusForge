@@ -61,7 +61,7 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
       footer={
         <button
           onClick={onClose}
-          className="w-full py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition"
+          className="w-full py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition"
         >
           Close Preview
         </button>
@@ -80,21 +80,21 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
         <div className="space-y-5 text-xs text-left">
           {/* User Header Badge */}
           <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-pink-500/10 border border-purple-500/20 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-purple-500/30 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-text-primary shadow-lg shadow-purple-500/30 shrink-0">
               {(profileData.display_name || 'U')[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-bold text-slate-100 truncate">
                 {profileData.display_name || 'User'}
               </h3>
-              <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+              <div className="text-[10px] text-text-muted font-mono tracking-wider mt-0.5 mb-1.5">
                 {profileData.friend_code || '......'}
               </div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold text-[10px]">
                   Level {profileData.level}
                 </span>
-                <span className="text-slate-400 text-[11px] font-bold flex items-center gap-1">
+                <span className="text-text-muted text-[11px] font-bold flex items-center gap-1">
                   <Zap size={12} className="text-amber-400" /> {profileData.xp} XP
                 </span>
               </div>
@@ -104,7 +104,7 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
           {/* Public Metrics Grid */}
           <div className="grid grid-cols-2 gap-3">
             {/* Arena Score */}
-            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-slate-700/60">
+            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-border/60">
               <div className="flex items-center gap-2 text-purple-400 mb-1 font-semibold text-[11px]">
                 <Trophy size={14} /> Arena Score
               </div>
@@ -112,7 +112,7 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
             </div>
 
             {/* Streak */}
-            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-slate-700/60">
+            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-border/60">
               <div className="flex items-center gap-2 text-amber-400 mb-1 font-semibold text-[11px]">
                 <Flame size={14} /> Current Streak
               </div>
@@ -120,7 +120,7 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
             </div>
 
             {/* Focus Minutes This Week */}
-            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-slate-700/60">
+            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-border/60">
               <div className="flex items-center gap-2 text-cyan-400 mb-1 font-semibold text-[11px]">
                 <Clock size={14} /> Focus This Week
               </div>
@@ -128,7 +128,7 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
             </div>
 
             {/* Tasks Completed This Week */}
-            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-slate-700/60">
+            <div className="p-3.5 bg-slate-800/50 rounded-xl border border-border/60">
               <div className="flex items-center gap-2 text-emerald-400 mb-1 font-semibold text-[11px]">
                 <CheckCircle size={14} /> Tasks Completed
               </div>
@@ -136,7 +136,7 @@ export default function FriendProfileModal({ isOpen, onClose, friendUserId }: Fr
             </div>
           </div>
 
-          <div className="p-3 bg-purple-500/5 border border-purple-500/10 rounded-xl text-[10px] text-slate-400 italic text-center">
+          <div className="p-3 bg-purple-500/5 border border-purple-500/10 rounded-xl text-[10px] text-text-muted italic text-center">
             🔒 Only public productivity achievements and level progress are visible. Private notes, tasks, expenses, and financial data are strictly protected.
           </div>
         </div>

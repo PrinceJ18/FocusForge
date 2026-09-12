@@ -214,8 +214,8 @@ export default function Settings() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap touch-manipulation min-h-[44px] shrink-0 ${activeTab === tab.id
-                  ? 'bg-purple-500/10 border-purple-500/30 text-white font-bold'
-                  : 'bg-white/2 border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
+                  ? 'bg-purple-500/10 border-purple-500/30 text-text-primary font-bold'
+                  : 'bg-background-card border-border text-text-muted hover:bg-background-card-hover hover:text-text-primary'
                 }`}
             >
               {tab.icon}
@@ -231,13 +231,13 @@ export default function Settings() {
           {activeTab === 'appearance' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Appearance Settings</h3>
-                <p className="text-[11px] text-slate-500">Personalize styling, variables, theme overrides, and animation speeds.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Appearance Settings</h3>
+                <p className="text-[11px] text-text-muted">Personalize styling, variables, theme overrides, and animation speeds.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="font-semibold text-slate-400 mb-2 block text-xs">Visual Theme</label>
+                  <label className="font-semibold text-text-muted mb-2 block text-xs">Visual Theme</label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {[
                       { id: 'dark', name: 'Dark Mode', icon: <Moon size={14} /> },
@@ -248,7 +248,7 @@ export default function Settings() {
                       <button
                         key={t.id}
                         onClick={() => handleUpdatePref('theme', t.id)}
-                        className={`flex items-center justify-between p-3 rounded-xl border text-left ${preferences.theme === t.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                        className={`flex items-center justify-between p-3 rounded-xl border text-left ${preferences.theme === t.id ? 'border-purple-500 bg-purple-500/5 text-text-primary font-bold' : 'bg-slate-950/40 border-border text-text-muted'
                           }`}
                       >
                         <span className="flex items-center gap-2">{t.icon} {t.name}</span>
@@ -259,13 +259,13 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-400 mb-2 block text-xs">Accent Brand Color</label>
+                  <label className="font-semibold text-text-muted mb-2 block text-xs">Accent Brand Color</label>
                   <div className="grid grid-cols-3 gap-2 text-[10px]">
                     {ACCENT_COLORS.map(c => (
                       <button
                         key={c.id}
                         onClick={() => handleUpdatePref('accent_color', c.id)}
-                        className={`flex items-center gap-2 p-2.5 rounded-xl border ${preferences.accent_color === c.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                        className={`flex items-center gap-2 p-2.5 rounded-xl border ${preferences.accent_color === c.id ? 'border-purple-500 bg-purple-500/5 text-text-primary font-bold' : 'bg-slate-950/40 border-border text-text-muted'
                           }`}
                       >
                         <span className="w-3.5 h-3.5 rounded-full" style={{ background: c.color }} />
@@ -276,13 +276,13 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-400 mb-2 block text-xs">Card Border Radius</label>
+                  <label className="font-semibold text-text-muted mb-2 block text-xs">Card Border Radius</label>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {['rounded', 'modern', 'compact'].map(s => (
                       <button
                         key={s}
                         onClick={() => handleUpdatePref('card_style', s)}
-                        className={`py-2 rounded-xl border text-center capitalize ${preferences.card_style === s ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                        className={`py-2 rounded-xl border text-center capitalize ${preferences.card_style === s ? 'border-purple-500 bg-purple-500/5 text-text-primary font-bold' : 'bg-slate-950/40 border-border text-text-muted'
                           }`}
                       >
                         {s}
@@ -292,7 +292,7 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-400 mb-2 block text-xs">Animations Density</label>
+                  <label className="font-semibold text-text-muted mb-2 block text-xs">Animations Density</label>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {[
                       { id: 'full', label: 'Full Motion' },
@@ -302,7 +302,7 @@ export default function Settings() {
                       <button
                         key={a.id}
                         onClick={() => handleUpdatePref('animation', a.id)}
-                        className={`py-2 rounded-xl border text-center ${preferences.animation === a.id ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                        className={`py-2 rounded-xl border text-center ${preferences.animation === a.id ? 'border-purple-500 bg-purple-500/5 text-text-primary font-bold' : 'bg-slate-950/40 border-border text-text-muted'
                           }`}
                       >
                         {a.label}
@@ -312,13 +312,13 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-400 mb-2 block text-xs">Base Font Size</label>
+                  <label className="font-semibold text-text-muted mb-2 block text-xs">Base Font Size</label>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {['small', 'medium', 'large'].map(f => (
                       <button
                         key={f}
                         onClick={() => handleUpdatePref('font_size', f)}
-                        className={`py-2 rounded-xl border text-center capitalize ${preferences.font_size === f ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                        className={`py-2 rounded-xl border text-center capitalize ${preferences.font_size === f ? 'border-purple-500 bg-purple-500/5 text-text-primary font-bold' : 'bg-slate-950/40 border-border text-text-muted'
                           }`}
                       >
                         {f}
@@ -328,13 +328,13 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-400 mb-2 block text-xs">Layout Density</label>
+                  <label className="font-semibold text-text-muted mb-2 block text-xs">Layout Density</label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {['comfortable', 'compact'].map(d => (
                       <button
                         key={d}
                         onClick={() => handleUpdatePref('ui_density', d)}
-                        className={`py-2 rounded-xl border text-center capitalize ${preferences.ui_density === d ? 'border-purple-500 bg-purple-500/5 text-white font-bold' : 'bg-slate-950/40 border-white/5 text-slate-400'
+                        className={`py-2 rounded-xl border text-center capitalize ${preferences.ui_density === d ? 'border-purple-500 bg-purple-500/5 text-text-primary font-bold' : 'bg-slate-950/40 border-border text-text-muted'
                           }`}
                       >
                         {d}
@@ -350,13 +350,13 @@ export default function Settings() {
           {activeTab === 'focus' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Focus Timer Preferences</h3>
-                <p className="text-[11px] text-slate-500">Configure default intervals, notification cues, and clock rings.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Focus Timer Preferences</h3>
+                <p className="text-[11px] text-text-muted">Configure default intervals, notification cues, and clock rings.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <div>
-                  <label htmlFor="settings-pomodoro" className="font-semibold text-slate-400 mb-1 block">Pomodoro Minutes</label>
+                  <label htmlFor="settings-pomodoro" className="font-semibold text-text-muted mb-1 block">Pomodoro Minutes</label>
                   <input
                     id="settings-pomodoro"
                     type="number"
@@ -366,13 +366,13 @@ export default function Settings() {
                       const clamped = isNaN(val) ? 25 : Math.max(1, Math.min(120, val));
                       handleUpdatePref('default_pomodoro', clamped);
                     }}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                     min="1"
                     max="120"
                   />
                 </div>
                 <div>
-                  <label htmlFor="settings-short-break" className="font-semibold text-slate-400 mb-1 block">Short Break Minutes</label>
+                  <label htmlFor="settings-short-break" className="font-semibold text-text-muted mb-1 block">Short Break Minutes</label>
                   <input
                     id="settings-short-break"
                     type="number"
@@ -382,13 +382,13 @@ export default function Settings() {
                       const clamped = isNaN(val) ? 5 : Math.max(1, Math.min(120, val));
                       handleUpdatePref('default_short_break', clamped);
                     }}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                     min="1"
                     max="120"
                   />
                 </div>
                 <div>
-                  <label htmlFor="settings-long-break" className="font-semibold text-slate-400 mb-1 block">Long Break Minutes</label>
+                  <label htmlFor="settings-long-break" className="font-semibold text-text-muted mb-1 block">Long Break Minutes</label>
                   <input
                     id="settings-long-break"
                     type="number"
@@ -398,7 +398,7 @@ export default function Settings() {
                       const clamped = isNaN(val) ? 15 : Math.max(1, Math.min(120, val));
                       handleUpdatePref('default_long_break', clamped);
                     }}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                     min="1"
                     max="120"
                   />
@@ -406,10 +406,10 @@ export default function Settings() {
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                   <div>
-                    <h4 className="font-bold text-white">Auto Start Break</h4>
-                    <p className="text-[10px] text-slate-500">Start the break countdown automatically when Pomodoro finishes.</p>
+                    <h4 className="font-bold text-text-primary">Auto Start Break</h4>
+                    <p className="text-[10px] text-text-muted">Start the break countdown automatically when Pomodoro finishes.</p>
                   </div>
                   <input
                     type="checkbox"
@@ -419,10 +419,10 @@ export default function Settings() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                   <div>
-                    <h4 className="font-bold text-white">Auto Start Focus</h4>
-                    <p className="text-[10px] text-slate-500">Start the next focus block automatically when break timer finishes.</p>
+                    <h4 className="font-bold text-text-primary">Auto Start Focus</h4>
+                    <p className="text-[10px] text-text-muted">Start the next focus block automatically when break timer finishes.</p>
                   </div>
                   <input
                     type="checkbox"
@@ -432,10 +432,10 @@ export default function Settings() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                   <div>
-                    <h4 className="font-bold text-white">Play Completion Sound</h4>
-                    <p className="text-[10px] text-slate-500">Play an audio sound when intervals complete.</p>
+                    <h4 className="font-bold text-text-primary">Play Completion Sound</h4>
+                    <p className="text-[10px] text-text-muted">Play an audio sound when intervals complete.</p>
                   </div>
                   <input
                     type="checkbox"
@@ -445,10 +445,10 @@ export default function Settings() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                   <div>
-                    <h4 className="font-bold text-white">Focus Ring Style</h4>
-                    <p className="text-[10px] text-slate-500">Visual accent of the timer dial ring.</p>
+                    <h4 className="font-bold text-text-primary">Focus Ring Style</h4>
+                    <p className="text-[10px] text-text-muted">Visual accent of the timer dial ring.</p>
                   </div>
                   <select
                     value={preferences.focus_ring_style}
@@ -468,58 +468,58 @@ export default function Settings() {
           {activeTab === 'goals' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Daily Target Goals</h3>
-                <p className="text-[11px] text-slate-500">Configure default benchmarks and adjust difficulty scaling.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Daily Target Goals</h3>
+                <p className="text-[11px] text-text-muted">Configure default benchmarks and adjust difficulty scaling.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label htmlFor="settings-focus-goal" className="font-semibold text-slate-400 mb-1 block">Default Daily Focus Target (Minutes)</label>
+                  <label htmlFor="settings-focus-goal" className="font-semibold text-text-muted mb-1 block">Default Daily Focus Target (Minutes)</label>
                   <input
                     id="settings-focus-goal"
                     type="number"
                     value={preferences.default_daily_focus_goal}
                     onChange={(e) => handleUpdatePref('default_daily_focus_goal', parseInt(e.target.value) || 120)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   />
                 </div>
                 <div>
-                  <label htmlFor="settings-task-goal" className="font-semibold text-slate-400 mb-1 block">Default Daily Tasks Count Target</label>
+                  <label htmlFor="settings-task-goal" className="font-semibold text-text-muted mb-1 block">Default Daily Tasks Count Target</label>
                   <input
                     id="settings-task-goal"
                     type="number"
                     value={preferences.default_task_goal}
                     onChange={(e) => handleUpdatePref('default_task_goal', parseInt(e.target.value) || 5)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   />
                 </div>
                 <div>
-                  <label htmlFor="settings-xp-goal" className="font-semibold text-slate-400 mb-1 block">Default Daily XP Target</label>
+                  <label htmlFor="settings-xp-goal" className="font-semibold text-text-muted mb-1 block">Default Daily XP Target</label>
                   <input
                     id="settings-xp-goal"
                     type="number"
                     value={preferences.default_xp_goal}
                     onChange={(e) => handleUpdatePref('default_xp_goal', parseInt(e.target.value) || 100)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   />
                 </div>
                 <div>
-                  <label htmlFor="settings-budget-goal" className="font-semibold text-slate-400 mb-1 block">Default Monthly Budget Target</label>
+                  <label htmlFor="settings-budget-goal" className="font-semibold text-text-muted mb-1 block">Default Monthly Budget Target</label>
                   <input
                     id="settings-budget-goal"
                     type="number"
                     value={preferences.default_budget_goal}
                     onChange={(e) => handleUpdatePref('default_budget_goal', parseFloat(e.target.value) || 10000)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                   <div>
-                    <h4 className="font-bold text-white">Goal Difficulty</h4>
-                    <p className="text-[10px] text-slate-500">Easy (70%), Medium (100%), Hard (130%), Adaptive (autoscale based on history).</p>
+                    <h4 className="font-bold text-text-primary">Goal Difficulty</h4>
+                    <p className="text-[10px] text-text-muted">Easy (70%), Medium (100%), Hard (130%), Adaptive (autoscale based on history).</p>
                   </div>
                   <select
                     value={preferences.goal_difficulty}
@@ -540,8 +540,8 @@ export default function Settings() {
           {activeTab === 'notifications' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Notification Categories</h3>
-                <p className="text-[11px] text-slate-500">Manage popups, reminder times, and sounds.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Notification Categories</h3>
+                <p className="text-[11px] text-text-muted">Manage popups, reminder times, and sounds.</p>
               </div>
 
               <div className="space-y-3 text-xs">
@@ -556,10 +556,10 @@ export default function Settings() {
                   { key: 'notify_arena_rank_up', label: 'Arena Rank Up Alerts', desc: 'Notification when climbing to higher rank positions.' },
                   { key: 'notify_arena_activity', label: 'Arena Public Feed', desc: 'Updates on public level-ups and challenge completions.' },
                 ].map(n => (
-                  <div key={n.key} className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                  <div key={n.key} className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                     <div>
-                      <h4 className="font-bold text-white">{n.label}</h4>
-                      <p className="text-[10px] text-slate-500">{n.desc}</p>
+                      <h4 className="font-bold text-text-primary">{n.label}</h4>
+                      <p className="text-[10px] text-text-muted">{n.desc}</p>
                     </div>
                     <input
                       type="checkbox"
@@ -577,18 +577,18 @@ export default function Settings() {
           {activeTab === 'finance' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Finance Settings</h3>
-                <p className="text-[11px] text-slate-500">Configure currency tags, spending limits, and week starters.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Finance Settings</h3>
+                <p className="text-[11px] text-text-muted">Configure currency tags, spending limits, and week starters.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label htmlFor="settings-currency" className="font-semibold text-slate-400 mb-1 block">Preferred Currency Symbol</label>
+                  <label htmlFor="settings-currency" className="font-semibold text-text-muted mb-1 block">Preferred Currency Symbol</label>
                   <select
                     id="settings-currency"
                     value={preferences.currency}
                     onChange={(e) => handleUpdatePref('currency', e.target.value)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   >
                     <option value="₹">₹ (INR)</option>
                     <option value="$">$ (USD)</option>
@@ -598,12 +598,12 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label htmlFor="settings-week-start" className="font-semibold text-slate-400 mb-1 block">Week Starts On</label>
+                  <label htmlFor="settings-week-start" className="font-semibold text-text-muted mb-1 block">Week Starts On</label>
                   <select
                     id="settings-week-start"
                     value={preferences.week_start_day}
                     onChange={(e) => handleUpdatePref('week_start_day', e.target.value)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   >
                     <option value="sunday">Sunday</option>
                     <option value="monday">Monday</option>
@@ -617,18 +617,18 @@ export default function Settings() {
           {activeTab === 'analytics' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Analytics View Styles</h3>
-                <p className="text-[11px] text-slate-500">Customize charting parameters and default formats.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Analytics View Styles</h3>
+                <p className="text-[11px] text-text-muted">Customize charting parameters and default formats.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label htmlFor="settings-time-format" className="font-semibold text-slate-400 mb-1 block">Preferred Time Format</label>
+                  <label htmlFor="settings-time-format" className="font-semibold text-text-muted mb-1 block">Preferred Time Format</label>
                   <select
                     id="settings-time-format"
                     value={preferences.preferred_time_format}
                     onChange={(e) => handleUpdatePref('preferred_time_format', e.target.value)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   >
                     <option value="12h">12-Hour (AM/PM)</option>
                     <option value="24h">24-Hour Military</option>
@@ -636,12 +636,12 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label htmlFor="settings-date-format" className="font-semibold text-slate-400 mb-1 block">Preferred Date Format</label>
+                  <label htmlFor="settings-date-format" className="font-semibold text-text-muted mb-1 block">Preferred Date Format</label>
                   <select
                     id="settings-date-format"
                     value={preferences.preferred_date_format}
                     onChange={(e) => handleUpdatePref('preferred_date_format', e.target.value)}
-                    className="input-glass w-full px-3 py-2 text-white"
+                    className="input-glass w-full px-3 py-2 text-text-primary"
                   >
                     <option value="yyyy-MM-dd">YYYY-MM-DD</option>
                     <option value="dd/MM/yyyy">DD/MM/YYYY</option>
@@ -656,15 +656,15 @@ export default function Settings() {
           {activeTab === 'accessibility' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Accessibility Toggles</h3>
-                <p className="text-[11px] text-slate-500">Enable helpers to improve viewing contrast and support keyboard loops.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Accessibility Toggles</h3>
+                <p className="text-[11px] text-text-muted">Enable helpers to improve viewing contrast and support keyboard loops.</p>
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                   <div>
-                    <h4 className="font-bold text-white">High Contrast Colors</h4>
-                    <p className="text-[10px] text-slate-500">Boosts borders and highlights text values to aid readers.</p>
+                    <h4 className="font-bold text-text-primary">High Contrast Colors</h4>
+                    <p className="text-[10px] text-text-muted">Boosts borders and highlights text values to aid readers.</p>
                   </div>
                   <input
                     type="checkbox"
@@ -674,10 +674,10 @@ export default function Settings() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-background-card rounded-xl border border-border">
                   <div>
-                    <h4 className="font-bold text-white">Keyboard Hotkey Navigation</h4>
-                    <p className="text-[10px] text-slate-500">Enables logical focus focus outline highlights.</p>
+                    <h4 className="font-bold text-text-primary">Keyboard Hotkey Navigation</h4>
+                    <p className="text-[10px] text-text-muted">Enables logical focus focus outline highlights.</p>
                   </div>
                   <input
                     type="checkbox"
@@ -694,29 +694,29 @@ export default function Settings() {
           {activeTab === 'backup' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Backup & Exports Center</h3>
-                <p className="text-[11px] text-slate-500">Download your transactions, tasks, logs, and state parameters locally.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Backup & Exports Center</h3>
+                <p className="text-[11px] text-text-muted">Download your transactions, tasks, logs, and state parameters locally.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 bg-white/2 rounded-xl border border-white/5 text-center">
+                <div className="p-4 bg-background-card rounded-xl border border-border text-center">
                   <Download size={24} className="mx-auto mb-2 text-purple-400" />
-                  <h4 className="font-bold text-white mb-1">Export Data</h4>
-                  <p className="text-[10px] text-slate-500 mb-3">Download complete JSON state parameters or CSV files.</p>
+                  <h4 className="font-bold text-text-primary mb-1">Export Data</h4>
+                  <p className="text-[10px] text-text-muted mb-3">Download complete JSON state parameters or CSV files.</p>
                   <div className="flex gap-2 justify-center">
                     <Button variant="secondary" onClick={handleExportJSON} className="px-3 py-1.5 font-semibold text-xs">
                       JSON
                     </Button>
-                    <Button variant="outline" onClick={handleExportCSV} className="px-3 py-1.5 font-semibold text-xs text-slate-400 border-white/5">
+                    <Button variant="outline" onClick={handleExportCSV} className="px-3 py-1.5 font-semibold text-xs text-text-muted border-border">
                       CSV
                     </Button>
                   </div>
                 </div>
 
-                <div className="p-4 bg-white/2 rounded-xl border border-white/5 text-center">
+                <div className="p-4 bg-background-card rounded-xl border border-border text-center">
                   <Upload size={24} className="mx-auto mb-2 text-cyan-400" />
-                  <h4 className="font-bold text-white mb-1">Restore State</h4>
-                  <p className="text-[10px] text-slate-500 mb-3">Select and upload a previously generated backup JSON file.</p>
+                  <h4 className="font-bold text-text-primary mb-1">Restore State</h4>
+                  <p className="text-[10px] text-text-muted mb-3">Select and upload a previously generated backup JSON file.</p>
                   <input
                     type="file"
                     accept=".json"
@@ -740,32 +740,32 @@ export default function Settings() {
           {activeTab === 'account' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">Profile Control</h3>
-                <p className="text-[11px] text-slate-500">Edit account variables or securely sign out.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">Profile Control</h3>
+                <p className="text-[11px] text-text-muted">Edit account variables or securely sign out.</p>
               </div>
 
               <div className="space-y-4 text-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="settings-display-name" className="font-semibold text-slate-400 mb-1 block">Display Name</label>
+                    <label htmlFor="settings-display-name" className="font-semibold text-text-muted mb-1 block">Display Name</label>
                     <input
                       id="settings-display-name"
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="input-glass w-full px-3 py-2 text-white"
+                      className="input-glass w-full px-3 py-2 text-text-primary"
                       placeholder="e.g. John Doe"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="settings-avatar-url" className="font-semibold text-slate-400 mb-1 block">Avatar URL</label>
+                    <label htmlFor="settings-avatar-url" className="font-semibold text-text-muted mb-1 block">Avatar URL</label>
                     <input
                       id="settings-avatar-url"
                       type="text"
                       value={avatarUrl}
                       onChange={(e) => setAvatarUrl(e.target.value)}
-                      className="input-glass w-full px-3 py-2 text-white"
+                      className="input-glass w-full px-3 py-2 text-text-primary"
                       placeholder="e.g. https://example.com/avatar.jpg"
                     />
                   </div>
@@ -781,15 +781,15 @@ export default function Settings() {
                   </Button>
                 </div>
 
-                <hr className="border-white/5 my-4" />
+                <hr className="border-border my-4" />
 
                 <div>
-                  <h4 className="font-bold text-white mb-2">Actions</h4>
+                  <h4 className="font-bold text-text-primary mb-2">Actions</h4>
                   <div className="flex flex-wrap gap-3">
                     <Button
                       variant="outline"
                       onClick={handleSignOut}
-                      className="px-4 py-2 font-semibold text-slate-300 border-white/5 hover:text-white flex items-center gap-1.5"
+                      className="px-4 py-2 font-semibold text-text-secondary border-border hover:text-text-primary flex items-center gap-1.5"
                     >
                       <LogOut size={14} /> Sign Out
                     </Button>
@@ -810,26 +810,26 @@ export default function Settings() {
           {activeTab === 'about' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-bold text-white mb-1">About FocusForge</h3>
-                <p className="text-[11px] text-slate-500">Licenses, developer coordinates, and system metrics.</p>
+                <h3 className="text-sm font-bold text-text-primary mb-1">About FocusForge</h3>
+                <p className="text-[11px] text-text-muted">Licenses, developer coordinates, and system metrics.</p>
               </div>
 
-              <div className="p-4 bg-white/2 rounded-xl border border-white/5 space-y-3 text-xs text-slate-400">
-                <div className="flex justify-between border-b border-white/5 pb-2">
+              <div className="p-4 bg-background-card rounded-xl border border-border space-y-3 text-xs text-text-muted">
+                <div className="flex justify-between border-b border-border pb-2">
                   <span>Application Version</span>
-                  <span className="font-bold text-white">v1.1.2-beta</span>
+                  <span className="font-bold text-text-primary">v1.1.2-beta</span>
                 </div>
-                <div className="flex justify-between border-b border-white/5 pb-2">
+                <div className="flex justify-between border-b border-border pb-2">
                   <span>Developer Team</span>
-                  <span className="font-bold text-white">FocusForge Contributors</span>
+                  <span className="font-bold text-text-primary">FocusForge Contributors</span>
                 </div>
-                <div className="flex justify-between border-b border-white/5 pb-2">
+                <div className="flex justify-between border-b border-border pb-2">
                   <span>Core Libraries</span>
-                  <span className="font-bold text-white">React, TypeScript, TailwindCSS, Zustand</span>
+                  <span className="font-bold text-text-primary">React, TypeScript, TailwindCSS, Zustand</span>
                 </div>
                 <div className="flex justify-between pt-1">
                   <span>Database Hosting</span>
-                  <span className="font-bold text-white">Supabase Cloud PostgreSQL</span>
+                  <span className="font-bold text-text-primary">Supabase Cloud PostgreSQL</span>
                 </div>
               </div>
             </div>

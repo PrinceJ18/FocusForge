@@ -121,11 +121,11 @@ export const AnalyticsIntelligentSummary: React.FC<AnalyticsIntelligentSummaryPr
               className="section-header-icon"
               style={{ background: 'linear-gradient(135deg, #a855f7, #06b6d4)' }}
             >
-              <Brain size={16} className="text-white" />
+              <Brain size={16} className="text-text-primary" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Intelligent Insights</h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-text-muted">
                 AI explanations based on your analytics trends.
               </p>
             </div>
@@ -156,7 +156,7 @@ export const AnalyticsIntelligentSummary: React.FC<AnalyticsIntelligentSummaryPr
                       {card.label}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed line-clamp-3">
+                  <p className="text-xs text-text-primary leading-relaxed line-clamp-3">
                     {card.content}
                   </p>
                 </div>
@@ -197,11 +197,11 @@ export const ChartInsightPanel: React.FC<ChartInsightPanelProps> = memo(function
 
   return (
     <div
-      className={`px-3.5 py-2.5 rounded-xl border flex items-center gap-2.5 text-xs text-slate-300 ${currentTheme.bg} ${currentTheme.border} ${className}`}
+      className={`px-3.5 py-2.5 rounded-xl border flex items-center gap-2.5 text-xs text-text-secondary ${currentTheme.bg} ${currentTheme.border} ${className}`}
       role="note"
       aria-label="AI Chart Insight"
     >
-      <div className={`p-1 rounded-md bg-white/5 shrink-0 ${currentTheme.text}`}>
+      <div className={`p-1 rounded-md bg-background-card-hover shrink-0 ${currentTheme.text}`}>
         <Sparkles size={13} />
       </div>
       <div className="flex-1 min-w-0">
@@ -239,7 +239,7 @@ export const AnalyticsPredictionsSummary: React.FC<AnalyticsPredictionsSummaryPr
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Predictions</h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-text-muted">
                 Deterministic run-rate forecasts based on active velocity.
               </p>
             </div>
@@ -251,30 +251,30 @@ export const AnalyticsPredictionsSummary: React.FC<AnalyticsPredictionsSummaryPr
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {/* Expected Productivity */}
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-center">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-1">
               Expected Productivity
             </span>
             <div className="text-lg font-black text-purple-400 font-space">
               {predictions.expectedProductivityScore}/100
             </div>
-            <span className="text-[10px] text-slate-500 mt-0.5">Estimated Score</span>
+            <span className="text-[10px] text-text-muted mt-0.5">Estimated Score</span>
           </div>
 
           {/* Expected Weekly Grade */}
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-center">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-1">
               Expected Weekly Grade
             </span>
             <div className="text-lg font-black text-cyan-400 font-space">
               {predictions.expectedWeeklyGrade || 'A'}
             </div>
-            <span className="text-[10px] text-slate-500 mt-0.5">Pace Trajectory</span>
+            <span className="text-[10px] text-text-muted mt-0.5">Pace Trajectory</span>
           </div>
 
           {/* Budget Runway */}
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-center">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-1">
               Budget Runway
             </span>
             <div className="text-lg font-black text-emerald-400 font-space">
@@ -282,12 +282,12 @@ export const AnalyticsPredictionsSummary: React.FC<AnalyticsPredictionsSummaryPr
                 ? `${predictions.daysUntilBudgetDepleted}d remaining`
                 : 'Safe Limit'}
             </div>
-            <span className="text-[10px] text-slate-500 mt-0.5">Depletion Estimate</span>
+            <span className="text-[10px] text-text-muted mt-0.5">Depletion Estimate</span>
           </div>
 
           {/* Momentum */}
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-center">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-1">
               Momentum
             </span>
             <div className="text-lg font-black text-pink-400 font-space">
@@ -295,7 +295,7 @@ export const AnalyticsPredictionsSummary: React.FC<AnalyticsPredictionsSummaryPr
                 ? `${Math.round(predictions.focusMomentumFactor * 100)}% pace`
                 : `${Math.round(predictions.expectedMonthlyFocusMinutes / 60)}h total`}
             </div>
-            <span className="text-[10px] text-slate-500 mt-0.5">Velocity Factor</span>
+            <span className="text-[10px] text-text-muted mt-0.5">Velocity Factor</span>
           </div>
         </div>
       </div>
@@ -334,12 +334,12 @@ export const AnalyticsRiskOverview: React.FC<AnalyticsRiskOverviewProps> = memo(
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Early Risk Overview</h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-text-muted">
                 Proactive risk mitigation analyzed by the Early Risk Engine.
               </p>
             </div>
           </div>
-          <span className="text-[10px] text-slate-500 font-semibold">
+          <span className="text-[10px] text-text-muted font-semibold">
             {activeRisks.length} active
           </span>
         </div>
@@ -360,7 +360,7 @@ export const AnalyticsRiskOverview: React.FC<AnalyticsRiskOverviewProps> = memo(
               return (
                 <div
                   key={risk.id}
-                  className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden transition-all"
+                  className="rounded-xl border border-border bg-white/[0.02] overflow-hidden transition-all"
                 >
                   <button
                     onClick={() => toggleRisk(risk.id)}
@@ -372,20 +372,20 @@ export const AnalyticsRiskOverview: React.FC<AnalyticsRiskOverviewProps> = memo(
                       <span className="text-base shrink-0">{risk.icon}</span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h5 className="text-xs font-bold text-white truncate">{risk.title}</h5>
+                          <h5 className="text-xs font-bold text-text-primary truncate">{risk.title}</h5>
                           <span
                             className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full border ${severityColor}`}
                           >
                             {risk.severity}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-300 truncate mt-0.5">
+                        <p className="text-[11px] text-text-secondary truncate mt-0.5">
                           {risk.description}
                         </p>
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-slate-400">
+                    <div className="shrink-0 text-text-muted">
                       {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </div>
                   </button>
@@ -394,28 +394,28 @@ export const AnalyticsRiskOverview: React.FC<AnalyticsRiskOverviewProps> = memo(
                   {isExpanded && (
                     <div
                       id={`risk-details-${risk.id}`}
-                      className="p-4 bg-slate-900/90 border-t border-white/5 space-y-2 text-xs animate-fadeIn"
+                      className="p-4 bg-slate-900/90 border-t border-border space-y-2 text-xs animate-fadeIn"
                     >
-                      <div className="grid grid-cols-2 gap-2 text-[11px] pb-2 border-b border-white/5">
+                      <div className="grid grid-cols-2 gap-2 text-[11px] pb-2 border-b border-border">
                         <div>
-                          <span className="text-slate-500 block">Severity Tier:</span>
+                          <span className="text-text-muted block">Severity Tier:</span>
                           <span className="font-bold text-red-400 capitalize">{risk.severity}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block">Probability:</span>
+                          <span className="text-text-muted block">Probability:</span>
                           <span className="font-bold text-amber-400 capitalize">{risk.probability || 'High'}</span>
                         </div>
                       </div>
 
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
+                        <span className="text-[10px] uppercase font-bold text-text-muted block mb-0.5">
                           Causal Factor
                         </span>
-                        <p className="text-slate-200 leading-relaxed">{risk.description}</p>
+                        <p className="text-text-primary leading-relaxed">{risk.description}</p>
                       </div>
 
                       {risk.suggestedAction && (
-                        <div className="pt-2 border-t border-white/5">
+                        <div className="pt-2 border-t border-border">
                           <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-0.5">
                             Suggested Action
                           </span>
@@ -432,7 +432,7 @@ export const AnalyticsRiskOverview: React.FC<AnalyticsRiskOverviewProps> = memo(
               <CheckCircle size={18} className="text-emerald-400 shrink-0" />
               <div>
                 <span className="text-xs font-bold text-emerald-400 block">All Systems Optimal</span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-text-muted">
                   Zero critical performance or financial risks detected.
                 </span>
               </div>
@@ -499,7 +499,7 @@ export const AnalyticsBehaviourSummary: React.FC<AnalyticsBehaviourSummaryProps>
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Behaviour & Habit Dynamics</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Discovered patterns across focus windows, weekday trends, and weekend variance.
             </p>
           </div>
@@ -511,7 +511,7 @@ export const AnalyticsBehaviourSummary: React.FC<AnalyticsBehaviourSummaryProps>
             return (
               <div
                 key={idx}
-                className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-between"
+                className="p-3.5 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-between"
               >
                 <div>
                   <div
@@ -520,7 +520,7 @@ export const AnalyticsBehaviourSummary: React.FC<AnalyticsBehaviourSummaryProps>
                   >
                     <Icon size={14} />
                   </div>
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
+                  <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold block mb-0.5">
                     {card.label}
                   </span>
                   <div
@@ -530,7 +530,7 @@ export const AnalyticsBehaviourSummary: React.FC<AnalyticsBehaviourSummaryProps>
                     {card.value}
                   </div>
                 </div>
-                <span className="text-[10px] text-slate-500 mt-1 block truncate">{card.sub}</span>
+                <span className="text-[10px] text-text-muted mt-1 block truncate">{card.sub}</span>
               </div>
             );
           })}
@@ -567,22 +567,22 @@ export const AnalyticsTimeline: React.FC<AnalyticsTimelineProps> = memo(function
         </div>
         <div>
           <h3 className="text-base font-bold text-slate-100">Intelligence Timeline</h3>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-text-muted">
             Chronological log of milestones, trend shifts, and risk detections.
           </p>
         </div>
       </div>
 
-      <div className="space-y-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
+      <div className="space-y-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-background-card-hover">
         {recentEvents.map((evt) => (
           <div key={evt.id} className="relative flex items-start gap-3 text-xs">
             <div className="w-3 h-3 rounded-full bg-purple-500/40 border border-purple-400 shrink-0 mt-0.5 -ml-[19px]" />
-            <div className="flex-1 min-w-0 bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+            <div className="flex-1 min-w-0 bg-white/[0.02] border border-border p-3 rounded-xl">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="font-bold text-white truncate">{evt.title}</span>
-                <span className="text-[10px] text-slate-500 shrink-0">{evt.timestamp}</span>
+                <span className="font-bold text-text-primary truncate">{evt.title}</span>
+                <span className="text-[10px] text-text-muted shrink-0">{evt.timestamp}</span>
               </div>
-              <p className="text-slate-300 text-[11px] leading-relaxed">{evt.description}</p>
+              <p className="text-text-secondary text-[11px] leading-relaxed">{evt.description}</p>
             </div>
           </div>
         ))}

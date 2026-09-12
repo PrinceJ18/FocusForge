@@ -173,7 +173,7 @@ export default function Friends() {
         {/* User's Own Friend Code Widget */}
         <div className="w-full md:w-auto p-3.5 bg-slate-900/80 rounded-xl border border-purple-500/30 flex items-center justify-between gap-4 shrink-0 shadow-lg shadow-purple-950/20">
           <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Your Friend Code</div>
+            <div className="text-[10px] uppercase font-bold text-text-muted tracking-wider">Your Friend Code</div>
             <div className="text-base font-black text-purple-300 tracking-widest font-mono mt-0.5">{myFriendCode || '......'}</div>
           </div>
           <Button
@@ -204,7 +204,7 @@ export default function Friends() {
           >
             <span>Requests</span>
             {incomingRequests.length > 0 && (
-              <span className="w-4 h-4 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-bold">
+              <span className="w-4 h-4 rounded-full bg-purple-500 text-text-primary text-[10px] flex items-center justify-center font-bold">
                 {incomingRequests.length}
               </span>
             )}
@@ -219,7 +219,7 @@ export default function Friends() {
 
         {/* Search Bar Input */}
         <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
             type="text"
             value={searchQuery}
@@ -269,24 +269,24 @@ export default function Friends() {
                 return (
                   <div key={f.id} className="glass-card p-5 flex flex-col justify-between space-y-4 hover:border-purple-500/30 transition">
                     <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-text-primary text-base shadow-md shrink-0">
                         {displayName[0].toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-bold text-slate-100 truncate">{displayName}</h4>
-                        <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+                        <div className="text-[10px] text-text-muted font-mono tracking-wider mt-0.5 mb-1.5">
                           {friendCode}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full">
                             Level {level}
                           </span>
-                          <span className="text-[11px] text-slate-400 font-semibold">{xp} XP</span>
+                          <span className="text-[11px] text-text-muted font-semibold">{xp} XP</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-300 border-t border-slate-800/80 pt-2">
+                    <div className="grid grid-cols-2 gap-2 text-[10px] text-text-secondary border-t border-border/80 pt-2">
                       <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-800/40">
                         <Trophy size={12} className="text-purple-400" /> 
                         <span className="font-bold">{arenaScore}</span> Score
@@ -297,7 +297,7 @@ export default function Friends() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+                    <div className="flex items-center justify-between text-[11px] text-text-muted pt-2 border-t border-border">
                       <span>Friend since {friendSince}</span>
                       <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
@@ -338,12 +338,12 @@ export default function Friends() {
             <>
               {/* INCOMING REQUESTS SECTION */}
               <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
                   <UserPlus size={14} className="text-purple-400" /> Incoming Requests ({incomingRequests.length})
                 </h3>
 
                 {incomingRequests.length === 0 ? (
-                  <div className="p-6 bg-slate-900/40 rounded-xl border border-slate-800/80 text-center text-xs text-slate-500">
+                  <div className="p-6 bg-slate-900/40 rounded-xl border border-border/80 text-center text-xs text-text-muted">
                     No pending friend requests.
                   </div>
                 ) : (
@@ -358,24 +358,24 @@ export default function Friends() {
                       return (
                         <div key={req.id} className="glass-card p-4 flex flex-col justify-between space-y-4 hover:border-purple-500/30 transition">
                           <div className="flex items-start gap-3">
-                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-text-primary text-base shadow-md shrink-0">
                               {displayName[0].toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm font-bold text-slate-100 truncate">{displayName}</h4>
-                              <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+                              <div className="text-[10px] text-text-muted font-mono tracking-wider mt-0.5 mb-1.5">
                                 {friendCode}
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[10px] font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full">
                                   Level {level}
                                 </span>
-                                <span className="text-[11px] text-slate-400 font-semibold">{xp} XP</span>
+                                <span className="text-[11px] text-text-muted font-semibold">{xp} XP</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+                          <div className="flex items-center justify-between text-[11px] text-text-muted pt-2 border-t border-border">
                             <span>Sent {format(parseISO(req.created_at), 'MMM d, yyyy')}</span>
                             <span className="flex items-center gap-1 font-bold text-amber-400">
                               <Flame size={12} /> {streak} Streak
@@ -415,9 +415,9 @@ export default function Friends() {
               </div>
 
               {/* OUTGOING REQUESTS SECTION */}
-              <div className="space-y-3 pt-4 border-t border-slate-800">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Clock size={14} className="text-slate-400" /> Sent Pending Requests ({outgoingRequests.length})
+              <div className="space-y-3 pt-4 border-t border-border">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
+                  <Clock size={14} className="text-text-muted" /> Sent Pending Requests ({outgoingRequests.length})
                 </h3>
 
                 {outgoingRequests.length === 0 ? (
@@ -435,18 +435,18 @@ export default function Friends() {
                       const level = req.receiver?.level || 1;
 
                       return (
-                        <div key={req.id} className="glass-card p-4 flex flex-col justify-between space-y-4 hover:border-slate-700/50 transition">
+                        <div key={req.id} className="glass-card p-4 flex flex-col justify-between space-y-4 hover:border-border/50 transition">
                           <div className="flex items-start gap-3">
-                            <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-base shadow-md shrink-0">
+                            <div className="w-11 h-11 rounded-xl bg-slate-800 text-text-muted flex items-center justify-center font-bold text-base shadow-md shrink-0">
                               {displayName[0].toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm font-bold text-slate-100 truncate">{displayName}</h4>
-                              <div className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5 mb-1.5">
+                              <div className="text-[10px] text-text-muted font-mono tracking-wider mt-0.5 mb-1.5">
                                 {friendCode}
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-full">
+                                <span className="text-[10px] font-bold text-text-secondary bg-slate-800 px-2 py-0.5 rounded-full">
                                   Level {level}
                                 </span>
                                 <span className="text-[10px] text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-full animate-pulse">
@@ -456,7 +456,7 @@ export default function Friends() {
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800">
+                          <div className="flex items-center justify-between text-[11px] text-text-muted pt-2 border-t border-border">
                             <span>Sent {format(parseISO(req.created_at), 'MMM d, yyyy')}</span>
                           </div>
 
@@ -508,7 +508,7 @@ export default function Friends() {
                 return (
                   <div key={userItem.id} className="glass-card p-4 flex flex-col justify-between space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-white text-base shrink-0 shadow-md">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-text-primary text-base shrink-0 shadow-md">
                         {name[0].toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -517,8 +517,8 @@ export default function Friends() {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-400 font-semibold">Level {userItem.level || 1}</span>
+                    <div className="pt-2 border-t border-border flex items-center justify-between">
+                      <span className="text-[11px] text-text-muted font-semibold">Level {userItem.level || 1}</span>
 
                       {isAlreadyFriend ? (
                         <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center gap-1">

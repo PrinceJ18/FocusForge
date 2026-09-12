@@ -127,26 +127,26 @@ export default function TaskCalendarView({
       >
         {/* Navigation Header */}
         <div className="flex items-center justify-between mb-5">
-          <div className="text-base font-bold text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+          <div className="text-base font-bold text-text-primary tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
             {format(currentMonth, 'MMMM yyyy')}
           </div>
           
           <div className="flex items-center gap-1.5">
             <button 
               onClick={handlePrevMonth}
-              className="p-2 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg bg-background-card-hover border border-border text-text-muted hover:text-text-primary transition-colors"
             >
               <ChevronLeft size={16} />
             </button>
             <button 
               onClick={handleGoToday}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-white/5 border border-white/5 text-purple-400 hover:text-purple-300 transition-colors"
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-background-card-hover border border-border text-purple-400 hover:text-purple-300 transition-colors"
             >
               Today
             </button>
             <button 
               onClick={handleNextMonth}
-              className="p-2 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg bg-background-card-hover border border-border text-text-muted hover:text-text-primary transition-colors"
             >
               <ChevronRight size={16} />
             </button>
@@ -156,7 +156,7 @@ export default function TaskCalendarView({
         {/* Days of Week Header */}
         <div className="grid grid-cols-7 gap-1 text-center mb-2">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day} className="text-xs font-bold text-gray-500 py-1 uppercase tracking-wider">
+            <div key={day} className="text-xs font-bold text-text-muted py-1 uppercase tracking-wider">
               {day}
             </div>
           ))}
@@ -179,7 +179,7 @@ export default function TaskCalendarView({
                 key={idx}
                 onClick={() => setSelectedDate(day)}
                 className={`relative aspect-square p-1 rounded-xl border flex flex-col items-center justify-between cursor-pointer transition-all duration-200 select-none ${
-                  isCurrentMonth ? 'text-white' : 'text-gray-600'
+                  isCurrentMonth ? 'text-text-primary' : 'text-gray-600'
                 }`}
                 style={{
                   background: isSelected 
@@ -241,7 +241,7 @@ export default function TaskCalendarView({
       {/* Selected Date Tasks Section */}
       <div className="space-y-3">
         <div className="flex items-center justify-between pl-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
             <Star size={14} className="text-purple-400" />
             Tasks for {format(selectedDate, 'MMM d, yyyy')} ({selectedDateTasks.length})
           </div>
@@ -256,7 +256,7 @@ export default function TaskCalendarView({
 
         {selectedDateTasks.length === 0 ? (
           <div className="glass-card py-10 flex flex-col items-center justify-center text-center opacity-60">
-            <p className="text-xs text-gray-500 font-medium">No tasks scheduled for this date.</p>
+            <p className="text-xs text-text-muted font-medium">No tasks scheduled for this date.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-2.5">

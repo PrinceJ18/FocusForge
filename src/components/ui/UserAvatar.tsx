@@ -41,7 +41,7 @@ export function UserAvatar({ profile, email, fallbackId, size = 'md', className 
       className={`rounded-full flex items-center justify-center font-bold shrink-0 overflow-hidden ${sizeClasses[size]} ${className}`}
       style={{
         background: hasAvatar ? 'transparent' : 'linear-gradient(135deg, var(--purple-primary), var(--pink-primary))',
-        color: 'white',
+        color: 'var(--text-primary)',
       }}
     >
       {hasAvatar ? (

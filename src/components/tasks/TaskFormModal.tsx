@@ -184,7 +184,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
             <button 
               type="button" 
               onClick={onClose} 
-              className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1"
+              className="px-4 py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition flex-1"
               disabled={saving}
             >
               Cancel
@@ -203,12 +203,12 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
         <form onSubmit={handleSave} className="space-y-4 text-left">
           {/* Title */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Task Title *</label>
+            <label className="text-xs font-semibold text-text-secondary mb-1.5 block">Task Title *</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+              className="w-full px-4 py-2.5 bg-slate-800/80 border border-border/80 rounded-xl text-slate-100 placeholder-slate-400 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
               placeholder="What needs to be done?"
               autoFocus
             />
@@ -217,12 +217,12 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
 
           {/* Description */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Description (Optional)</label>
+            <label className="text-xs font-semibold text-text-secondary mb-1.5 block">Description (Optional)</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 text-sm resize-none outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
+              className="w-full px-4 py-2.5 bg-slate-800/80 border border-border/80 rounded-xl text-slate-100 placeholder-slate-400 text-sm resize-none outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 transition"
               placeholder="Add notes, details, links..."
             />
           </div>
@@ -231,7 +231,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Priority */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Priority</label>
+              <label className="text-xs font-semibold text-text-secondary mb-1.5 block">Priority</label>
               <div className="flex gap-2">
                 {(['low', 'medium', 'high'] as const).map((p) => {
                   const activeColor = p === 'high' ? '#ef4444' : p === 'medium' ? '#f59e0b' : '#10b981';
@@ -259,7 +259,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
             {/* Section */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">Section</label>
+                <label className="text-xs font-semibold text-text-secondary block">Section</label>
                 <button
                   type="button"
                   onClick={() => setShowSectionManager(true)}
@@ -271,7 +271,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
               <select
                 value={sectionId}
                 onChange={(e) => setSectionId(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 text-sm outline-none focus:border-purple-500 transition"
+                className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-border/80 rounded-xl text-slate-100 text-sm outline-none focus:border-purple-500 transition"
               >
                 <option value="">No Section / Uncategorized</option>
                 {taskSections.map((sec) => (
@@ -287,32 +287,32 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Scheduled Date */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Scheduled Date *</label>
+              <label className="text-xs font-semibold text-text-secondary mb-1.5 block">Scheduled Date *</label>
               <input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 text-sm outline-none focus:border-purple-500 transition"
+                className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-border/80 rounded-xl text-slate-100 text-sm outline-none focus:border-purple-500 transition"
               />
               {errors.scheduledDate && <p className="text-xs text-red-400 mt-1">{errors.scheduledDate}</p>}
             </div>
 
             {/* Due Date */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Due/End Date (Optional)</label>
+              <label className="text-xs font-semibold text-text-secondary mb-1.5 block">Due/End Date (Optional)</label>
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 text-sm outline-none focus:border-purple-500 transition"
+                className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-border/80 rounded-xl text-slate-100 text-sm outline-none focus:border-purple-500 transition"
               />
               {errors.deadline && <p className="text-xs text-red-400 mt-1">{errors.deadline}</p>}
             </div>
           </div>
 
           {/* Reminders section */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-800/30">
-            <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
+          <div className="p-4 rounded-xl border border-border bg-slate-800/30">
+            <div className="flex items-center gap-2 mb-2 text-xs font-bold text-text-primary uppercase tracking-wider">
               <Clock size={14} className="text-purple-400" />
               Task Reminders
             </div>
@@ -320,7 +320,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
               <select
                 value={reminderType}
                 onChange={(e) => setReminderType(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-slate-100 text-xs col-span-2 outline-none focus:border-purple-500"
+                className="w-full px-3 py-2 bg-slate-800/90 border border-border rounded-xl text-slate-100 text-xs col-span-2 outline-none focus:border-purple-500"
               >
                 <option value="off">Reminder Off</option>
                 <option value="default">Default (9:00 AM on date)</option>
@@ -332,12 +332,12 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
                   type="time"
                   value={reminderTime}
                   onChange={(e) => setReminderTime(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 bg-slate-800/90 border border-border rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
                 />
               )}
             </div>
             {reminderType !== 'off' && (
-              <p className="text-[10px] text-slate-400 mt-2">
+              <p className="text-[10px] text-text-muted mt-2">
                 🔔 Effective reminder resolves to:{' '}
                 <span className="text-purple-400 font-bold">
                   {reminderType === 'default' ? '9:00 AM' : reminderTime} on scheduled date
@@ -347,8 +347,8 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
           </div>
 
           {/* Recurrence System */}
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-800/30 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
+          <div className="p-4 rounded-xl border border-border bg-slate-800/30 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-text-primary uppercase tracking-wider">
               <RotateCcw size={14} className="text-purple-400" />
               Recurrence (Repeating Tasks)
             </div>
@@ -356,11 +356,11 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Recurrence Type */}
               <div>
-                <label className="text-xs font-medium text-slate-400 mb-1.5 block">Repeat Pattern</label>
+                <label className="text-xs font-medium text-text-muted mb-1.5 block">Repeat Pattern</label>
                 <select
                   value={recurrenceType}
                   onChange={(e) => setRecurrenceType(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2.5 bg-slate-800/90 border border-border rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
                 >
                   <option value="none">None (One-time Task)</option>
                   <option value="daily">Daily</option>
@@ -374,7 +374,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
               {/* Recurrence Interval */}
               {recurrenceType !== 'none' && (
                 <div>
-                  <label className="text-xs font-medium text-slate-400 mb-1.5 block">
+                  <label className="text-xs font-medium text-text-muted mb-1.5 block">
                     Repeat Every (Interval)
                   </label>
                   <div className="flex items-center gap-2">
@@ -383,9 +383,9 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
                       min="1"
                       value={recurrenceInterval}
                       onChange={(e) => setRecurrenceInterval(parseInt(e.target.value) || 1)}
-                      className="w-full px-3 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 bg-slate-800/90 border border-border rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
                     />
-                    <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                    <span className="text-xs text-text-muted font-medium whitespace-nowrap">
                       {recurrenceType === 'daily' && 'day(s)'}
                       {recurrenceType === 'weekly' && 'week(s)'}
                       {recurrenceType === 'monthly' && 'month(s)'}
@@ -403,7 +403,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
             {/* Specific Weekdays selection */}
             {recurrenceType === 'weekdays' && (
               <div>
-                <label className="text-xs font-medium text-slate-400 mb-1.5 block">Select Weekdays</label>
+                <label className="text-xs font-medium text-text-muted mb-1.5 block">Select Weekdays</label>
                 <div className="flex flex-wrap gap-1.5">
                   {WEEKDAYS.map((day) => {
                     const selected = recurrenceWeekdays.includes(day.id);
@@ -432,9 +432,9 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
 
             {/* End Behavior */}
             {recurrenceType !== 'none' && (
-              <div className="border-t border-slate-800 pt-3 space-y-3">
+              <div className="border-t border-border pt-3 space-y-3">
                 <div className="flex gap-4">
-                  <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5 cursor-pointer">
+                  <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       name="endType"
@@ -444,7 +444,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
                     />
                     No End Date
                   </label>
-                  <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5 cursor-pointer">
+                  <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       name="endType"
@@ -462,7 +462,7 @@ export default function TaskFormModal({ onClose, onSave, initialTask, defaultDat
                       type="date"
                       value={recurrenceEndDate}
                       onChange={(e) => setRecurrenceEndDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 bg-slate-800/90 border border-border rounded-xl text-slate-100 text-xs outline-none focus:border-purple-500"
                     />
                     {errors.recurrenceEndDate && (
                       <p className="text-xs text-red-400 mt-1">{errors.recurrenceEndDate}</p>

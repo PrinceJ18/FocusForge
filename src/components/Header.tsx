@@ -140,7 +140,7 @@ const Header = memo(function Header({ onMenuClick, title, subtitle, headerAction
             className="relative flex items-center justify-center rounded-12 transition-all h-[44px] w-[44px]"
             aria-label="Notifications"
             style={{
-              background: 'rgba(255,255,255,0.05)',
+              background: 'var(--bg-card-hover)',
               border: '1px solid var(--border-color)',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
@@ -149,7 +149,7 @@ const Header = memo(function Header({ onMenuClick, title, subtitle, headerAction
             <Bell size={20} style={{ color: 'var(--text-primary)' }} />
             {totalUnread > 0 && (
               <span 
-                className="absolute -top-1 -right-1 flex items-center justify-center text-[10px] font-bold text-white rounded-full px-1 min-w-[18px] h-[18px]"
+                className="absolute -top-1 -right-1 flex items-center justify-center text-[10px] font-bold text-text-primary rounded-full px-1 min-w-[18px] h-[18px]"
                 style={{ background: 'var(--brand-primary)', boxShadow: '0 0 0 2px var(--bg-primary)' }}
               >
                 {totalUnread > 99 ? '99+' : totalUnread}
@@ -168,7 +168,7 @@ const Header = memo(function Header({ onMenuClick, title, subtitle, headerAction
               aria-expanded={dropdownOpen}
               aria-haspopup="true"
               style={{
-                background: 'rgba(255,255,255,0.05)',
+                background: 'var(--bg-card-hover)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 12,
                 color: 'var(--text-primary)',

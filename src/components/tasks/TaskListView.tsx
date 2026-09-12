@@ -256,7 +256,7 @@ export default function TaskListView({
     return (
       <div className="glass-card py-16 flex flex-col items-center justify-center text-center">
         <CheckCircle2 size={40} className="text-gray-600 mb-3 opacity-40" />
-        <p className="text-base text-gray-400 font-medium">No tasks found matching these filters.</p>
+        <p className="text-base text-text-muted font-medium">No tasks found matching these filters.</p>
         <p className="text-xs text-gray-600 mt-1">Try resetting filters or adding a new task!</p>
       </div>
     );
@@ -352,7 +352,7 @@ export default function TaskListView({
 
       {/* 4. COMPLETED */}
       {completed.length > 0 && (
-        <div className="pt-1.5 border-t border-white/5">
+        <div className="pt-1.5 border-t border-border">
           <SectionHeader
             icon={CheckCircle2}
             title="Completed"
@@ -370,7 +370,7 @@ export default function TaskListView({
 
       {/* 5. WONT DO */}
       {wontDo.length > 0 && (
-        <div className="pt-1.5 border-t border-white/5">
+        <div className="pt-1.5 border-t border-border">
           <SectionHeader
             icon={CheckCircle2}
             title="Won't Do"

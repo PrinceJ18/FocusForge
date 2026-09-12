@@ -235,7 +235,7 @@ export default function ArenaPage() {
     return (
       <div className="page-enter max-w-2xl mx-auto space-y-6 text-left pb-16">
         {/* Hero Onboarding Card */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 p-8 md:p-10 shadow-2xl">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 p-8 md:p-10 shadow-2xl">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -245,8 +245,8 @@ export default function ArenaPage() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-3xl font-black text-white tracking-tight">Productivity Arena</h2>
-              <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
+              <h2 className="text-3xl font-black text-text-primary tracking-tight">Productivity Arena</h2>
+              <p className="text-text-muted max-w-md mx-auto leading-relaxed">
                 Compete with friends on focus time, tasks completed, and daily challenges. Create an arena and start climbing the leaderboard.
               </p>
             </div>
@@ -265,7 +265,7 @@ export default function ArenaPage() {
 
         {/* How It Works */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white px-1">How It Works</h2>
+          <h2 className="text-lg font-bold text-text-primary px-1">How It Works</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { icon: Swords, title: 'Create', desc: 'Start your own arena with a name and privacy setting.' },
@@ -274,14 +274,14 @@ export default function ArenaPage() {
             ].map((step, i) => (
               <div
                 key={step.title}
-                className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 space-y-3 hover:bg-white/[0.07] transition-colors group"
+                className="relative bg-background-card-hover backdrop-blur-sm border border-border rounded-xl p-5 space-y-3 hover:bg-white/[0.07] transition-colors group"
               >
                 <div className="absolute top-3 right-3 text-xs font-bold text-slate-600">{i + 1}</div>
                 <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
                   <step.icon size={20} />
                 </div>
-                <h3 className="font-semibold text-white text-sm">{step.title}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
+                <h3 className="font-semibold text-text-primary text-sm">{step.title}</h3>
+                <p className="text-xs text-text-muted leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -314,31 +314,31 @@ export default function ArenaPage() {
     <div className="page-enter space-y-6 max-w-5xl mx-auto text-left pb-16">
       {/* Header & Tabs */}
       <div className="text-center space-y-6">
-        <h2 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+        <h2 className="text-3xl font-bold text-text-primary bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
           {activeArena.name}
         </h2>
 
         {/* Arena metadata sub-header */}
-        <div className="flex items-center justify-center gap-3 flex-wrap text-sm text-slate-400">
+        <div className="flex items-center justify-center gap-3 flex-wrap text-sm text-text-muted">
           {activeArena.description && (
-            <span className="text-slate-300 max-w-md">{activeArena.description}</span>
+            <span className="text-text-secondary max-w-md">{activeArena.description}</span>
           )}
         </div>
         <div className="flex items-center justify-center gap-3 flex-wrap text-xs">
           {ownerName && (
-            <span className="flex items-center gap-1 text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-text-muted bg-background-card-hover border border-border px-2.5 py-1 rounded-full">
               <Crown className="w-3 h-3 text-yellow-400" />
               {ownerName}
             </span>
           )}
-          <span className="flex items-center gap-1 text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-text-muted bg-background-card-hover border border-border px-2.5 py-1 rounded-full">
             {activeArena.visibility === 'private' ? (
-              <><Shield className="w-3 h-3 text-slate-400" /> Private</>
+              <><Shield className="w-3 h-3 text-text-muted" /> Private</>
             ) : (
-              <><Eye className="w-3 h-3 text-slate-400" /> Friends Only</>
+              <><Eye className="w-3 h-3 text-text-muted" /> Friends Only</>
             )}
           </span>
-          <span className="flex items-center gap-1 text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-text-muted bg-background-card-hover border border-border px-2.5 py-1 rounded-full">
             <Users className="w-3 h-3 text-accent" />
             {leaderboard.length} {leaderboard.length === 1 ? 'member' : 'members'}
           </span>
@@ -397,7 +397,7 @@ export default function ArenaPage() {
               #2
             </div>
             <div className="mt-4 bg-gradient-to-b from-gray-300/20 to-transparent w-24 h-24 rounded-t-lg border-t-2 border-gray-300/50 flex flex-col items-center pt-2">
-              <span className="font-bold text-white truncate w-full text-center px-1 text-sm">{top3[1].profile?.display_name}</span>
+              <span className="font-bold text-text-primary truncate w-full text-center px-1 text-sm">{top3[1].profile?.display_name}</span>
               <span className="text-accent font-bold mt-1">{top3[1].total_score}</span>
             </div>
           </div>
@@ -410,7 +410,7 @@ export default function ArenaPage() {
               <Crown className="w-8 h-8" />
             </div>
             <div className="mt-4 bg-gradient-to-b from-yellow-400/30 to-transparent w-28 h-32 rounded-t-lg border-t-4 border-yellow-400 flex flex-col items-center pt-3">
-              <span className="font-bold text-white truncate w-full text-center px-1">{top3[0].profile?.display_name}</span>
+              <span className="font-bold text-text-primary truncate w-full text-center px-1">{top3[0].profile?.display_name}</span>
               <span className="text-yellow-400 font-black text-lg mt-1">{top3[0].total_score}</span>
             </div>
           </div>
@@ -423,7 +423,7 @@ export default function ArenaPage() {
               #3
             </div>
             <div className="mt-4 bg-gradient-to-b from-amber-600/20 to-transparent w-24 h-20 rounded-t-lg border-t-2 border-amber-600/50 flex flex-col items-center pt-2">
-              <span className="font-bold text-white truncate w-full text-center px-1 text-sm">{top3[2].profile?.display_name}</span>
+              <span className="font-bold text-text-primary truncate w-full text-center px-1 text-sm">{top3[2].profile?.display_name}</span>
               <span className="text-amber-500 font-bold mt-1">{top3[2].total_score}</span>
             </div>
           </div>
@@ -431,11 +431,11 @@ export default function ArenaPage() {
       </div>
 
       {/* LEADERBOARD TABLE */}
-      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+      <div className="bg-background-card-hover backdrop-blur-xl rounded-2xl border border-border overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/5 border-b border-white/10 text-xs uppercase tracking-wider text-gray-400">
+              <tr className="bg-background-card-hover border-b border-border text-xs uppercase tracking-wider text-text-muted">
                 <th className="px-6 py-4 font-semibold text-center w-20">Rank</th>
                 <th className="px-6 py-4 font-semibold">Member</th>
                 <th className="px-6 py-4 font-semibold text-center hidden sm:table-cell">Lvl</th>
@@ -453,11 +453,11 @@ export default function ArenaPage() {
                   <tr 
                     key={entry.id} 
                     className={clsx(
-                      "transition-colors hover:bg-white/5",
+                      "transition-colors hover:bg-background-card-hover",
                       isMe ? "bg-accent/10 border-l-4 border-l-accent" : "border-l-4 border-l-transparent"
                     )}
                   >
-                    <td className="px-6 py-4 text-center font-bold text-gray-400">
+                    <td className="px-6 py-4 text-center font-bold text-text-muted">
                       {rank}
                     </td>
                     <td className="px-6 py-4">
@@ -465,28 +465,28 @@ export default function ArenaPage() {
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
                           <UserAvatar profile={entry.profile} fallbackId={entry.user_id} size="sm" className="!w-full !h-full" />
                         </div>
-                        <span className={clsx("font-medium truncate max-w-[120px] sm:max-w-[200px]", isMe ? "text-white" : "text-gray-200")}>
+                        <span className={clsx("font-medium truncate max-w-[120px] sm:max-w-[200px]", isMe ? "text-text-primary" : "text-gray-200")}>
                           {entry.profile?.display_name || 'Unknown User'}
                           {isMe && <span className="ml-2 text-xs text-accent px-2 py-0.5 rounded-full bg-accent/20">You</span>}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center hidden sm:table-cell text-sm text-gray-400">
+                    <td className="px-6 py-4 text-center hidden sm:table-cell text-sm text-text-muted">
                       {entry.profile?.level || 1}
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-300">
+                    <td className="px-6 py-4 text-center text-sm text-text-secondary">
                       <div className="flex items-center justify-center space-x-1">
-                        <Clock className="w-3 h-3 text-gray-500" />
+                        <Clock className="w-3 h-3 text-text-muted" />
                         <span>{entry.focus_points}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-300">
+                    <td className="px-6 py-4 text-center text-sm text-text-secondary">
                       <div className="flex items-center justify-center space-x-1">
-                        <CheckCircle2 className="w-3 h-3 text-gray-500" />
+                        <CheckCircle2 className="w-3 h-3 text-text-muted" />
                         <span>{entry.task_points}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right font-bold text-white text-lg">
+                    <td className="px-6 py-4 text-right font-bold text-text-primary text-lg">
                       {entry.total_score}
                     </td>
                   </tr>
@@ -501,7 +501,7 @@ export default function ArenaPage() {
                 return (
                   <>
                     <tr>
-                      <td colSpan={6} className="px-6 py-2 text-center text-gray-500 bg-white/[0.02]">
+                      <td colSpan={6} className="px-6 py-2 text-center text-text-muted bg-white/[0.02]">
                         <div className="flex items-center justify-center space-x-4">
                           <div className="h-px w-8 bg-gray-700"></div>
                           <span className="text-xs font-bold tracking-widest">...</span>
@@ -509,7 +509,7 @@ export default function ArenaPage() {
                         </div>
                       </td>
                     </tr>
-                    <tr className="bg-accent/10 border-l-4 border-l-accent border-t border-white/10">
+                    <tr className="bg-accent/10 border-l-4 border-l-accent border-t border-border">
                       <td className="px-6 py-4 text-center font-bold text-accent">
                         {currentUserRank}
                       </td>
@@ -518,28 +518,28 @@ export default function ArenaPage() {
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
                             <UserAvatar profile={myEntry.profile} fallbackId={myEntry.user_id} size="sm" className="!w-full !h-full" />
                           </div>
-                          <span className="font-medium text-white truncate max-w-[120px] sm:max-w-[200px]">
+                          <span className="font-medium text-text-primary truncate max-w-[120px] sm:max-w-[200px]">
                             {myEntry.profile?.display_name || 'Unknown User'}
                             <span className="ml-2 text-xs text-accent px-2 py-0.5 rounded-full bg-accent/20">You</span>
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center hidden sm:table-cell text-sm text-gray-400">
+                      <td className="px-6 py-4 text-center hidden sm:table-cell text-sm text-text-muted">
                         {myEntry.profile?.level || 1}
                       </td>
-                      <td className="px-6 py-4 text-center text-sm text-gray-300">
+                      <td className="px-6 py-4 text-center text-sm text-text-secondary">
                         <div className="flex items-center justify-center space-x-1">
-                          <Clock className="w-3 h-3 text-gray-500" />
+                          <Clock className="w-3 h-3 text-text-muted" />
                           <span>{myEntry.focus_points}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center text-sm text-gray-300">
+                      <td className="px-6 py-4 text-center text-sm text-text-secondary">
                         <div className="flex items-center justify-center space-x-1">
-                          <CheckCircle2 className="w-3 h-3 text-gray-500" />
+                          <CheckCircle2 className="w-3 h-3 text-text-muted" />
                           <span>{myEntry.task_points}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-white text-lg">
+                      <td className="px-6 py-4 text-right font-bold text-text-primary text-lg">
                         {myEntry.total_score}
                       </td>
                     </tr>
@@ -570,10 +570,10 @@ export default function ArenaPage() {
                 <Crown className="w-4 h-4" />
                 <span>{periodType === 'weekly' ? 'Current Weekly Champion' : 'Current Monthly Champion'}</span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-black text-white">{latestChampion.display_name_snapshot || 'Unknown'}</h2>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-gray-400 mt-2">
+              <h2 className="text-3xl md:text-4xl font-black text-text-primary">{latestChampion.display_name_snapshot || 'Unknown'}</h2>
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-text-muted mt-2">
                 <span className="flex items-center space-x-1">
-                  <span className="font-bold text-gray-300">Level {latestChampion.level_snapshot}</span>
+                  <span className="font-bold text-text-secondary">Level {latestChampion.level_snapshot}</span>
                 </span>
                 <span>•</span>
                 <span className="flex items-center space-x-1 text-yellow-400 font-bold">
@@ -592,7 +592,7 @@ export default function ArenaPage() {
 
       {/* HALL OF FAME HISTORY */}
       <div className="mt-16 space-y-6">
-        <div className="flex items-center space-x-2 text-white px-2">
+        <div className="flex items-center space-x-2 text-text-primary px-2">
           <History className="w-6 h-6 text-accent" />
           <h2 className="text-2xl font-bold">Hall of Fame</h2>
         </div>
@@ -607,27 +607,27 @@ export default function ArenaPage() {
           <div className="relative w-full overflow-x-auto pb-4 custom-scrollbar">
             <div className="flex space-x-4 min-w-max px-2">
               {history.map((entry) => (
-                <div key={entry.id} className="w-72 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-5 hover:bg-white/10 transition-colors flex flex-col space-y-4 shadow-lg">
+                <div key={entry.id} className="w-72 bg-background-card-hover backdrop-blur-md border border-border rounded-xl p-5 hover:bg-background-card-hover transition-colors flex flex-col space-y-4 shadow-lg">
                   <div className="flex justify-between items-start">
                     <div className="w-10 h-10 rounded-xl border border-yellow-400/20 bg-yellow-400/10 text-yellow-400 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                       <Trophy className="w-5 h-5" />
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-gray-500 font-medium">{entry.period_start}</div>
-                      <div className="text-xs text-gray-500 font-medium border-t border-white/5 pt-0.5 mt-0.5">{entry.period_end}</div>
+                      <div className="text-xs text-text-muted font-medium">{entry.period_start}</div>
+                      <div className="text-xs text-text-muted font-medium border-t border-border pt-0.5 mt-0.5">{entry.period_end}</div>
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="font-bold text-white text-lg truncate" title={entry.display_name_snapshot || 'Unknown'}>
+                    <h3 className="font-bold text-text-primary text-lg truncate" title={entry.display_name_snapshot || 'Unknown'}>
                       {entry.display_name_snapshot || 'Unknown'}
                     </h3>
-                    <div className="text-sm text-gray-400">Level {entry.level_snapshot}</div>
+                    <div className="text-sm text-text-muted">Level {entry.level_snapshot}</div>
                   </div>
                   
-                  <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                    <div className="text-xl font-black text-accent">{entry.total_score} <span className="text-xs font-normal text-gray-500">pts</span></div>
-                    <div className="flex items-center space-x-1 text-xs text-gray-500" title="Arena Members during this period">
+                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                    <div className="text-xl font-black text-accent">{entry.total_score} <span className="text-xs font-normal text-text-muted">pts</span></div>
+                    <div className="flex items-center space-x-1 text-xs text-text-muted" title="Arena Members during this period">
                       <Users className="w-3 h-3" />
                       <span>{entry.member_count}</span>
                     </div>
@@ -654,7 +654,7 @@ export default function ArenaPage() {
 
       {/* RECENT ACTIVITY FEED */}
       <div className="mt-16 space-y-6">
-        <div className="flex items-center space-x-2 text-white px-2">
+        <div className="flex items-center space-x-2 text-text-primary px-2">
           <Activity className="w-6 h-6 text-accent" />
           <h2 className="text-2xl font-bold">Recent Activity</h2>
         </div>
@@ -666,27 +666,27 @@ export default function ArenaPage() {
             description="No recent activity to show."
           />
         ) : (
-          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden shadow-xl">
+          <div className="bg-background-card-hover border border-border rounded-xl overflow-hidden shadow-xl">
             <div className="divide-y divide-white/5">
               {activities.map((activity) => (
-                <div key={activity.id} className="p-4 hover:bg-white/5 transition-colors flex items-start space-x-4">
-                  <div className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <div key={activity.id} className="p-4 hover:bg-background-card-hover transition-colors flex items-start space-x-4">
+                  <div className="w-10 h-10 rounded-xl border border-border bg-background-card-hover flex items-center justify-center flex-shrink-0" aria-hidden="true">
                     {activity.activity_type.includes('champion') && <Crown className="w-5 h-5 text-yellow-400" />}
                     {activity.activity_type.includes('focus') && <Clock className="w-5 h-5 text-accent" />}
                     {activity.activity_type.includes('task') && <CheckCircle2 className="w-5 h-5 text-green-400" />}
                     {activity.activity_type.includes('level') && <Trophy className="w-5 h-5 text-amber-500" />}
                     {activity.activity_type.includes('friend') && <UserPlus className="w-5 h-5 text-blue-400" />}
-                    {!['champion', 'focus', 'task', 'level', 'friend'].some(type => activity.activity_type.includes(type)) && <Activity className="w-5 h-5 text-slate-400" />}
+                    {!['champion', 'focus', 'task', 'level', 'friend'].some(type => activity.activity_type.includes(type)) && <Activity className="w-5 h-5 text-text-muted" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm">
+                    <p className="text-text-primary text-sm">
                       <span className="font-bold">{activity.profile?.display_name || 'Unknown'}</span>{' '}
-                      <span className="text-gray-300">{activity.title}</span>
+                      <span className="text-text-secondary">{activity.title}</span>
                     </p>
                     {activity.description && (
-                      <p className="text-gray-400 text-xs mt-1">{activity.description}</p>
+                      <p className="text-text-muted text-xs mt-1">{activity.description}</p>
                     )}
-                    <div className="text-xs text-gray-500 mt-2 font-medium">
+                    <div className="text-xs text-text-muted mt-2 font-medium">
                       {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                     </div>
                   </div>
@@ -695,7 +695,7 @@ export default function ArenaPage() {
             </div>
             
             {hasMoreActivity && (
-              <div className="p-4 border-t border-white/10 flex justify-center bg-white/[0.02]">
+              <div className="p-4 border-t border-border flex justify-center bg-white/[0.02]">
                 <Button 
                   variant="outline"
                   onClick={loadMoreActivity}
@@ -713,7 +713,7 @@ export default function ArenaPage() {
       {/* CELEBRATION TOAST / OVERLAY */}
       {activeCelebration && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-bounce-short">
-          <div className="bg-gradient-to-r from-yellow-500/90 to-amber-500/90 backdrop-blur-xl border border-yellow-400/50 shadow-[0_0_40px_rgba(250,204,21,0.4)] rounded-full px-6 py-3 flex items-center space-x-3 text-white">
+          <div className="bg-gradient-to-r from-yellow-500/90 to-amber-500/90 backdrop-blur-xl border border-yellow-400/50 shadow-[0_0_40px_rgba(250,204,21,0.4)] rounded-full px-6 py-3 flex items-center space-x-3 text-text-primary">
             <Crown className="w-6 h-6 text-yellow-200" />
             <span className="font-bold text-lg">
               {activeCelebration === 'weekly_champion' && 'New Weekly Champion Crowned!'}
@@ -741,7 +741,7 @@ export default function ArenaPage() {
       {/* ARENA SETTINGS PANEL */}
       {showSettings && activeArena && user && (
         <div className="mt-16 space-y-6">
-          <div className="flex items-center space-x-2 text-white px-2">
+          <div className="flex items-center space-x-2 text-text-primary px-2">
             <Settings className="w-6 h-6 text-accent" />
             <h2 className="text-2xl font-bold">Arena Settings</h2>
           </div>
@@ -754,8 +754,8 @@ export default function ArenaPage() {
 
           {/* Rename Arena (Owner Only) */}
           {isOwner && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
-              <h3 className="font-semibold text-white flex items-center gap-2 text-sm">
+            <div className="bg-background-card-hover border border-border rounded-xl p-5 space-y-3">
+              <h3 className="font-semibold text-text-primary flex items-center gap-2 text-sm">
                 <Pen className="w-4 h-4 text-accent" /> Rename Arena
               </h3>
               <div className="flex gap-2">
@@ -765,7 +765,7 @@ export default function ArenaPage() {
                   onChange={e => setRenameValue(e.target.value)}
                   placeholder={activeArena.name}
                   maxLength={50}
-                  className="flex-1 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                  className="flex-1 px-3 py-2 bg-slate-800/80 border border-border rounded-lg text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
                   disabled={actionLoading !== null}
                 />
                 <Button
@@ -782,9 +782,9 @@ export default function ArenaPage() {
           )}
 
           {/* Members List */}
-          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden shadow-xl">
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-              <h3 className="font-semibold text-white flex items-center gap-2">
+          <div className="bg-background-card-hover border border-border rounded-xl overflow-hidden shadow-xl">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="font-semibold text-text-primary flex items-center gap-2">
                 <Users className="w-4 h-4 text-accent" /> Members ({members.length})
               </h3>
             </div>
@@ -795,12 +795,12 @@ export default function ArenaPage() {
                 const isMemberOwner = member.user_id === activeArena.owner_id;
 
                 return (
-                  <div key={member.id} className="px-6 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors">
+                  <div key={member.id} className="px-6 py-3 flex items-center gap-3 hover:bg-background-card-hover transition-colors">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800 flex-shrink-0 border border-gray-600">
                       <UserAvatar profile={profile} fallbackId={member.user_id} size="sm" className="!w-full !h-full" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-white truncate block">
+                      <span className="text-sm font-medium text-text-primary truncate block">
                         {profile?.display_name || 'Unknown User'}
                         {isSelf && <span className="ml-2 text-xs text-accent">You</span>}
                       </span>
@@ -868,7 +868,7 @@ export default function ArenaPage() {
               )}
             </div>
             {isOwner && (
-              <p className="text-xs text-slate-500">Transfer ownership to another member before leaving. Deleting removes all data permanently.</p>
+              <p className="text-xs text-text-muted">Transfer ownership to another member before leaving. Deleting removes all data permanently.</p>
             )}
           </div>
         </div>

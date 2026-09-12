@@ -164,21 +164,21 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500/30 to-accent/30 border border-green-500/40 flex items-center justify-center">
             <Check className="w-10 h-10 text-green-400" />
           </div>
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-text-primary">
             {successCount} {successCount === 1 ? 'Friend' : 'Friends'} Invited!
           </h3>
-          <p className="text-sm text-slate-400">They'll appear on the leaderboard.</p>
+          <p className="text-sm text-text-muted">They'll appear on the leaderboard.</p>
         </div>
       ) : loading ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-3">
           <Loader2 className="w-8 h-8 text-accent animate-spin" />
-          <p className="text-sm text-slate-400">Loading friends...</p>
+          <p className="text-sm text-text-muted">Loading friends...</p>
         </div>
       ) : friends.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 space-y-3 text-center">
           <Users className="w-12 h-12 text-slate-600" />
-          <h3 className="text-lg font-semibold text-slate-300">No Friends Yet</h3>
-          <p className="text-sm text-slate-500 max-w-xs">
+          <h3 className="text-lg font-semibold text-text-secondary">No Friends Yet</h3>
+          <p className="text-sm text-text-muted max-w-xs">
             Add friends first from the Friends page, then come back to invite them.
           </p>
         </div>
@@ -187,10 +187,10 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
           {invitableCount === 0 ? (
             <div className="text-center py-8">
               <Check className="w-10 h-10 text-green-400 mx-auto mb-3" />
-              <p className="text-slate-300 font-medium">All friends are already in this arena!</p>
+              <p className="text-text-secondary font-medium">All friends are already in this arena!</p>
             </div>
           ) : (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-text-muted">
               Select friends to invite ({selected.size} selected)
             </p>
           )}
@@ -209,10 +209,10 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
                   disabled={disabled}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 text-left ${
                     isUnavailable
-                      ? 'border-slate-800 bg-slate-800/30 opacity-50 cursor-not-allowed'
+                      ? 'border-border bg-slate-800/30 opacity-50 cursor-not-allowed'
                       : isSelected
                       ? 'border-accent bg-accent/10 shadow-lg shadow-accent/5'
-                      : 'border-slate-700/50 bg-slate-800/50 hover:border-slate-600 hover:bg-slate-800'
+                      : 'border-border/50 bg-slate-800/50 hover:border-slate-600 hover:bg-slate-800'
                   }`}
                 >
                   {/* Avatar */}
@@ -222,17 +222,17 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
 
                   {/* Name + Level */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
+                    <p className="text-sm font-medium text-text-primary truncate">
                       {friend.profile?.display_name || 'Unknown'}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-text-muted">
                       Level {friend.profile?.level || 1}
                     </p>
                   </div>
 
                   {/* Status Badge */}
                   {friend.isAlreadyMember ? (
-                    <span className="text-xs text-slate-500 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 flex-shrink-0">
+                    <span className="text-xs text-text-muted bg-slate-800 px-2.5 py-1 rounded-full border border-border flex-shrink-0">
                       In Arena
                     </span>
                   ) : friend.isInOtherArena ? (
@@ -245,7 +245,7 @@ export default function InviteFriendsModal({ isOpen, onClose, arenaId, userId, o
                         ? 'border-accent bg-accent'
                         : 'border-slate-600'
                     }`}>
-                      {isSelected && <Check size={12} className="text-white" />}
+                      {isSelected && <Check size={12} className="text-text-primary" />}
                     </div>
                   )}
                 </button>

@@ -13,7 +13,7 @@ const DEFAULT_COLORS = ['#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '
 
 export default function CategoryPieChart({ data, height = 250 }: CategoryPieChartProps) {
   if (!data || data.length === 0) {
-    return <div className="text-slate-500 text-xs text-center py-4">No data available</div>;
+    return <div className="text-text-muted text-xs text-center py-4">No data available</div>;
   }
 
   return (

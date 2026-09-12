@@ -152,7 +152,7 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
       headerAction={
         <button
           onClick={() => setShowCustomize(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-lg text-xs font-semibold backdrop-blur-sm transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-background-card-hover border border-border hover:bg-background-card-hover text-text-primary rounded-lg text-xs font-semibold backdrop-blur-sm transition-all"
         >
           Customize
         </button>
@@ -170,10 +170,10 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
             <UserAvatar profile={profile} size="lg" className="!w-full !h-full rounded-2xl" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
+            <h2 className="text-xl sm:text-2xl font-bold text-text-primary" style={{ fontFamily: 'Space Grotesk' }}>
               {greeting}, {displayName}! 👋
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-text-muted mt-0.5">
               Level {levelInfo.level} • {levelInfo.title} — {profile.xp} XP Total
             </p>
           </div>
@@ -210,8 +210,8 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
                   <Icon size={14} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider leading-tight truncate">{stat.label}</div>
-                  <div className="text-xs font-bold text-white leading-tight mt-0.5">{stat.value}</div>
+                  <div className="text-[10px] text-text-muted uppercase tracking-wider leading-tight truncate">{stat.label}</div>
+                  <div className="text-xs font-bold text-text-primary leading-tight mt-0.5">{stat.value}</div>
                 </div>
               </div>
             );
@@ -276,7 +276,7 @@ const DailyProgressRingWidget: React.FC<WidgetProps> = ({ context }) => {
             {/* Center value */}
             <div className="daily-progress-ring-center">
               <div className="text-2xl font-black" style={{ color: overallColor, fontFamily: 'Space Grotesk' }}>{overall}%</div>
-              <div className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">Overall</div>
+              <div className="text-[9px] text-text-muted uppercase tracking-wider font-semibold">Overall</div>
             </div>
           </div>
 
@@ -287,13 +287,13 @@ const DailyProgressRingWidget: React.FC<WidgetProps> = ({ context }) => {
                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: m.color }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-white">{m.label}</span>
+                    <span className="text-xs font-semibold text-text-primary">{m.label}</span>
                     <span className="text-[10px] font-bold" style={{ color: m.color }}>{m.pct}%</span>
                   </div>
                   <div className="daily-progress-bar-track">
                     <div className="daily-progress-bar-fill" style={{ width: `${m.pct}%`, background: m.color }} />
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">{m.detail}</div>
+                  <div className="text-[10px] text-text-muted mt-0.5">{m.detail}</div>
                 </div>
               </div>
             ))}
@@ -360,8 +360,8 @@ const SnapshotWidget: React.FC<WidgetProps> = ({ context }) => {
       ) : (
         <DashboardWidget size="kpi" colSpan={3} icon={Target} title="Budget Remaining" iconBg="rgba(16,185,129,0.12)" iconColor="#10b981">
           <div className="flex flex-col items-center justify-center h-full text-center mt-[-8px]">
-            <p className="text-[11px] text-slate-400 mb-2">Create your first monthly budget.</p>
-            <button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold transition-colors">
+            <p className="text-[11px] text-text-muted mb-2">Create your first monthly budget.</p>
+            <button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-text-primary rounded-lg text-[10px] font-bold transition-colors">
               Create Budget
             </button>
           </div>
@@ -431,7 +431,7 @@ const TodaysTasksWidget: React.FC<WidgetProps> = ({ context }) => {
         headerAction={
           <div className="flex gap-2">
             <button onClick={() => setShowQuickAddTask(true)} className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 rounded-lg text-xs font-semibold">Quick Add</button>
-            <button onClick={() => setPage('productivity')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Manage Board</button>
+            <button onClick={() => setPage('productivity')} className="px-3 py-1.5 bg-slate-900 border border-border hover:bg-slate-800 text-text-secondary rounded-lg text-xs font-semibold">Manage Board</button>
           </div>
         }
       >
@@ -441,9 +441,9 @@ const TodaysTasksWidget: React.FC<WidgetProps> = ({ context }) => {
               <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-3">
                 <CheckSquare size={24} className="text-purple-400" />
               </div>
-              <h3 className="text-sm font-bold text-white mb-1">🎉 You're all caught up!</h3>
-              <p className="text-xs text-slate-400 mb-4 max-w-[200px] mx-auto">Enjoy your free time or create a new task.</p>
-              <button onClick={() => setShowQuickAddTask(true)} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-colors">
+              <h3 className="text-sm font-bold text-text-primary mb-1">🎉 You're all caught up!</h3>
+              <p className="text-xs text-text-muted mb-4 max-w-[200px] mx-auto">Enjoy your free time or create a new task.</p>
+              <button onClick={() => setShowQuickAddTask(true)} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-text-primary rounded-xl text-xs font-bold transition-colors">
                 + Add Task
               </button>
             </div>
@@ -455,12 +455,12 @@ const TodaysTasksWidget: React.FC<WidgetProps> = ({ context }) => {
               const priorityColor = isHigh ? '#ef4444' : isMed ? '#f59e0b' : '#10b981';
 
               return (
-                <div key={`${task.id}_${occurrenceDate}`} onClick={() => setSelectedTaskDetails({ task, status, date: occurrenceDate })} className="p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs">
-                  <button onClick={(e) => { e.stopPropagation(); if (status !== 'wont_do') handleToggleTask(task, status === 'completed', occurrenceDate); }} disabled={status === 'wont_do'} className={`transition-colors ${status === 'wont_do' ? 'opacity-50 cursor-not-allowed' : 'text-gray-400 hover:text-white'}`} style={{ color: status === 'completed' ? '#10b981' : status === 'wont_do' ? '#f97316' : 'var(--text-muted)' }}>
+                <div key={`${task.id}_${occurrenceDate}`} onClick={() => setSelectedTaskDetails({ task, status, date: occurrenceDate })} className="p-3 rounded-xl border border-border bg-white/[0.01] hover:bg-white/[0.03] transition-colors cursor-pointer flex items-center justify-between gap-3 text-xs">
+                  <button onClick={(e) => { e.stopPropagation(); if (status !== 'wont_do') handleToggleTask(task, status === 'completed', occurrenceDate); }} disabled={status === 'wont_do'} className={`transition-colors ${status === 'wont_do' ? 'opacity-50 cursor-not-allowed' : 'text-text-muted hover:text-text-primary'}`} style={{ color: status === 'completed' ? '#10b981' : status === 'wont_do' ? '#f97316' : 'var(--text-muted)' }}>
                     {status === 'completed' ? <CheckSquare size={16} className="text-green-500" /> : status === 'wont_do' ? <XCircle size={16} className="text-orange-500" /> : <div className="w-4 h-4 rounded border border-white/20 hover:border-purple-400 transition-colors" />}
                   </button>
                   <div className="flex-1 min-w-0 text-left">
-                    <span className="font-semibold text-white block truncate" style={{ textDecoration: (status === 'completed' || status === 'wont_do') ? 'line-through' : 'none', color: (status === 'completed' || status === 'wont_do') ? 'rgba(255,255,255,0.4)' : 'white' }}>{task.title}</span>
+                    <span className="font-semibold text-text-primary block truncate" style={{ textDecoration: (status === 'completed' || status === 'wont_do') ? 'line-through' : 'none', color: (status === 'completed' || status === 'wont_do') ? 'rgba(255,255,255,0.4)' : 'white' }}>{task.title}</span>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase" style={{ backgroundColor: `${priorityColor}15`, color: priorityColor }}>{task.priority}</span>
                       {section && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${section.color}15`, color: section.color }}>{section.name}</span>}
@@ -488,7 +488,7 @@ const UpcomingBillsWidget: React.FC<WidgetProps> = ({ context }) => {
       scrollable
       iconBg="rgba(236,72,153,0.12)"
       iconColor="#ec4899"
-      headerAction={<button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">View All</button>}
+      headerAction={<button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-slate-900 border border-border hover:bg-slate-800 text-text-secondary rounded-lg text-xs font-semibold">View All</button>}
     >
       <div className="space-y-2">
         {upcomingBills.length === 0 ? (
@@ -496,17 +496,17 @@ const UpcomingBillsWidget: React.FC<WidgetProps> = ({ context }) => {
             <div className="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center mb-3">
               <Calendar size={24} className="text-pink-400" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">No upcoming payments.</h3>
-            <p className="text-xs text-slate-400">You're all clear.</p>
+            <h3 className="text-sm font-bold text-text-primary mb-1">No upcoming payments.</h3>
+            <p className="text-xs text-text-muted">You're all clear.</p>
           </div>
         ) : (
           upcomingBills.map(bill => (
-            <div key={bill.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 group hover:bg-white/[0.04] transition-colors cursor-pointer" onClick={() => setPage('finance')}>
+            <div key={bill.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-border group hover:bg-white/[0.04] transition-colors cursor-pointer" onClick={() => setPage('finance')}>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm flex-shrink-0" style={{ color: bill.color, border: `1px solid ${bill.color}30` }}>{bill.icon}</div>
-                <div className="min-w-0 flex-1"><div className="text-xs font-bold text-white group-hover:text-pink-400 transition-colors truncate">{bill.name}</div><div className="text-[10px] text-slate-400">Due: {format(parseISO(bill.payment_date), 'MMM d')}</div></div>
+                <div className="min-w-0 flex-1"><div className="text-xs font-bold text-text-primary group-hover:text-pink-400 transition-colors truncate">{bill.name}</div><div className="text-[10px] text-text-muted">Due: {format(parseISO(bill.payment_date), 'MMM d')}</div></div>
               </div>
-              <div className="text-sm font-bold text-white font-mono">{formatCurrency(bill.amount)}</div>
+              <div className="text-sm font-bold text-text-primary font-mono">{formatCurrency(bill.amount)}</div>
             </div>
           ))
         )}
@@ -521,14 +521,14 @@ const FocusTrendWidget: React.FC<WidgetProps> = ({ context }) => {
   return (
     <>
       <h2 className="dashboard-section-title w-full col-span-12">Analytics & Trends</h2>
-      <DashboardWidget icon={BarChart3} title="Focus Trend" size="medium" colSpan={6} iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Details</button>}>
+      <DashboardWidget icon={BarChart3} title="Focus Trend" size="medium" colSpan={6} iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-border hover:bg-slate-800 text-text-secondary rounded-lg text-xs font-semibold">Details</button>}>
         {!hasFocus ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-6">
             <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-3">
               <Play size={24} className="text-purple-400" />
             </div>
-            <p className="text-xs text-slate-400 mb-4 max-w-[200px]">Start your first focus session today.</p>
-            <button onClick={() => handleStartTimer(25)} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-colors">
+            <p className="text-xs text-text-muted mb-4 max-w-[200px]">Start your first focus session today.</p>
+            <button onClick={() => handleStartTimer(25)} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-text-primary rounded-xl text-xs font-bold transition-colors">
               Start Focus
             </button>
           </div>
@@ -544,14 +544,14 @@ const ExpenseTrendWidget: React.FC<WidgetProps> = ({ context }) => {
   const { expenseTrendData, setPage, setShowQuickAddExpense } = context;
   const hasExpense = expenseTrendData && expenseTrendData.some(d => d.spent > 0);
   return (
-    <DashboardWidget icon={TrendingUp} title="Expense Trend" size="medium" colSpan={6} iconBg="rgba(236,72,153,0.12)" iconColor="#ec4899" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Details</button>}>
+    <DashboardWidget icon={TrendingUp} title="Expense Trend" size="medium" colSpan={6} iconBg="rgba(236,72,153,0.12)" iconColor="#ec4899" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-border hover:bg-slate-800 text-text-secondary rounded-lg text-xs font-semibold">Details</button>}>
       {!hasExpense ? (
         <div className="flex flex-col items-center justify-center h-full text-center py-6">
           <div className="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center mb-3">
             <Wallet size={24} className="text-pink-400" />
           </div>
-          <p className="text-xs text-slate-400 mb-4 max-w-[200px]">Track your first expense to unlock financial insights.</p>
-          <button onClick={() => setShowQuickAddExpense(true)} className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-bold transition-colors">
+          <p className="text-xs text-text-muted mb-4 max-w-[200px]">Track your first expense to unlock financial insights.</p>
+          <button onClick={() => setShowQuickAddExpense(true)} className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-text-primary rounded-xl text-xs font-bold transition-colors">
             + Add Expense
           </button>
         </div>
@@ -579,8 +579,8 @@ const AiInsightsWidget: React.FC<WidgetProps> = ({ context }) => {
               <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-3">
                 <Star size={24} className="text-amber-400" />
               </div>
-              <h3 className="text-sm font-bold text-white mb-1">You're on track!</h3>
-              <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Keep using FocusForge. We'll surface smart recommendations here.</p>
+              <h3 className="text-sm font-bold text-text-primary mb-1">You're on track!</h3>
+              <p className="text-xs text-text-muted max-w-[200px] mx-auto">Keep using FocusForge. We'll surface smart recommendations here.</p>
             </div>
           ) : (
             sortedRecs.map((rec, idx) => {
@@ -595,8 +595,8 @@ const AiInsightsWidget: React.FC<WidgetProps> = ({ context }) => {
                     <Icon size={16} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-white">{rec.title}</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">{rec.action}</div>
+                    <div className="text-xs font-bold text-text-primary">{rec.title}</div>
+                    <div className="text-[10px] text-text-muted mt-0.5">{rec.action}</div>
                   </div>
                   <span className="smart-rec-priority" style={{ background: `${rec.color}15`, color: rec.color }}>{rec.priority}</span>
                 </div>
@@ -645,9 +645,9 @@ const RecentActivityWidget: React.FC<WidgetProps> = ({ context }) => {
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-3">
               <Activity size={24} className="text-emerald-400" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">No activity yet</h3>
-            <p className="text-xs text-slate-400 max-w-[200px] mx-auto mb-3">Complete a task or start a focus session to build your timeline.</p>
-            <button onClick={() => setPage('productivity')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors">
+            <h3 className="text-sm font-bold text-text-primary mb-1">No activity yet</h3>
+            <p className="text-xs text-text-muted max-w-[200px] mx-auto mb-3">Complete a task or start a focus session to build your timeline.</p>
+            <button onClick={() => setPage('productivity')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-text-primary rounded-xl text-xs font-bold transition-colors">
               Go to Productivity
             </button>
           </div>
@@ -665,11 +665,11 @@ const RecentActivityWidget: React.FC<WidgetProps> = ({ context }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-white truncate">{e.metadata.title || e.type}</span>
-                    <span className="text-[10px] text-slate-500 flex-shrink-0">{getRelativeTime(e.timestamp)}</span>
+                    <span className="text-xs font-semibold text-text-primary truncate">{e.metadata.title || e.type}</span>
+                    <span className="text-[10px] text-text-muted flex-shrink-0">{getRelativeTime(e.timestamp)}</span>
                   </div>
                   {e.metadata.description && (
-                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">{e.metadata.description}</p>
+                    <p className="text-[10px] text-text-muted mt-0.5 truncate">{e.metadata.description}</p>
                   )}
                 </div>
               </div>
@@ -686,27 +686,27 @@ const SavingsWidget: React.FC<WidgetProps> = ({ context }) => {
   return (
     <>
       <h2 className="dashboard-section-title w-full col-span-12">Savings</h2>
-      <DashboardWidget icon={PiggyBank} title="Savings Progress" badge={savingsSummary ? `${savingsSummary.count} goal${savingsSummary.count !== 1 ? 's' : ''}` : '0'} size="auto" colSpan={12} iconBg="rgba(16,185,129,0.12)" iconColor="#10b981" headerAction={<button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Manage</button>}>
+      <DashboardWidget icon={PiggyBank} title="Savings Progress" badge={savingsSummary ? `${savingsSummary.count} goal${savingsSummary.count !== 1 ? 's' : ''}` : '0'} size="auto" colSpan={12} iconBg="rgba(16,185,129,0.12)" iconColor="#10b981" headerAction={<button onClick={() => setPage('finance')} className="px-3 py-1.5 bg-slate-900 border border-border hover:bg-slate-800 text-text-secondary rounded-lg text-xs font-semibold">Manage</button>}>
         {!savingsSummary ? (
           <div className="text-center py-6 px-4 flex flex-col items-center justify-center h-full">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-3">
               <PiggyBank size={24} className="text-emerald-400" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">No savings goal</h3>
-            <p className="text-xs text-slate-400 mb-4 max-w-[200px] mx-auto">Start saving for something meaningful.</p>
-            <button onClick={() => setPage('finance')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors">
+            <h3 className="text-sm font-bold text-text-primary mb-1">No savings goal</h3>
+            <p className="text-xs text-text-muted mb-4 max-w-[200px] mx-auto">Start saving for something meaningful.</p>
+            <button onClick={() => setPage('finance')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-text-primary rounded-xl text-xs font-bold transition-colors">
               Create Goal
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="sm:col-span-2 p-4 rounded-xl bg-white/[0.02] border border-white/5">
-              <div className="flex items-center gap-2 mb-3"><div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: savingsSummary.goal.color || '#10b981' }} /><span className="text-sm font-bold text-white truncate flex-1">{savingsSummary.goal.title}</span></div>
+            <div className="sm:col-span-2 p-4 rounded-xl bg-white/[0.02] border border-border">
+              <div className="flex items-center gap-2 mb-3"><div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: savingsSummary.goal.color || '#10b981' }} /><span className="text-sm font-bold text-text-primary truncate flex-1">{savingsSummary.goal.title}</span></div>
               <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden mb-2"><div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${savingsSummary.goal.color || '#10b981'}, #06b6d4)`, width: `${savingsSummary.pct}%`, transition: 'width 0.8s ease' }} /></div>
-              <div className="flex justify-between text-xs"><span className="text-slate-400">{formatCurrency(savingsSummary.goal.current_amount)} saved</span><span className="text-white font-bold">{savingsSummary.pct}%</span></div>
+              <div className="flex justify-between text-xs"><span className="text-text-muted">{formatCurrency(savingsSummary.goal.current_amount)} saved</span><span className="text-text-primary font-bold">{savingsSummary.pct}%</span></div>
             </div>
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center"><div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">Remaining</div><div className="text-lg font-black text-amber-400" style={{ fontFamily: 'Space Grotesk' }}>{formatCurrency(savingsSummary.remaining)}</div><div className="text-[10px] text-slate-500 mt-0.5">of {formatCurrency(savingsSummary.goal.target_amount)}</div></div>
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-center"><div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-1">{savingsSummary.goal.deadline ? 'Deadline' : 'Total Saved'}</div><div className="text-lg font-black text-green-400" style={{ fontFamily: 'Space Grotesk' }}>{savingsSummary.goal.deadline ? format(parseISO(savingsSummary.goal.deadline), 'MMM d') : formatCurrency(savingsSummary.totalSaved)}</div><div className="text-[10px] text-slate-500 mt-0.5">{savingsSummary.goal.deadline ? format(parseISO(savingsSummary.goal.deadline), 'yyyy') : `across ${savingsSummary.count} goals`}</div></div>
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-center"><div className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-1">Remaining</div><div className="text-lg font-black text-amber-400" style={{ fontFamily: 'Space Grotesk' }}>{formatCurrency(savingsSummary.remaining)}</div><div className="text-[10px] text-text-muted mt-0.5">of {formatCurrency(savingsSummary.goal.target_amount)}</div></div>
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-center"><div className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-1">{savingsSummary.goal.deadline ? 'Deadline' : 'Total Saved'}</div><div className="text-lg font-black text-green-400" style={{ fontFamily: 'Space Grotesk' }}>{savingsSummary.goal.deadline ? format(parseISO(savingsSummary.goal.deadline), 'MMM d') : formatCurrency(savingsSummary.totalSaved)}</div><div className="text-[10px] text-text-muted mt-0.5">{savingsSummary.goal.deadline ? format(parseISO(savingsSummary.goal.deadline), 'yyyy') : `across ${savingsSummary.count} goals`}</div></div>
           </div>
         )}
       </DashboardWidget>
@@ -730,7 +730,7 @@ const GoalTrackerWidget: React.FC<WidgetProps> = ({ context }) => {
   return (
     <>
       <h2 className="dashboard-section-title w-full col-span-12">Goals & Progress</h2>
-      <DashboardWidget icon={Target} title="Goal Tracker" size="medium" colSpan={6} scrollable iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-white/5 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold">Details</button>}>
+      <DashboardWidget icon={Target} title="Goal Tracker" size="medium" colSpan={6} scrollable iconBg="rgba(168,85,247,0.12)" iconColor="#a855f7" headerAction={<button onClick={() => setPage('analytics')} className="px-3 py-1.5 bg-slate-900 border border-border hover:bg-slate-800 text-text-secondary rounded-lg text-xs font-semibold">Details</button>}>
         <div className="space-y-3">
           {goals.map((goal) => {
             const Icon = goal.icon;
@@ -747,7 +747,7 @@ const GoalTrackerWidget: React.FC<WidgetProps> = ({ context }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[11px] font-semibold text-white truncate">{goal.label}</span>
+                    <span className="text-[11px] font-semibold text-text-primary truncate">{goal.label}</span>
                     <span className="text-[10px] font-bold" style={{ color: barColor }}>
                       {isInverse ? `${formatCurrency(goal.current)} / ${formatCurrency(goal.target)}` : `${goal.current} / ${goal.target}`}
                     </span>
@@ -767,7 +767,7 @@ const GoalTrackerWidget: React.FC<WidgetProps> = ({ context }) => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] font-semibold text-white">{goalTrackerData.streak.label}</span>
+                <span className="text-[11px] font-semibold text-text-primary">{goalTrackerData.streak.label}</span>
                 <span className="text-[10px] font-bold text-amber-400">{goalTrackerData.streak.current} day{goalTrackerData.streak.current !== 1 ? 's' : ''}</span>
               </div>
             </div>
@@ -791,8 +791,8 @@ const QuickContinueWidget: React.FC<WidgetProps> = ({ context }) => {
             <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-3">
               <RotateCcw size={24} className="text-cyan-400" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Nothing to resume</h3>
-            <p className="text-xs text-slate-400 max-w-[200px] mx-auto">Start a task or focus session. Quick resume links will appear here.</p>
+            <h3 className="text-sm font-bold text-text-primary mb-1">Nothing to resume</h3>
+            <p className="text-xs text-text-muted max-w-[200px] mx-auto">Start a task or focus session. Quick resume links will appear here.</p>
           </div>
         ) : (
           quickContinueItems.map((item, idx) => {
@@ -807,8 +807,8 @@ const QuickContinueWidget: React.FC<WidgetProps> = ({ context }) => {
                   <Icon size={18} />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <div className="text-xs font-bold text-white truncate">{item.label}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">{item.sublabel}</div>
+                  <div className="text-xs font-bold text-text-primary truncate">{item.label}</div>
+                  <div className="text-[10px] text-text-muted mt-0.5">{item.sublabel}</div>
                 </div>
                 <ArrowRight size={14} className="text-slate-600 flex-shrink-0" />
               </button>

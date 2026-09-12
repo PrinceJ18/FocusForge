@@ -79,7 +79,7 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
                 className="sidebar-logo-icon w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
               >
-                <Zap size={18} className="text-white" />
+                <Zap size={18} className="text-text-primary" />
               </div>
               <div className="sidebar-label">
                 <h1 className="text-sm font-bold" style={{ fontFamily: 'Space Grotesk', color: 'var(--text-primary)' }}>
@@ -154,33 +154,33 @@ const Sidebar = memo(function Sidebar({ isOpen, onClose, collapsed, onToggleColl
 
           {/* Tools Section */}
           <div className="sidebar-tools-section px-4 pb-4 shrink-0">
-            <h3 className="sidebar-label text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">Tools</h3>
+            <h3 className="sidebar-label text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2 px-1">Tools</h3>
             <div className="space-y-2">
               <button
                 title="Expense Buddy"
                 onClick={() => handleNav('splits')}
-                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-colors transition-transform transition-shadow duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(168,85,247,0.15)] relative ${currentPage === 'splits' ? 'border-purple-500/50 bg-purple-500/10' : ''}`}
+                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-border bg-background-card-hover hover:bg-background-card-hover hover:border-purple-500/30 transition-colors transition-transform transition-shadow duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(168,85,247,0.15)] relative ${currentPage === 'splits' ? 'border-purple-500/50 bg-purple-500/10' : ''}`}
               >
                 <div className="sidebar-tool-icon w-8 h-8 shrink-0 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200">
                   <Users size={16} />
                 </div>
                 <div className="sidebar-label text-left flex-1 min-w-0 overflow-hidden">
-                  <div className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors truncate">Expense Buddy</div>
-                  <div className="text-[9px] text-slate-400 truncate">Track shared expenses, split bills, and settle balances with friends and groups.</div>
+                  <div className="text-xs font-bold text-text-primary group-hover:text-purple-400 transition-colors truncate">Expense Buddy</div>
+                  <div className="text-[9px] text-text-muted truncate">Track shared expenses, split bills, and settle balances with friends and groups.</div>
                 </div>
                 <span className="sidebar-tooltip" aria-hidden="true">Expense Buddy</span>
               </button>
               <button
                 title="Settings"
                 onClick={() => handleNav('settings')}
-                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-slate-500/30 transition-colors transition-transform transition-shadow duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)] relative ${currentPage === 'settings' ? 'border-slate-500/50 bg-slate-500/10' : ''}`}
+                className={`sidebar-tool-btn w-full flex items-center p-3 rounded-2xl border border-border bg-background-card-hover hover:bg-background-card-hover hover:border-slate-500/30 transition-colors transition-transform transition-shadow duration-200 group hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)] relative ${currentPage === 'settings' ? 'border-slate-500/50 bg-slate-500/10' : ''}`}
               >
-                <div className="sidebar-tool-icon w-8 h-8 shrink-0 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200 group-hover:rotate-45">
+                <div className="sidebar-tool-icon w-8 h-8 shrink-0 rounded-xl bg-slate-800 text-text-muted flex items-center justify-center mr-3 group-hover:scale-105 transition-transform duration-200 group-hover:rotate-45">
                   <Settings size={16} />
                 </div>
                 <div className="sidebar-label text-left flex-1 min-w-0 overflow-hidden">
-                  <div className="text-xs font-bold text-white transition-colors truncate">Settings</div>
-                  <div className="text-[9px] text-slate-400 truncate">Personalize themes, colors, layouts, preferences, and productivity goals.</div>
+                  <div className="text-xs font-bold text-text-primary transition-colors truncate">Settings</div>
+                  <div className="text-[9px] text-text-muted truncate">Personalize themes, colors, layouts, preferences, and productivity goals.</div>
                 </div>
                 <span className="sidebar-tooltip" aria-hidden="true">Settings</span>
               </button>

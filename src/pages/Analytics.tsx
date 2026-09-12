@@ -115,7 +115,7 @@ export default function Analytics() {
             </div>
             <div>
               <h4 className="text-sm font-bold text-slate-100">Deep Work Tracking</h4>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-text-muted mt-1">
                 Measure daily focus volume, session endurance, and peak hours.
               </p>
               <button
@@ -133,7 +133,7 @@ export default function Analytics() {
             </div>
             <div>
               <h4 className="text-sm font-bold text-slate-100">Finance & Budget Runway</h4>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-text-muted mt-1">
                 Track burn rate, categorize spending, and forecast month-end balance.
               </p>
               <button
@@ -173,14 +173,14 @@ export default function Analytics() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
-          <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
-            <span className="text-slate-400">Total Spend:</span>
+          <div className="px-3 py-1.5 rounded-xl bg-background-card-hover border border-border flex items-center gap-2">
+            <span className="text-text-muted">Total Spend:</span>
             <span className="font-bold text-red-400 font-mono">
               {formatCurrency(data.totalSpent)}
             </span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
-            <span className="text-slate-400">Total Focus:</span>
+          <div className="px-3 py-1.5 rounded-xl bg-background-card-hover border border-border flex items-center gap-2">
+            <span className="text-text-muted">Total Focus:</span>
             <span className="font-bold text-purple-400 font-mono">
               {formatFocusTime(data.totalFocusMin)}
             </span>
@@ -193,7 +193,7 @@ export default function Analytics() {
         {/* Overall Wellness Score */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">
               Wellness Index
             </span>
             <span
@@ -231,7 +231,7 @@ export default function Analytics() {
             >
               {data.overallWellnessScore}
             </span>
-            <span className="text-xs text-slate-500 font-semibold">/ 100</span>
+            <span className="text-xs text-text-muted font-semibold">/ 100</span>
           </div>
           <div className="w-full bg-slate-800/80 h-1.5 rounded-full mt-3 overflow-hidden">
             <div
@@ -247,7 +247,7 @@ export default function Analytics() {
         {/* Productivity Score */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">
               Productivity Score
             </span>
             <span className="text-[10px] font-bold text-purple-400">
@@ -261,11 +261,11 @@ export default function Analytics() {
             >
               {data.productivityScore}
             </span>
-            <span className="text-xs text-slate-500 font-semibold">
+            <span className="text-xs text-text-muted font-semibold">
               {data.taskCompletionRate}% task rate
             </span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+          <div className="text-[11px] text-text-muted mt-2 flex items-center justify-between">
             <span>{data.completedTasksCount} tasks done</span>
             <span>{formatFocusTime(data.totalFocusMin)} focus</span>
           </div>
@@ -274,7 +274,7 @@ export default function Analytics() {
         {/* Financial Discipline Score */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">
               Financial Health
             </span>
             <span
@@ -304,11 +304,11 @@ export default function Analytics() {
             >
               {data.financialScore}
             </span>
-            <span className="text-xs text-slate-500 font-semibold">
+            <span className="text-xs text-text-muted font-semibold">
               {data.budgetUtilizationPct}% budget used
             </span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+          <div className="text-[11px] text-text-muted mt-2 flex items-center justify-between">
             <span>Burn: {formatCurrency(data.avgDailySpend)}/day</span>
             <span>{formatCurrency(data.availableBudget)} left</span>
           </div>
@@ -317,7 +317,7 @@ export default function Analytics() {
         {/* Deep Work & Consistency */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span className="text-xs text-text-muted font-semibold uppercase tracking-wider">
               Focus Streak & Habit
             </span>
             <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
@@ -332,9 +332,9 @@ export default function Analytics() {
             >
               {data.focusConsistencyRate}%
             </span>
-            <span className="text-xs text-slate-500 font-semibold">Consistency</span>
+            <span className="text-xs text-text-muted font-semibold">Consistency</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
+          <div className="text-[11px] text-text-muted mt-2 flex items-center justify-between">
             <span>Avg: {formatFocusTime(data.avgSessionLength)} / session</span>
             <span>Peak: {formatFocusTime(data.longestSessionMins)}</span>
           </div>
@@ -352,11 +352,11 @@ export default function Analytics() {
               className="section-header-icon"
               style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
             >
-              <Sparkles size={16} className="text-white" />
+              <Sparkles size={16} className="text-text-primary" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Intelligent Insights</h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-text-muted">
                 Actionable trends and predictive patterns derived from your activity.
               </p>
             </div>
@@ -384,7 +384,7 @@ export default function Analytics() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-100">Focus & Deep Work Velocity</h3>
-                <p className="text-[11px] text-slate-400">Daily minutes of dedicated attention.</p>
+                <p className="text-[11px] text-text-muted">Daily minutes of dedicated attention.</p>
               </div>
             </div>
 
@@ -453,7 +453,7 @@ export default function Analytics() {
           </div>
 
           {/* Quick Highlight Pills */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-white/5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-border">
             <HighlightPill
               label="Best Day"
               value={data.bestFocusDay.dayName}
@@ -505,7 +505,7 @@ export default function Analytics() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-100">Weekly Consistency</h3>
-                <p className="text-[11px] text-slate-400">Focus hours over the last 4 weeks.</p>
+                <p className="text-[11px] text-text-muted">Focus hours over the last 4 weeks.</p>
               </div>
             </div>
 
@@ -544,8 +544,8 @@ export default function Analytics() {
           </div>
 
           <div className="space-y-2">
-            <div className="p-3 bg-white/2 rounded-xl border border-white/5 text-xs text-slate-300">
-              <span className="font-semibold text-white">Focus Target:</span> 10+ hours per week
+            <div className="p-3 bg-background-card rounded-xl border border-border text-xs text-text-secondary">
+              <span className="font-semibold text-text-primary">Focus Target:</span> 10+ hours per week
               delivers maximum productivity compound momentum.
             </div>
 
@@ -575,7 +575,7 @@ export default function Analytics() {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Task Priority Execution</h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-text-muted">
                 Completion rates categorized by task impact and urgency.
               </p>
             </div>
@@ -589,7 +589,7 @@ export default function Analytics() {
                   <span className="w-2 h-2 rounded-full bg-red-500" />
                   High Priority
                 </span>
-                <span className="font-bold text-slate-300">
+                <span className="font-bold text-text-secondary">
                   {data.priorityDistribution.high.completed} /{' '}
                   {data.priorityDistribution.high.total} ({data.priorityDistribution.high.rate}%)
                 </span>
@@ -609,7 +609,7 @@ export default function Analytics() {
                   <span className="w-2 h-2 rounded-full bg-amber-500" />
                   Medium Priority
                 </span>
-                <span className="font-bold text-slate-300">
+                <span className="font-bold text-text-secondary">
                   {data.priorityDistribution.medium.completed} /{' '}
                   {data.priorityDistribution.medium.total} ({data.priorityDistribution.medium.rate}%)
                 </span>
@@ -629,7 +629,7 @@ export default function Analytics() {
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
                   Low Priority
                 </span>
-                <span className="font-bold text-slate-300">
+                <span className="font-bold text-text-secondary">
                   {data.priorityDistribution.low.completed} /{' '}
                   {data.priorityDistribution.low.total} ({data.priorityDistribution.low.rate}%)
                 </span>
@@ -666,38 +666,38 @@ export default function Analytics() {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Predictive Month-End Forecast</h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-text-muted">
                 AI run-rate projections based on current daily pace.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3.5 bg-white/2 rounded-xl border border-white/5 space-y-1">
-              <span className="text-[10px] text-slate-400 font-semibold uppercase">
+            <div className="p-3.5 bg-background-card rounded-xl border border-border space-y-1">
+              <span className="text-[10px] text-text-muted font-semibold uppercase">
                 Projected Spend
               </span>
-              <div className="text-lg font-bold text-white">
+              <div className="text-lg font-bold text-text-primary">
                 {formatCurrency(data.forecast.projectedMonthEndSpend)}
               </div>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[10px] text-text-muted">
                 Pacing: {formatCurrency(data.forecast.dailyBurnRate)}/day
               </p>
             </div>
 
-            <div className="p-3.5 bg-white/2 rounded-xl border border-white/5 space-y-1">
-              <span className="text-[10px] text-slate-400 font-semibold uppercase">
+            <div className="p-3.5 bg-background-card rounded-xl border border-border space-y-1">
+              <span className="text-[10px] text-text-muted font-semibold uppercase">
                 Projected Focus
               </span>
               <div className="text-lg font-bold text-purple-400">
                 {data.forecast.projectedMonthEndFocusHours} hrs
               </div>
-              <p className="text-[10px] text-slate-500">By end of current month</p>
+              <p className="text-[10px] text-text-muted">By end of current month</p>
             </div>
           </div>
 
-          <div className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-center justify-between text-xs">
-            <span className="text-slate-300">Budget Runway Status:</span>
+          <div className="p-3 bg-background-card rounded-xl border border-border flex items-center justify-between text-xs">
+            <span className="text-text-secondary">Budget Runway Status:</span>
             <span
               className={`font-bold px-2 py-0.5 rounded-full ${
                 data.forecast.budgetHealthStatus === 'healthy'
@@ -732,7 +732,7 @@ export default function Analytics() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-100">Expense Trajectory</h3>
-                <p className="text-[11px] text-slate-400">Daily spending pattern over time.</p>
+                <p className="text-[11px] text-text-muted">Daily spending pattern over time.</p>
               </div>
             </div>
 
@@ -787,15 +787,15 @@ export default function Analytics() {
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5">
-            <div className="p-2.5 bg-white/2 rounded-xl border border-white/5">
-              <span className="text-[10px] text-slate-400 block font-semibold">Top Category</span>
-              <span className="text-xs font-bold text-slate-200 truncate block mt-0.5">
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+            <div className="p-2.5 bg-background-card rounded-xl border border-border">
+              <span className="text-[10px] text-text-muted block font-semibold">Top Category</span>
+              <span className="text-xs font-bold text-text-primary truncate block mt-0.5">
                 {data.topCategory.name} ({data.topCategory.percentage}%)
               </span>
             </div>
-            <div className="p-2.5 bg-white/2 rounded-xl border border-white/5">
-              <span className="text-[10px] text-slate-400 block font-semibold">Largest Purchase</span>
+            <div className="p-2.5 bg-background-card rounded-xl border border-border">
+              <span className="text-[10px] text-text-muted block font-semibold">Largest Purchase</span>
               <span className="text-xs font-bold text-red-400 truncate block mt-0.5">
                 {data.largestExpense
                   ? `${data.largestExpense.title} (${formatCurrency(data.largestExpense.amount)})`
@@ -827,7 +827,7 @@ export default function Analytics() {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Category Allocation</h3>
-              <p className="text-[11px] text-slate-400">Expense distribution by category.</p>
+              <p className="text-[11px] text-text-muted">Expense distribution by category.</p>
             </div>
           </div>
 
@@ -862,18 +862,18 @@ export default function Analytics() {
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: cat.fill }}
                       />
-                      <span className="text-slate-300 truncate">{cat.name}</span>
+                      <span className="text-text-secondary truncate">{cat.name}</span>
                     </div>
-                    <span className="font-semibold text-slate-200 font-mono">
+                    <span className="font-semibold text-text-primary font-mono">
                       {formatCurrency(cat.value)}{' '}
-                      <span className="text-[10px] text-slate-500">({cat.percentage}%)</span>
+                      <span className="text-[10px] text-text-muted">({cat.percentage}%)</span>
                     </span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="h-44 flex items-center justify-center text-slate-500 text-xs">
+            <div className="h-44 flex items-center justify-center text-text-muted text-xs">
               No categorized expenses logged in this period.
             </div>
           )}
@@ -913,7 +913,7 @@ export default function Analytics() {
                 <h3 className="text-base font-bold text-slate-100">
                   Focus vs Spending Correlation
                 </h3>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-text-muted">
                   Higher daily focus directly correlates with reduced impulse spending.
                 </p>
               </div>
@@ -989,7 +989,7 @@ function HighlightPill({
         borderColor: `${color}20`,
       }}
     >
-      <span className="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">
+      <span className="text-[10px] text-text-muted font-semibold block uppercase tracking-wider">
         {label}
       </span>
       <span
@@ -998,7 +998,7 @@ function HighlightPill({
       >
         {value}
       </span>
-      {sub && <span className="text-[9px] text-slate-500 block truncate mt-0.5">{sub}</span>}
+      {sub && <span className="text-[9px] text-text-muted block truncate mt-0.5">{sub}</span>}
     </div>
   );
 }

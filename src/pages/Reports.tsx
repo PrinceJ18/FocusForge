@@ -520,7 +520,7 @@ export default function Reports() {
                     <div
                       key={b.id}
                       className="px-2.5 py-1 rounded-lg text-xs flex items-center gap-1.5"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)' }}
+                      style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)' }}
                       title={b.name}
                     >
                       <span>{b.icon}</span>
@@ -573,7 +573,7 @@ export default function Reports() {
             <TrendingUp size={18} style={{ color: '#a855f7' }} /> Chronological Monthly Timeline
           </h3>
           {reportData.timeline.length > 0 ? (
-            <div className="relative border-l border-white/10 ml-4 pl-6 space-y-6">
+            <div className="relative border-l border-border ml-4 pl-6 space-y-6">
               {reportData.timeline.map((event, idx) => (
                 <div key={idx} className="relative">
                   <div
@@ -640,7 +640,7 @@ export default function Reports() {
                     {ins.text}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span className="font-bold text-white">Advice:</span> {ins.recommendation}
+                    <span className="font-bold text-text-primary">Advice:</span> {ins.recommendation}
                   </p>
                 </div>
               ))}
@@ -696,7 +696,7 @@ export default function Reports() {
                     )}
                   </div>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    Productivity Score: <span className="font-semibold text-white">{summary.score}%</span>
+                    Productivity Score: <span className="font-semibold text-text-primary">{summary.score}%</span>
                   </p>
                 </div>
 

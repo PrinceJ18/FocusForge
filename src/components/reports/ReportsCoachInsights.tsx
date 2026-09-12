@@ -124,11 +124,11 @@ export const ReportsExecutiveIntelligence: React.FC<ReportsExecutiveIntelligence
               className="section-header-icon"
               style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)' }}
             >
-              <Brain size={18} className="text-white" />
+              <Brain size={18} className="text-text-primary" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Executive Intelligence</h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-text-muted">
                 AI interpretation of your overall performance and velocity.
               </p>
             </div>
@@ -159,7 +159,7 @@ export const ReportsExecutiveIntelligence: React.FC<ReportsExecutiveIntelligence
                       {card.label}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed line-clamp-3">
+                  <p className="text-xs text-text-primary leading-relaxed line-clamp-3">
                     {card.content}
                   </p>
                 </div>
@@ -241,7 +241,7 @@ export const ReportsBehaviourAnalysis: React.FC<ReportsBehaviourAnalysisProps> =
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Behavioural & Habit Analysis</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-text-muted">
               Deep habit signals discovered across focus windows, weekend dynamics, and task cadence.
             </p>
           </div>
@@ -253,7 +253,7 @@ export const ReportsBehaviourAnalysis: React.FC<ReportsBehaviourAnalysisProps> =
             return (
               <div
                 key={idx}
-                className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-between"
+                className="p-3.5 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-between"
               >
                 <div>
                   <div
@@ -262,7 +262,7 @@ export const ReportsBehaviourAnalysis: React.FC<ReportsBehaviourAnalysisProps> =
                   >
                     <Icon size={14} />
                   </div>
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
+                  <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold block mb-0.5">
                     {card.label}
                   </span>
                   <div
@@ -272,7 +272,7 @@ export const ReportsBehaviourAnalysis: React.FC<ReportsBehaviourAnalysisProps> =
                     {card.value}
                   </div>
                 </div>
-                <span className="text-[9px] text-slate-500 mt-1 block truncate">{card.sub}</span>
+                <span className="text-[9px] text-text-muted mt-1 block truncate">{card.sub}</span>
               </div>
             );
           })}
@@ -345,7 +345,7 @@ export const ReportsPerformanceOutlook: React.FC<ReportsPerformanceOutlookProps>
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Performance Outlook & Predictions</h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-text-muted">
                 Deterministic mathematical forecasts derived from current run rates.
               </p>
             </div>
@@ -359,10 +359,10 @@ export const ReportsPerformanceOutlook: React.FC<ReportsPerformanceOutlookProps>
           {cards.map((card, idx) => (
             <div
               key={idx}
-              className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col justify-between"
+              className="p-4 rounded-xl bg-white/[0.02] border border-border text-center flex flex-col justify-between"
             >
               <div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-1">
+                <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold block mb-1">
                   {card.label}
                 </span>
                 <div
@@ -372,7 +372,7 @@ export const ReportsPerformanceOutlook: React.FC<ReportsPerformanceOutlookProps>
                   {card.value}
                 </div>
               </div>
-              <span className="text-[10px] text-slate-500 mt-1 block">{card.sub}</span>
+              <span className="text-[10px] text-text-muted mt-1 block">{card.sub}</span>
             </div>
           ))}
         </div>
@@ -412,7 +412,7 @@ export const ReportsStrategicRecommendations: React.FC<ReportsStrategicRecommend
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Strategic Recommendations</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-text-muted">
               Ranked action items with causal explainability and estimated impact.
             </p>
           </div>
@@ -424,7 +424,7 @@ export const ReportsStrategicRecommendations: React.FC<ReportsStrategicRecommend
             return (
               <div
                 key={rec.id}
-                className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden transition-all"
+                className="rounded-xl border border-border bg-white/[0.02] overflow-hidden transition-all"
               >
                 <button
                   onClick={() => toggleRec(rec.id)}
@@ -436,16 +436,16 @@ export const ReportsStrategicRecommendations: React.FC<ReportsStrategicRecommend
                     <span className="text-xl shrink-0">{rec.icon}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold text-white truncate">{rec.title}</h4>
+                        <h4 className="text-xs font-bold text-text-primary truncate">{rec.title}</h4>
                         <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
                           {rec.priority}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-300 truncate mt-0.5">{rec.description}</p>
+                      <p className="text-xs text-text-secondary truncate mt-0.5">{rec.description}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 text-slate-400">
+                  <div className="flex items-center gap-2 shrink-0 text-text-muted">
                     <span className="text-[11px] font-semibold text-purple-400 hidden sm:inline-flex items-center gap-1">
                       <HelpCircle size={12} /> Why?
                     </span>
@@ -457,13 +457,13 @@ export const ReportsStrategicRecommendations: React.FC<ReportsStrategicRecommend
                 {isExpanded && rec.explainability && (
                   <div
                     id={`rec-detail-${rec.id}`}
-                    className="p-4 bg-slate-900/90 border-t border-white/5 space-y-3 text-xs animate-fadeIn"
+                    className="p-4 bg-slate-900/90 border-t border-border space-y-3 text-xs animate-fadeIn"
                   >
                     <div>
                       <span className="text-[10px] uppercase font-bold text-purple-400 tracking-wider block mb-0.5">
                         Causal Reason
                       </span>
-                      <p className="text-slate-200 leading-relaxed">{rec.explainability.why}</p>
+                      <p className="text-text-primary leading-relaxed">{rec.explainability.why}</p>
                     </div>
 
                     {rec.explainability.triggerMetrics.length > 0 && (
@@ -484,17 +484,17 @@ export const ReportsStrategicRecommendations: React.FC<ReportsStrategicRecommend
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
                       {rec.explainability.expectedImprovement && (
                         <div>
-                          <span className="text-[10px] text-slate-400 block">Expected Improvement</span>
+                          <span className="text-[10px] text-text-muted block">Expected Improvement</span>
                           <span className="font-semibold text-emerald-400 text-xs">
                             {rec.explainability.expectedImprovement}
                           </span>
                         </div>
                       )}
                       <div>
-                        <span className="text-[10px] text-slate-400 block">Confidence Level</span>
+                        <span className="text-[10px] text-text-muted block">Confidence Level</span>
                         <span className="font-semibold text-cyan-400 text-xs capitalize">
                           {rec.confidence || 'Medium'} Confidence
                         </span>
@@ -542,12 +542,12 @@ export const ReportsRiskAssessment: React.FC<ReportsRiskAssessmentProps> = memo(
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100">Executive Risk Assessment</h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-text-muted">
                 Proactive risk mitigation analyzed by the Early Risk Engine.
               </p>
             </div>
           </div>
-          <span className="text-[10px] text-slate-500 font-semibold">
+          <span className="text-[10px] text-text-muted font-semibold">
             {activeRisks.length} active
           </span>
         </div>
@@ -568,7 +568,7 @@ export const ReportsRiskAssessment: React.FC<ReportsRiskAssessmentProps> = memo(
               return (
                 <div
                   key={risk.id}
-                  className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden transition-all"
+                  className="rounded-xl border border-border bg-white/[0.02] overflow-hidden transition-all"
                 >
                   <button
                     onClick={() => toggleRisk(risk.id)}
@@ -580,18 +580,18 @@ export const ReportsRiskAssessment: React.FC<ReportsRiskAssessmentProps> = memo(
                       <span className="text-xl shrink-0">{risk.icon}</span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-bold text-white truncate">{risk.title}</h4>
+                          <h4 className="text-xs font-bold text-text-primary truncate">{risk.title}</h4>
                           <span
                             className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full border ${severityStyle}`}
                           >
                             {risk.severity}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-300 truncate mt-0.5">{risk.description}</p>
+                        <p className="text-xs text-text-secondary truncate mt-0.5">{risk.description}</p>
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-slate-400">
+                    <div className="shrink-0 text-text-muted">
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </div>
                   </button>
@@ -600,15 +600,15 @@ export const ReportsRiskAssessment: React.FC<ReportsRiskAssessmentProps> = memo(
                   {isExpanded && (
                     <div
                       id={`risk-rep-${risk.id}`}
-                      className="p-4 bg-slate-900/90 border-t border-white/5 space-y-3 text-xs animate-fadeIn"
+                      className="p-4 bg-slate-900/90 border-t border-border space-y-3 text-xs animate-fadeIn"
                     >
-                      <div className="grid grid-cols-2 gap-3 text-[11px] pb-2 border-b border-white/5">
+                      <div className="grid grid-cols-2 gap-3 text-[11px] pb-2 border-b border-border">
                         <div>
-                          <span className="text-slate-500 block">Severity Tier:</span>
+                          <span className="text-text-muted block">Severity Tier:</span>
                           <span className="font-bold text-red-400 capitalize">{risk.severity}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block">Probability:</span>
+                          <span className="text-text-muted block">Probability:</span>
                           <span className="font-bold text-amber-400 capitalize">
                             {risk.probability || 'High'}
                           </span>
@@ -616,14 +616,14 @@ export const ReportsRiskAssessment: React.FC<ReportsRiskAssessmentProps> = memo(
                       </div>
 
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
+                        <span className="text-[10px] uppercase font-bold text-text-muted block mb-0.5">
                           Impact Assessment
                         </span>
-                        <p className="text-slate-200 leading-relaxed">{risk.description}</p>
+                        <p className="text-text-primary leading-relaxed">{risk.description}</p>
                       </div>
 
                       {risk.suggestedAction && (
-                        <div className="pt-2 border-t border-white/5">
+                        <div className="pt-2 border-t border-border">
                           <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-0.5">
                             Suggested Mitigation
                           </span>
@@ -640,7 +640,7 @@ export const ReportsRiskAssessment: React.FC<ReportsRiskAssessmentProps> = memo(
               <ShieldCheck size={20} className="text-emerald-400 shrink-0" />
               <div>
                 <span className="text-xs font-bold text-emerald-400 block">All Systems Optimal</span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-text-muted">
                   No critical friction points or performance anomalies detected.
                 </span>
               </div>
@@ -678,22 +678,22 @@ export const ReportsPerformanceTimeline: React.FC<ReportsPerformanceTimelineProp
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Performance Timeline</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-text-muted">
               Chronological log of executive milestones, habit discoveries, and risk triggers.
             </p>
           </div>
         </div>
 
-        <div className="space-y-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
+        <div className="space-y-3 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-background-card-hover">
           {events.map((evt) => (
             <div key={evt.id} className="relative flex items-start gap-3 text-xs">
               <div className="w-3 h-3 rounded-full bg-purple-500/40 border border-purple-400 shrink-0 mt-0.5 -ml-[19px]" />
-              <div className="flex-1 min-w-0 bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+              <div className="flex-1 min-w-0 bg-white/[0.02] border border-border p-3 rounded-xl">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-bold text-white truncate">{evt.title}</span>
-                  <span className="text-[10px] text-slate-500 shrink-0">{evt.timestamp}</span>
+                  <span className="font-bold text-text-primary truncate">{evt.title}</span>
+                  <span className="text-[10px] text-text-muted shrink-0">{evt.timestamp}</span>
                 </div>
-                <p className="text-slate-300 text-xs leading-relaxed">{evt.description}</p>
+                <p className="text-text-secondary text-xs leading-relaxed">{evt.description}</p>
               </div>
             </div>
           ))}
@@ -744,19 +744,19 @@ export const ReportsExecutiveClosingSummary: React.FC<ReportsExecutiveClosingSum
             className="section-header-icon"
             style={{ background: 'linear-gradient(135deg, #a855f7, #06b6d4)' }}
           >
-            <Award size={18} className="text-white" />
+            <Award size={18} className="text-text-primary" />
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Executive Closing Summary</h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-text-muted">
               High-level strategic alignment and recommended execution cadence.
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold block">
               Overall Grade
             </span>
             <div className="text-xl font-black text-purple-400 font-space mt-0.5">
@@ -764,8 +764,8 @@ export const ReportsExecutiveClosingSummary: React.FC<ReportsExecutiveClosingSum
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold block">
               Current Momentum
             </span>
             <div className="text-xl font-black text-cyan-400 font-space mt-0.5">
@@ -773,8 +773,8 @@ export const ReportsExecutiveClosingSummary: React.FC<ReportsExecutiveClosingSum
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold block">
               Primary Focus Window
             </span>
             <div className="text-sm font-bold text-pink-400 font-space mt-1 truncate">
@@ -782,8 +782,8 @@ export const ReportsExecutiveClosingSummary: React.FC<ReportsExecutiveClosingSum
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-border">
+            <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold block">
               Next Strategic Step
             </span>
             <div className="text-xs font-semibold text-emerald-400 mt-1 line-clamp-2">

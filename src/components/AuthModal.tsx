@@ -74,24 +74,24 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
     >
       <div className="space-y-4 text-left">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">Email Address</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-border/80 text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+          <label className="block text-xs font-semibold text-text-secondary mb-1">Password</label>
           <input
             type="password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-border/80 text-slate-100 placeholder-slate-400 outline-none focus:border-purple-500 transition"
           />
         </div>
 
@@ -106,7 +106,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
 
         <button
           onClick={handleGoogleLogin}
-          className="w-full py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 font-medium transition"
+          className="w-full py-3 rounded-xl border border-border bg-slate-800/50 hover:bg-slate-800 text-text-primary font-medium transition"
         >
           Continue with Google
         </button>

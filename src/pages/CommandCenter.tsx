@@ -181,9 +181,9 @@ const ExecutiveBrief: React.FC<{ coach: UseCoachReturn }> = memo(function Execut
   if (!brief) {
     return (
       <div className="glass-card p-8 text-center" role="region" aria-label="Executive Brief">
-        <Brain size={32} className="mx-auto text-slate-500 mb-3" />
-        <h3 className="text-sm font-bold text-slate-300">Gathering Intelligence…</h3>
-        <p className="text-xs text-slate-500 mt-1">
+        <Brain size={32} className="mx-auto text-text-muted mb-3" />
+        <h3 className="text-sm font-bold text-text-secondary">Gathering Intelligence…</h3>
+        <p className="text-xs text-text-muted mt-1">
           The AI Coach needs more data to generate your daily brief.
         </p>
       </div>
@@ -216,19 +216,19 @@ const ExecutiveBrief: React.FC<{ coach: UseCoachReturn }> = memo(function Execut
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2
-              className="text-lg sm:text-xl font-extrabold text-white"
+              className="text-lg sm:text-xl font-extrabold text-text-primary"
               style={{ fontFamily: 'Space Grotesk' }}
             >
               {brief.greeting}
             </h2>
-            <p className="text-xs text-slate-300 mt-1">{brief.yesterdaySummary}</p>
+            <p className="text-xs text-text-secondary mt-1">{brief.yesterdaySummary}</p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             {/* Grade */}
             <div className="text-center">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black text-white"
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black text-text-primary"
                 style={{
                   background: 'linear-gradient(135deg, #a855f7, #ec4899)',
                   boxShadow: '0 0 24px rgba(168,85,247,0.3)',
@@ -236,7 +236,7 @@ const ExecutiveBrief: React.FC<{ coach: UseCoachReturn }> = memo(function Execut
               >
                 {overallGrade}
               </div>
-              <span className="text-[9px] text-slate-500 uppercase font-bold mt-1 block">Grade</span>
+              <span className="text-[9px] text-text-muted uppercase font-bold mt-1 block">Grade</span>
             </div>
 
             {/* Momentum */}
@@ -252,7 +252,7 @@ const ExecutiveBrief: React.FC<{ coach: UseCoachReturn }> = memo(function Execut
                 {momentum > 0 ? '+' : ''}
                 {momentum}
               </div>
-              <span className="text-[9px] text-slate-500 uppercase font-bold mt-1 block">
+              <span className="text-[9px] text-text-muted uppercase font-bold mt-1 block">
                 {momentumLabel}
               </span>
             </div>
@@ -262,11 +262,11 @@ const ExecutiveBrief: React.FC<{ coach: UseCoachReturn }> = memo(function Execut
         {/* Streak Status */}
         <div className="flex items-center gap-2 text-xs">
           <Flame size={14} style={{ color: brief.streakStatus.isAtRisk ? '#ef4444' : '#f59e0b' }} />
-          <span className="text-slate-200 font-semibold">
+          <span className="text-text-primary font-semibold">
             {brief.streakStatus.currentStreak}-day streak
           </span>
-          <span className="text-slate-500">·</span>
-          <span className="text-slate-400">{brief.streakStatus.message}</span>
+          <span className="text-text-muted">·</span>
+          <span className="text-text-muted">{brief.streakStatus.message}</span>
         </div>
 
         {/* Key Metrics Grid */}
@@ -319,12 +319,12 @@ function MetricPill({
   color: string;
 }) {
   return (
-    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+    <div className="p-3 rounded-xl bg-white/[0.02] border border-border">
       <div className="flex items-center gap-1.5 mb-1">
         <span style={{ color }}>{icon}</span>
-        <span className="text-[9px] uppercase font-bold text-slate-500 tracking-wider">{label}</span>
+        <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider">{label}</span>
       </div>
-      <p className="text-[11px] text-slate-200 font-semibold leading-snug line-clamp-2">{value}</p>
+      <p className="text-[11px] text-text-primary font-semibold leading-snug line-clamp-2">{value}</p>
     </div>
   );
 }
@@ -428,7 +428,7 @@ const PerformanceScoreboard: React.FC<{ coach: UseCoachReturn }> = memo(
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Performance Scoreboard</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Six-facet health check across all performance dimensions.
             </p>
           </div>
@@ -442,7 +442,7 @@ const PerformanceScoreboard: React.FC<{ coach: UseCoachReturn }> = memo(
             return (
               <div
                 key={f.label}
-                className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center space-y-2"
+                className="p-3.5 rounded-xl bg-white/[0.02] border border-border text-center space-y-2"
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto"
@@ -456,7 +456,7 @@ const PerformanceScoreboard: React.FC<{ coach: UseCoachReturn }> = memo(
                 >
                   {f.score}
                 </div>
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block">
                   {f.label}
                 </span>
                 <div className="flex items-center justify-center gap-1">
@@ -495,7 +495,7 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
         </div>
         <div>
           <h3 className="text-base font-bold text-slate-100">Today's Priorities</h3>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-text-muted">
             Top ranked recommendations with full explainability.
           </p>
         </div>
@@ -507,7 +507,7 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
           return (
             <div
               key={rec.id}
-              className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden transition-all"
+              className="rounded-xl border border-border bg-white/[0.02] overflow-hidden transition-all"
             >
               <button
                 onClick={() => setExpandedId((prev) => (prev === rec.id ? null : rec.id))}
@@ -515,16 +515,16 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
                 aria-controls={`priority-${rec.id}`}
                 className="w-full p-3.5 flex items-center gap-3 text-left hover:bg-white/[0.02] transition-colors"
               >
-                <span className="text-xs font-black text-slate-500 w-5 text-center shrink-0">
+                <span className="text-xs font-black text-text-muted w-5 text-center shrink-0">
                   #{idx + 1}
                 </span>
                 <span className="text-lg shrink-0">{rec.icon}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <h5 className="text-xs font-bold text-white truncate">{rec.title}</h5>
+                    <h5 className="text-xs font-bold text-text-primary truncate">{rec.title}</h5>
                     <SeverityChip severity={rec.priority} />
                   </div>
-                  <p className="text-[11px] text-slate-300 truncate">{rec.description}</p>
+                  <p className="text-[11px] text-text-secondary truncate">{rec.description}</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-purple-400 text-[11px] font-semibold shrink-0">
                   <HelpCircle size={13} />
@@ -536,7 +536,7 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
               {isExpanded && (
                 <div
                   id={`priority-${rec.id}`}
-                  className="p-4 bg-slate-900/90 border-t border-white/5 space-y-3 text-xs animate-fadeIn"
+                  className="p-4 bg-slate-900/90 border-t border-border space-y-3 text-xs animate-fadeIn"
                 >
                   {/* Explainability */}
                   {rec.explainability && (
@@ -545,7 +545,7 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
                         <span className="text-[10px] uppercase font-bold text-purple-400 tracking-wider block mb-0.5">
                           Causal Reason
                         </span>
-                        <p className="text-slate-200 leading-relaxed">{rec.explainability.why}</p>
+                        <p className="text-text-primary leading-relaxed">{rec.explainability.why}</p>
                       </div>
 
                       {rec.explainability.triggerMetrics.length > 0 && (
@@ -568,14 +568,14 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
 
                       {rec.explainability.relatedMetrics.length > 0 && (
                         <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">
+                          <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider block mb-1">
                             Related Metrics
                           </span>
                           <div className="flex flex-wrap gap-1.5">
                             {rec.explainability.relatedMetrics.map((m, i) => (
                               <span
                                 key={i}
-                                className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300 text-[11px]"
+                                className="px-2 py-0.5 rounded bg-background-card-hover border border-border text-text-secondary text-[11px]"
                               >
                                 {m}
                               </span>
@@ -584,21 +584,21 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border">
                         <div>
-                          <span className="text-[10px] text-slate-400 block">Expected Improvement</span>
+                          <span className="text-[10px] text-text-muted block">Expected Improvement</span>
                           <span className="font-semibold text-emerald-400">
                             {rec.explainability.expectedImprovement}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 block">Confidence</span>
+                          <span className="text-[10px] text-text-muted block">Confidence</span>
                           <span className="font-semibold text-cyan-400 capitalize">
                             {rec.confidence || 'medium'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] text-slate-400 block">Impact × Urgency</span>
+                          <span className="text-[10px] text-text-muted block">Impact × Urgency</span>
                           <span className="font-semibold text-amber-400 capitalize">
                             {rec.impact || 'medium'} × {rec.urgency || 'medium'}
                           </span>
@@ -608,7 +608,7 @@ const TodaysPriorities: React.FC<{ coach: UseCoachReturn }> = memo(function Toda
                   )}
 
                   {/* Action */}
-                  <div className="pt-2 border-t border-white/5">
+                  <div className="pt-2 border-t border-border">
                     <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block mb-0.5">
                       Recommended Action
                     </span>
@@ -661,18 +661,18 @@ const ActiveRiskCenter: React.FC<{ coach: UseCoachReturn }> = memo(function Acti
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Active Risk Center</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               All detected risks grouped by severity level.
             </p>
           </div>
         </div>
-        <span className="text-[10px] text-slate-500 font-semibold">{risks.length} total</span>
+        <span className="text-[10px] text-text-muted font-semibold">{risks.length} total</span>
       </div>
 
       {grouped.length > 0 ? (
         grouped.map((group) => (
           <div key={group.severity} className="space-y-2">
-            <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider pl-1 flex items-center gap-2">
+            <h4 className="text-[10px] uppercase font-bold text-text-muted tracking-wider pl-1 flex items-center gap-2">
               <SeverityChip severity={group.severity} />
               <span>{group.items.length} {group.severity} risk{group.items.length > 1 ? 's' : ''}</span>
             </h4>
@@ -681,7 +681,7 @@ const ActiveRiskCenter: React.FC<{ coach: UseCoachReturn }> = memo(function Acti
               return (
                 <div
                   key={risk.id}
-                  className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden"
+                  className="rounded-xl border border-border bg-white/[0.02] overflow-hidden"
                 >
                   <button
                     onClick={() =>
@@ -694,16 +694,16 @@ const ActiveRiskCenter: React.FC<{ coach: UseCoachReturn }> = memo(function Acti
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-base shrink-0">{risk.icon}</span>
                       <div className="min-w-0">
-                        <h5 className="text-xs font-bold text-white truncate">{risk.title}</h5>
-                        <p className="text-[11px] text-slate-300 truncate mt-0.5">{risk.description}</p>
+                        <h5 className="text-xs font-bold text-text-primary truncate">{risk.title}</h5>
+                        <p className="text-[11px] text-text-secondary truncate mt-0.5">{risk.description}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {risk.probability && <ConfidenceChip confidence={risk.probability} />}
                       {isExpanded ? (
-                        <ChevronUp size={14} className="text-slate-400" />
+                        <ChevronUp size={14} className="text-text-muted" />
                       ) : (
-                        <ChevronDown size={14} className="text-slate-400" />
+                        <ChevronDown size={14} className="text-text-muted" />
                       )}
                     </div>
                   </button>
@@ -711,37 +711,37 @@ const ActiveRiskCenter: React.FC<{ coach: UseCoachReturn }> = memo(function Acti
                   {isExpanded && (
                     <div
                       id={`risk-detail-${risk.id}`}
-                      className="p-4 bg-slate-900/90 border-t border-white/5 space-y-2.5 text-xs animate-fadeIn"
+                      className="p-4 bg-slate-900/90 border-t border-border space-y-2.5 text-xs animate-fadeIn"
                     >
-                      <div className="grid grid-cols-2 gap-2 pb-2 border-b border-white/5">
+                      <div className="grid grid-cols-2 gap-2 pb-2 border-b border-border">
                         <div>
-                          <span className="text-slate-500 block text-[10px]">Severity</span>
+                          <span className="text-text-muted block text-[10px]">Severity</span>
                           <SeverityChip severity={risk.severity} />
                         </div>
                         <div>
-                          <span className="text-slate-500 block text-[10px]">Probability</span>
+                          <span className="text-text-muted block text-[10px]">Probability</span>
                           <span className="font-bold text-amber-400 capitalize">
                             {risk.probability || 'Unknown'}
                           </span>
                         </div>
                       </div>
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
+                        <span className="text-[10px] uppercase font-bold text-text-muted block mb-0.5">
                           Impact
                         </span>
-                        <p className="text-slate-200 leading-relaxed">{risk.description}</p>
+                        <p className="text-text-primary leading-relaxed">{risk.description}</p>
                       </div>
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
+                        <span className="text-[10px] uppercase font-bold text-text-muted block mb-0.5">
                           Threshold Breached
                         </span>
-                        <p className="text-slate-200">
+                        <p className="text-text-primary">
                           {risk.threshold.label}: {risk.threshold.actual}{risk.threshold.unit} (limit:{' '}
                           {risk.threshold.limit}{risk.threshold.unit})
                         </p>
                       </div>
                       {risk.suggestedAction && (
-                        <div className="pt-2 border-t border-white/5">
+                        <div className="pt-2 border-t border-border">
                           <span className="text-[10px] uppercase font-bold text-emerald-400 block mb-0.5">
                             Mitigation
                           </span>
@@ -760,7 +760,7 @@ const ActiveRiskCenter: React.FC<{ coach: UseCoachReturn }> = memo(function Acti
           <ShieldCheck size={18} className="text-emerald-400 shrink-0" />
           <div>
             <span className="text-xs font-bold text-emerald-400 block">All Systems Clear</span>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-text-muted">
               No active risks or anomalies detected across all dimensions.
             </span>
           </div>
@@ -852,7 +852,7 @@ const FutureOutlook: React.FC<{ coach: UseCoachReturn }> = memo(function FutureO
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Future Outlook</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Deterministic forecasts and projections from the Prediction Engine.
             </p>
           </div>
@@ -866,11 +866,11 @@ const FutureOutlook: React.FC<{ coach: UseCoachReturn }> = memo(function FutureO
           return (
             <div
               key={item.label}
-              className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5"
+              className="p-3.5 rounded-xl bg-white/[0.02] border border-border space-y-1.5"
             >
               <div className="flex items-center gap-1.5">
                 <Icon size={13} style={{ color: item.color }} />
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
                   {item.label}
                 </span>
               </div>
@@ -880,7 +880,7 @@ const FutureOutlook: React.FC<{ coach: UseCoachReturn }> = memo(function FutureO
               >
                 {item.value}
               </div>
-              {item.sub && <p className="text-[10px] text-slate-500">{item.sub}</p>}
+              {item.sub && <p className="text-[10px] text-text-muted">{item.sub}</p>}
             </div>
           );
         })}
@@ -991,7 +991,7 @@ const BehaviourIntelligence: React.FC<{ coach: UseCoachReturn }> = memo(
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Behaviour Intelligence</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Deep habit analysis across focus, spending, consistency, and procrastination.
             </p>
           </div>
@@ -1003,7 +1003,7 @@ const BehaviourIntelligence: React.FC<{ coach: UseCoachReturn }> = memo(
             return (
               <div
                 key={c.label}
-                className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5"
+                className="p-3.5 rounded-xl bg-white/[0.02] border border-border space-y-1.5"
               >
                 <div className="flex items-center gap-1.5 mb-1">
                   <div
@@ -1012,7 +1012,7 @@ const BehaviourIntelligence: React.FC<{ coach: UseCoachReturn }> = memo(
                   >
                     <Icon size={12} />
                   </div>
-                  <span className="text-[9px] uppercase font-bold text-slate-500 tracking-wider">
+                  <span className="text-[9px] uppercase font-bold text-text-muted tracking-wider">
                     {c.label}
                   </span>
                 </div>
@@ -1022,7 +1022,7 @@ const BehaviourIntelligence: React.FC<{ coach: UseCoachReturn }> = memo(
                 >
                   {c.value}
                 </div>
-                <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">{c.detail}</p>
+                <p className="text-[10px] text-text-muted line-clamp-2 leading-relaxed">{c.detail}</p>
               </div>
             );
           })}
@@ -1080,7 +1080,7 @@ const IntelligenceTimeline: React.FC<{ coach: UseCoachReturn }> = memo(
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Intelligence Timeline</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Chronological log of milestones, trend shifts, and risk detections.
             </p>
           </div>
@@ -1088,10 +1088,10 @@ const IntelligenceTimeline: React.FC<{ coach: UseCoachReturn }> = memo(
 
         {grouped.map((group) => (
           <div key={group.label} className="space-y-2.5">
-            <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider pl-1">
+            <h4 className="text-[10px] uppercase font-bold text-text-muted tracking-wider pl-1">
               {group.label}
             </h4>
-            <div className="space-y-2 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
+            <div className="space-y-2 relative pl-4 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-background-card-hover">
               {group.events.map((evt) => {
                 const typeColors: Record<string, string> = {
                   trend_shift: '#06b6d4',
@@ -1109,17 +1109,17 @@ const IntelligenceTimeline: React.FC<{ coach: UseCoachReturn }> = memo(
                       className="w-3 h-3 rounded-full border-2 shrink-0 mt-0.5 -ml-[19px]"
                       style={{ backgroundColor: `${dotColor}60`, borderColor: dotColor }}
                     />
-                    <div className="flex-1 min-w-0 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                    <div className="flex-1 min-w-0 p-3 rounded-xl bg-white/[0.02] border border-border">
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm shrink-0">{evt.icon}</span>
-                          <span className="font-bold text-white truncate">{evt.title}</span>
+                          <span className="font-bold text-text-primary truncate">{evt.title}</span>
                         </div>
-                        <span className="text-[10px] text-slate-500 shrink-0">
+                        <span className="text-[10px] text-text-muted shrink-0">
                           {evt.timestamp.slice(0, 10)}
                         </span>
                       </div>
-                      <p className="text-slate-300 text-[11px] leading-relaxed">{evt.description}</p>
+                      <p className="text-text-secondary text-[11px] leading-relaxed">{evt.description}</p>
                     </div>
                   </div>
                 );
@@ -1155,7 +1155,7 @@ const AchievementsMilestones: React.FC<{ coach: UseCoachReturn }> = memo(
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-100">Achievements & Milestones</h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Unlocked badges, approaching goals, and streak progress.
             </p>
           </div>
@@ -1178,7 +1178,7 @@ const AchievementsMilestones: React.FC<{ coach: UseCoachReturn }> = memo(
         {/* Recent Achievements */}
         {recentAchievements.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+            <h4 className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
               Unlocked Achievements
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1189,8 +1189,8 @@ const AchievementsMilestones: React.FC<{ coach: UseCoachReturn }> = memo(
                 >
                   <span className="text-xl shrink-0">{ach.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <h5 className="text-xs font-bold text-white truncate">{ach.name}</h5>
-                    <p className="text-[10px] text-slate-400 truncate">Unlocked {ach.unlockedAt}</p>
+                    <h5 className="text-xs font-bold text-text-primary truncate">{ach.name}</h5>
+                    <p className="text-[10px] text-text-muted truncate">Unlocked {ach.unlockedAt}</p>
                   </div>
                 </div>
               ))}
@@ -1201,19 +1201,19 @@ const AchievementsMilestones: React.FC<{ coach: UseCoachReturn }> = memo(
         {/* Approaching Milestones */}
         {approachingMilestones.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+            <h4 className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
               Approaching Milestones
             </h4>
             <div className="space-y-2">
               {approachingMilestones.map((ms, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-border"
                 >
                   <span className="text-xl shrink-0">{ms.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h5 className="text-xs font-bold text-white truncate">{ms.title}</h5>
+                      <h5 className="text-xs font-bold text-text-primary truncate">{ms.title}</h5>
                       <span
                         className="text-[10px] font-bold shrink-0"
                         style={{ color: ms.color }}
@@ -1221,7 +1221,7 @@ const AchievementsMilestones: React.FC<{ coach: UseCoachReturn }> = memo(
                         {ms.progressPct}%
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-400 mb-1.5">{ms.description}</p>
+                    <p className="text-[10px] text-text-muted mb-1.5">{ms.description}</p>
                     <div className="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
@@ -1241,8 +1241,8 @@ const AchievementsMilestones: React.FC<{ coach: UseCoachReturn }> = memo(
 
 function StatChip({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 text-center">
-      <span className="text-[9px] uppercase font-bold text-slate-500 block">{label}</span>
+    <div className="px-3 py-1.5 rounded-lg bg-white/[0.02] border border-border text-center">
+      <span className="text-[9px] uppercase font-bold text-text-muted block">{label}</span>
       <span className="text-sm font-extrabold" style={{ color, fontFamily: 'Space Grotesk' }}>
         {value}
       </span>
@@ -1355,11 +1355,11 @@ const SystemHealth: React.FC<{ coach: UseCoachReturn }> = memo(function SystemHe
             className="section-header-icon"
             style={{ background: 'rgba(148,163,184,0.1)' }}
           >
-            <Server size={16} className="text-slate-400" />
+            <Server size={16} className="text-text-muted" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-300">System Health</h3>
-            <p className="text-[11px] text-slate-500">
+            <h3 className="text-base font-bold text-text-secondary">System Health</h3>
+            <p className="text-[11px] text-text-muted">
               Developer diagnostics — coach engine, cache, infrastructure status.
             </p>
           </div>
@@ -1375,13 +1375,13 @@ const SystemHealth: React.FC<{ coach: UseCoachReturn }> = memo(function SystemHe
                 : '0 0 8px rgba(239,68,68,0.4)',
             }}
           />
-          <span className="text-[10px] font-bold text-slate-400">
+          <span className="text-[10px] font-bold text-text-muted">
             {coachHealth.isHealthy ? 'Healthy' : 'Degraded'}
           </span>
           {expanded ? (
-            <ChevronUp size={14} className="text-slate-400" />
+            <ChevronUp size={14} className="text-text-muted" />
           ) : (
-            <ChevronDown size={14} className="text-slate-400" />
+            <ChevronDown size={14} className="text-text-muted" />
           )}
         </div>
       </button>
@@ -1389,20 +1389,20 @@ const SystemHealth: React.FC<{ coach: UseCoachReturn }> = memo(function SystemHe
       {expanded && (
         <div
           id="system-health-details"
-          className="px-5 pb-5 border-t border-white/5 animate-fadeIn"
+          className="px-5 pb-5 border-t border-border animate-fadeIn"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-4">
             {rows.map((row) => (
               <div
                 key={row.label}
-                className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] border border-white/5"
+                className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] border border-border"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span
                     className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: statusColors[row.status] }}
                   />
-                  <span className="text-[11px] text-slate-400 truncate">{row.label}</span>
+                  <span className="text-[11px] text-text-muted truncate">{row.label}</span>
                 </div>
                 <span
                   className="text-[11px] font-bold shrink-0 ml-2 truncate max-w-[140px]"

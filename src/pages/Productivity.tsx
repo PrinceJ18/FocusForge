@@ -316,7 +316,7 @@ export default function Productivity() {
         {/* Timer */}
         <Card padding="lg" className="flex flex-col items-center">
           {/* Mode selector */}
-          <div className="flex gap-1 p-1 rounded-xl mb-6 self-stretch" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          <div className="flex gap-1 p-1 rounded-xl mb-6 self-stretch" style={{ background: 'var(--bg-card-hover)' }}>
             {TIMER_MODES.map((mode) => (
               <button
                 key={mode.id}
@@ -422,7 +422,7 @@ export default function Productivity() {
                   <div
                     className="text-5xl sm:text-6xl font-black tracking-tight text-center"
                     style={{
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontFamily: 'Space Grotesk',
                       lineHeight: 1,
                     }}
@@ -482,7 +482,7 @@ export default function Productivity() {
                 boxShadow: timerRunning
                   ? '0 0 25px rgba(239,68,68,0.25)'
                   : '0 0 30px rgba(168,85,247,0.35)',
-                color: 'white',
+                color: 'var(--text-primary)',
               }}
             >
               {timerRunning ? (
@@ -499,9 +499,9 @@ export default function Productivity() {
                 width: 58,
                 height: 58,
                 borderRadius: '50%',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: 'white',
+                background: 'var(--bg-card-hover)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
                 backdropFilter: 'blur(10px)',
               }}
             >
@@ -618,33 +618,33 @@ export default function Productivity() {
         {/* Tasks Management Section */}
         <Card padding="md" className="flex flex-col gap-4" style={{ maxHeight: 'calc(100vh - 8rem)', overflow: 'hidden' }}>
           {/* ═══ ROW 1 — Title + Search + Add Task ═══ */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 pb-3 border-b border-white/5 flex-shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 pb-3 border-b border-border flex-shrink-0">
             {/* Title */}
             <div className="text-left flex-shrink-0">
-              <h3 className="font-bold text-base text-white leading-tight" style={{ fontFamily: 'Space Grotesk' }}>
+              <h3 className="font-bold text-base text-text-primary leading-tight" style={{ fontFamily: 'Space Grotesk' }}>
                 Tasks Board
               </h3>
-              <p className="text-[10px] text-gray-500 mt-0.5">
+              <p className="text-[10px] text-text-muted mt-0.5">
                 {todayPendingCount} pending today
               </p>
             </div>
 
             {/* Search — fills remaining space */}
             <div className="relative flex-1 min-w-0" style={{ maxWidth: 360 }}>
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted">
                 <Search size={13} />
               </span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-glass w-full pl-8 pr-8 py-1.5 text-xs text-white"
+                className="input-glass w-full pl-8 pr-8 py-1.5 text-xs text-text-primary"
                 placeholder="Search tasks..."
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
                 >
                   <X size={11} />
                 </button>
@@ -666,7 +666,7 @@ export default function Productivity() {
           {/* ═══ ROW 2 — Priority + Section + View Toggle ═══ */}
           <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
             {/* Priority Chips */}
-            <div className="flex p-0.5 rounded-lg bg-white/5 border border-white/5">
+            <div className="flex p-0.5 rounded-lg bg-background-card-hover border border-border">
               {(['all', 'high', 'medium', 'low'] as const).map((p) => {
                 const active = filterPriority === p;
                 return (
@@ -687,14 +687,14 @@ export default function Productivity() {
             </div>
 
             {/* Separator */}
-            <div className="w-px h-5 bg-white/5 hidden sm:block" />
+            <div className="w-px h-5 bg-border hidden sm:block" />
 
             {/* Section Dropdown + Manage */}
             <div className="flex items-center gap-1">
               <select
                 value={filterSectionId}
                 onChange={(e) => setFilterSectionId(e.target.value)}
-                className="input-glass px-2.5 py-1.5 text-xs text-white"
+                className="input-glass px-2.5 py-1.5 text-xs text-text-primary"
                 style={{ colorScheme: 'dark', maxWidth: 220 }}
               >
                 <option value="all">All Sections</option>
@@ -707,7 +707,7 @@ export default function Productivity() {
               </select>
               <button
                 onClick={() => setShowSectionManager(true)}
-                className="p-1.5 rounded-md bg-white/5 border border-white/5 text-gray-500 hover:text-white transition-colors"
+                className="p-1.5 rounded-md bg-background-card-hover border border-border text-text-muted hover:text-text-primary transition-colors"
                 title="Manage Sections"
               >
                 <FolderPlus size={13} />
@@ -718,7 +718,7 @@ export default function Productivity() {
             <div className="flex-1" />
 
             {/* View Toggle */}
-            <div className="flex p-0.5 rounded-lg bg-white/5 border border-white/5">
+            <div className="flex p-0.5 rounded-lg bg-background-card-hover border border-border">
               <button
                 onClick={() => setViewMode('list')}
                 className="px-2 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1"
@@ -778,7 +778,7 @@ export default function Productivity() {
         <Card padding="md" className="lg:col-span-2">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp size={15} style={{ color: '#a855f7' }} />
-            <h3 className="text-sm font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Today's Productivity</h3>
+            <h3 className="text-sm font-bold text-text-primary" style={{ fontFamily: 'Space Grotesk' }}>Today's Productivity</h3>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
             {/* Today's Focus */}
@@ -790,8 +790,8 @@ export default function Productivity() {
                 <Clock size={13} />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Focus</div>
-                <div className="text-xs font-bold text-white leading-tight mt-0.5">{formatFocusTime(todayMinutes)}</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Focus</div>
+                <div className="text-xs font-bold text-text-primary leading-tight mt-0.5">{formatFocusTime(todayMinutes)}</div>
               </div>
             </div>
 
@@ -804,8 +804,8 @@ export default function Productivity() {
                 <CheckSquare size={13} />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Tasks</div>
-                <div className="text-xs font-bold text-white leading-tight mt-0.5">{todayCompletedCount} / {todayTotalCount}</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Tasks</div>
+                <div className="text-xs font-bold text-text-primary leading-tight mt-0.5">{todayCompletedCount} / {todayTotalCount}</div>
               </div>
             </div>
 
@@ -818,8 +818,8 @@ export default function Productivity() {
                 <Target size={13} />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Done</div>
-                <div className="text-xs font-bold text-white leading-tight mt-0.5">{completionPct}%</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Done</div>
+                <div className="text-xs font-bold text-text-primary leading-tight mt-0.5">{completionPct}%</div>
               </div>
             </div>
 
@@ -832,8 +832,8 @@ export default function Productivity() {
                 <Flame size={13} />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Streak</div>
-                <div className="text-xs font-bold text-white leading-tight mt-0.5">{profile.streak ?? 0} {(profile.streak ?? 0) === 1 ? 'Day' : 'Days'}</div>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Streak</div>
+                <div className="text-xs font-bold text-text-primary leading-tight mt-0.5">{profile.streak ?? 0} {(profile.streak ?? 0) === 1 ? 'Day' : 'Days'}</div>
               </div>
             </div>
 
@@ -855,8 +855,8 @@ export default function Productivity() {
                 <AlertTriangle size={13} />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Overdue</div>
-                <div className={`text-xs font-bold leading-tight mt-0.5 ${overdueCount > 0 ? 'text-red-400' : 'text-white'}`}>
+                <div className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Overdue</div>
+                <div className={`text-xs font-bold leading-tight mt-0.5 ${overdueCount > 0 ? 'text-red-400' : 'text-text-primary'}`}>
                   {overdueCount > 0 ? `${overdueCount} ${overdueCount === 1 ? 'task' : 'tasks'}` : 'None'}
                 </div>
               </div>
@@ -871,8 +871,8 @@ export default function Productivity() {
                 <Brain size={13} />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">Next Up</div>
-                <div className="text-xs font-bold text-white leading-tight mt-0.5 truncate">
+                <div className="text-[10px] text-text-muted uppercase tracking-wider leading-tight">Next Up</div>
+                <div className="text-xs font-bold text-text-primary leading-tight mt-0.5 truncate">
                   {nextPendingTask ? nextPendingTask.title : 'No pending tasks'}
                 </div>
               </div>
@@ -1049,7 +1049,7 @@ function TimerSettingsModal({
           { label: 'Long Break', value: longBrk, set: setLongBrk, color: '#06b6d4' },
         ].map(({ label, value, set }) => (
           <div key={label}>
-            <label className="font-semibold text-slate-300 mb-1.5 block">
+            <label className="font-semibold text-text-secondary mb-1.5 block">
               {label} (minutes)
             </label>
             <input

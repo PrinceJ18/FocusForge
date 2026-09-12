@@ -101,7 +101,7 @@ export default class PageErrorBoundary extends React.Component<
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
                 background: 'var(--accent-gradient)',
-                color: 'white',
+                color: 'var(--text-primary)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -114,7 +114,7 @@ export default class PageErrorBoundary extends React.Component<
                 onClick={this.handleNavigateHome}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
+                  background: 'var(--bg-card-hover)',
                   color: 'var(--text-secondary)',
                   border: '1px solid var(--border-primary)',
                   cursor: 'pointer',

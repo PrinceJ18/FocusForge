@@ -90,7 +90,7 @@ const GoalSettingsModal = memo(function GoalSettingsModal({ onClose }: GoalSetti
       maxWidth="xl"
     >
       {/* Tab selector */}
-      <div className="flex gap-1 p-1 mb-4 rounded-xl bg-slate-800/80 border border-slate-700/60">
+      <div className="flex gap-1 p-1 mb-4 rounded-xl bg-slate-800/80 border border-border/60">
         {(['goals', 'custom', 'settings'] as const).map((tab) => (
           <button
             key={tab}
@@ -166,7 +166,7 @@ const GoalSettingsModal = memo(function GoalSettingsModal({ onClose }: GoalSetti
                     />
                     <button
                       onClick={() => removeCustomGoal(goal.id)}
-                      className="p-1 rounded-lg transition-colors hover:bg-white/5"
+                      className="p-1 rounded-lg transition-colors hover:bg-background-card-hover"
                       style={{ color: 'var(--text-muted)' }}
                     >
                       <Trash2 size={14} />
@@ -343,10 +343,10 @@ function BuiltInGoalEditor({
           </p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={onMoveUp} className="p-1 rounded transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onMoveUp} className="p-1 rounded transition-colors hover:bg-background-card-hover" style={{ color: 'var(--text-muted)' }}>
             <ChevronUp size={14} />
           </button>
-          <button onClick={onMoveDown} className="p-1 rounded transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onMoveDown} className="p-1 rounded transition-colors hover:bg-background-card-hover" style={{ color: 'var(--text-muted)' }}>
             <ChevronDown size={14} />
           </button>
           <ToggleSwitch enabled={goal.enabled} onChange={onToggle} color={goal.color} />
@@ -376,7 +376,7 @@ function BuiltInGoalEditor({
               onClick={() => setShowCustom(true)}
               className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
               style={{
-                background: 'rgba(255,255,255,0.05)',
+                background: 'var(--bg-card-hover)',
                 color: 'var(--text-muted)',
                 borderRadius: 8,
               }}

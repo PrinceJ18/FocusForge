@@ -87,14 +87,14 @@ export default function CreateArenaModal({ isOpen, onClose, userId, onCreated }:
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent/30 to-purple-500/30 border border-accent/40 flex items-center justify-center">
             <Sparkles className="w-10 h-10 text-accent animate-pulse" />
           </div>
-          <h3 className="text-xl font-bold text-white">Arena Created!</h3>
-          <p className="text-sm text-slate-400">Your friends have been auto-invited.</p>
+          <h3 className="text-xl font-bold text-text-primary">Arena Created!</h3>
+          <p className="text-sm text-text-muted">Your friends have been auto-invited.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Arena Name */}
           <div className="space-y-1.5">
-            <label htmlFor="arena-name" className="text-sm font-medium text-slate-300">
+            <label htmlFor="arena-name" className="text-sm font-medium text-text-secondary">
               Arena Name <span className="text-red-400">*</span>
             </label>
             <input
@@ -104,17 +104,17 @@ export default function CreateArenaModal({ isOpen, onClose, userId, onCreated }:
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Study Squad, Focus Warriors"
               maxLength={50}
-              className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+              className="w-full px-4 py-2.5 bg-slate-800/80 border border-border rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
               autoFocus
               disabled={creating}
             />
-            <p className="text-xs text-slate-500 text-right">{name.length}/50</p>
+            <p className="text-xs text-text-muted text-right">{name.length}/50</p>
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
-            <label htmlFor="arena-desc" className="text-sm font-medium text-slate-300">
-              Description <span className="text-slate-500">(optional)</span>
+            <label htmlFor="arena-desc" className="text-sm font-medium text-text-secondary">
+              Description <span className="text-text-muted">(optional)</span>
             </label>
             <textarea
               id="arena-desc"
@@ -123,15 +123,15 @@ export default function CreateArenaModal({ isOpen, onClose, userId, onCreated }:
               placeholder="What's this arena about?"
               maxLength={200}
               rows={3}
-              className="w-full px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors resize-none"
+              className="w-full px-4 py-2.5 bg-slate-800/80 border border-border rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors resize-none"
               disabled={creating}
             />
-            <p className="text-xs text-slate-500 text-right">{description.length}/200</p>
+            <p className="text-xs text-text-muted text-right">{description.length}/200</p>
           </div>
 
           {/* Visibility */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Visibility</label>
+            <label className="text-sm font-medium text-text-secondary">Visibility</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -139,13 +139,13 @@ export default function CreateArenaModal({ isOpen, onClose, userId, onCreated }:
                 disabled={creating}
                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 ${
                   visibility === 'friends_only'
-                    ? 'border-accent bg-accent/10 text-white shadow-lg shadow-accent/10'
-                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                    ? 'border-accent bg-accent/10 text-text-primary shadow-lg shadow-accent/10'
+                    : 'border-border bg-slate-800/50 text-text-muted hover:border-slate-600'
                 }`}
               >
                 <Users size={20} className={visibility === 'friends_only' ? 'text-accent' : ''} />
                 <span className="text-sm font-medium">Friends Only</span>
-                <span className="text-xs text-slate-500">Only friends can join</span>
+                <span className="text-xs text-text-muted">Only friends can join</span>
               </button>
 
               <button
@@ -154,13 +154,13 @@ export default function CreateArenaModal({ isOpen, onClose, userId, onCreated }:
                 disabled={creating}
                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 ${
                   visibility === 'private'
-                    ? 'border-accent bg-accent/10 text-white shadow-lg shadow-accent/10'
-                    : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                    ? 'border-accent bg-accent/10 text-text-primary shadow-lg shadow-accent/10'
+                    : 'border-border bg-slate-800/50 text-text-muted hover:border-slate-600'
                 }`}
               >
                 <Shield size={20} className={visibility === 'private' ? 'text-accent' : ''} />
                 <span className="text-sm font-medium">Private</span>
-                <span className="text-xs text-slate-500">Invite only</span>
+                <span className="text-xs text-text-muted">Invite only</span>
               </button>
             </div>
           </div>

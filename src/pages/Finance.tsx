@@ -570,7 +570,7 @@ export default function Finance() {
                           onClick={() => setSelectedRecurringDetails(bill)}
                         >
                           <div>
-                            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-text-primary flex items-center gap-2">
                               <span className="text-lg">{bill.icon}</span>
                               {bill.name}
                             </h4>
@@ -596,16 +596,16 @@ export default function Finance() {
                       Bills Calendar View
                     </h3>
                     <div className="flex items-center gap-2">
-                      <div className="flex bg-slate-900 rounded-lg p-0.5 border border-white/5">
+                      <div className="flex bg-slate-900 rounded-lg p-0.5 border border-border">
                         <button
                           onClick={() => setCalendarView('month')}
-                          className={`px-2.5 py-1 text-xs rounded-md ${calendarView === 'month' ? 'bg-purple-500/20 text-white font-bold' : 'text-slate-400'}`}
+                          className={`px-2.5 py-1 text-xs rounded-md ${calendarView === 'month' ? 'bg-purple-500/20 text-text-primary font-bold' : 'text-text-muted'}`}
                         >
                           Month
                         </button>
                         <button
                           onClick={() => setCalendarView('week')}
-                          className={`px-2.5 py-1 text-xs rounded-md ${calendarView === 'week' ? 'bg-purple-500/20 text-white font-bold' : 'text-slate-400'}`}
+                          className={`px-2.5 py-1 text-xs rounded-md ${calendarView === 'week' ? 'bg-purple-500/20 text-text-primary font-bold' : 'text-text-muted'}`}
                         >
                           Week
                         </button>
@@ -614,16 +614,16 @@ export default function Finance() {
                       <div className="flex items-center gap-1.5 ml-2">
                         <button
                           onClick={() => setCalendarDate(prev => calendarView === 'month' ? subMonths(prev, 1) : subWeeks(prev, 1))}
-                          className="p-1 rounded bg-slate-950 border border-white/5 text-slate-400 hover:text-white"
+                          className="p-1 rounded bg-slate-950 border border-border text-text-muted hover:text-text-primary"
                         >
                           <ChevronLeft size={14} />
                         </button>
-                        <span className="text-xs font-semibold text-slate-200">
+                        <span className="text-xs font-semibold text-text-primary">
                           {format(calendarDate, calendarView === 'month' ? 'MMMM yyyy' : 'MMM d, yyyy')}
                         </span>
                         <button
                           onClick={() => setCalendarDate(prev => calendarView === 'month' ? addMonths(prev, 1) : addWeeks(prev, 1))}
-                          className="p-1 rounded bg-slate-950 border border-white/5 text-slate-400 hover:text-white"
+                          className="p-1 rounded bg-slate-950 border border-border text-text-muted hover:text-text-primary"
                         >
                           <ChevronRight size={14} />
                         </button>
@@ -635,15 +635,15 @@ export default function Finance() {
                   {calendarView === 'month' ? (
                     <div className="grid grid-cols-7 gap-1 text-center">
                       {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
-                        <div key={idx} className="text-[10px] font-bold text-slate-500 py-1">{day}</div>
+                        <div key={idx} className="text-[10px] font-bold text-text-muted py-1">{day}</div>
                       ))}
                       {calendarCells.map((cell, idx) => (
                         <div
                           key={idx}
-                          className={`min-h-[60px] p-1 border rounded-lg flex flex-col justify-between transition-all ${cell.isCurrentMonth ? 'bg-slate-950/20 border-white/5' : 'bg-slate-900/10 border-white/3 opacity-30'
+                          className={`min-h-[60px] p-1 border rounded-lg flex flex-col justify-between transition-all ${cell.isCurrentMonth ? 'bg-slate-950/20 border-border' : 'bg-slate-900/10 border-white/3 opacity-30'
                             } ${isToday(cell.date) ? 'border-purple-500/50 bg-purple-500/5' : ''}`}
                         >
-                          <span className={`text-[10px] font-bold self-end ${isToday(cell.date) ? 'text-purple-400' : 'text-slate-400'}`}>
+                          <span className={`text-[10px] font-bold self-end ${isToday(cell.date) ? 'text-purple-400' : 'text-text-muted'}`}>
                             {format(cell.date, 'd')}
                           </span>
 
@@ -671,12 +671,12 @@ export default function Finance() {
                       {calendarWeekCells.map((cell, idx) => (
                         <div
                           key={idx}
-                          className={`min-h-[100px] p-2 border rounded-xl flex flex-col justify-between ${isToday(cell.date) ? 'border-purple-500 bg-purple-500/5' : 'border-white/5 bg-slate-950/30'
+                          className={`min-h-[100px] p-2 border rounded-xl flex flex-col justify-between ${isToday(cell.date) ? 'border-purple-500 bg-purple-500/5' : 'border-border bg-slate-950/30'
                             }`}
                         >
                           <div className="flex flex-col items-center">
-                            <span className="text-[10px] text-slate-500 uppercase">{format(cell.date, 'EEE')}</span>
-                            <span className="text-xs font-black text-slate-200 mt-0.5">{format(cell.date, 'd')}</span>
+                            <span className="text-[10px] text-text-muted uppercase">{format(cell.date, 'EEE')}</span>
+                            <span className="text-xs font-black text-text-primary mt-0.5">{format(cell.date, 'd')}</span>
                           </div>
 
                           <div className="space-y-1 mt-2">
@@ -741,7 +741,7 @@ export default function Finance() {
                     {/* Next Month */}
                     {recurringStats.upcomingNextMonth.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 font-medium">Later Next Month</h4>
+                        <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest mb-2 font-medium">Later Next Month</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {recurringStats.upcomingNextMonth.map(bill => (
                             <UpcomingBillCard key={bill.id} bill={bill} onSelect={handleSelectRecurring} />
@@ -766,13 +766,13 @@ export default function Finance() {
 
                   <div className="space-y-2">
                     {recurringExpenses.length === 0 ? (
-                      <p className="text-xs text-slate-500 text-center py-4">No bills configured yet.</p>
+                      <p className="text-xs text-text-muted text-center py-4">No bills configured yet.</p>
                     ) : (
                       recurringExpenses.map(bill => {
                         return (
                           <div
                             key={bill.id}
-                            className="p-3 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer text-left"
+                            className="p-3 rounded-xl bg-background-card border border-border flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer text-left"
                             onClick={() => setSelectedRecurringDetails(bill)}
                           >
                             <div className="flex items-center gap-3">
@@ -783,10 +783,10 @@ export default function Finance() {
                                 {bill.icon || '🏷'}
                               </div>
                               <div>
-                                <h4 className="text-xs font-bold text-white">{bill.name}</h4>
+                                <h4 className="text-xs font-bold text-text-primary">{bill.name}</h4>
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="text-[9px] text-slate-400 capitalize">{bill.frequency}</span>
-                                  <span className="text-[9px] text-slate-500">•</span>
+                                  <span className="text-[9px] text-text-muted capitalize">{bill.frequency}</span>
+                                  <span className="text-[9px] text-text-muted">•</span>
                                   <span
                                     className="text-[9px] font-semibold uppercase"
                                     style={{ color: bill.status === 'active' ? '#10b981' : '#f59e0b' }}
@@ -797,8 +797,8 @@ export default function Finance() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-extrabold text-white">-{formatCurrency(bill.amount)}</span>
-                              <span className="text-[9px] text-slate-500 block mt-0.5">Due {bill.payment_date}</span>
+                              <span className="text-xs font-extrabold text-text-primary">-{formatCurrency(bill.amount)}</span>
+                              <span className="text-[9px] text-text-muted block mt-0.5">Due {bill.payment_date}</span>
                             </div>
                           </div>
                         );
@@ -816,26 +816,26 @@ export default function Finance() {
                 <div className="glass-card p-5">
                   <h3 className="font-semibold text-sm mb-4">Financial Planning Projections</h3>
                   <div className="space-y-4">
-                    <div className="p-3 bg-white/2 rounded-xl border border-white/5">
+                    <div className="p-3 bg-background-card rounded-xl border border-border">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-400">Monthly Projected Spending</span>
-                        <span className="font-bold text-white">{formatCurrency(recurringStats.monthlyTotal)}</span>
+                        <span className="text-text-muted">Monthly Projected Spending</span>
+                        <span className="font-bold text-text-primary">{formatCurrency(recurringStats.monthlyTotal)}</span>
                       </div>
                       <div className="w-full bg-slate-900 h-1.5 rounded-full mt-2 overflow-hidden">
                         <div className="bg-purple-500 h-full" style={{ width: `${Math.min(100, (recurringStats.monthlyTotal / Math.max(1, profile.monthly_budget)) * 100)}%` }} />
                       </div>
                     </div>
 
-                    <div className="p-3 bg-white/2 rounded-xl border border-white/5">
+                    <div className="p-3 bg-background-card rounded-xl border border-border">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-400">Annual Projected Spending</span>
-                        <span className="font-bold text-white">{formatCurrency(recurringStats.annualTotal)}</span>
+                        <span className="text-text-muted">Annual Projected Spending</span>
+                        <span className="font-bold text-text-primary">{formatCurrency(recurringStats.annualTotal)}</span>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-white/2 rounded-xl border border-white/5">
+                    <div className="p-3 bg-background-card rounded-xl border border-border">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-400">Savings Post Recurring Bills</span>
+                        <span className="text-text-muted">Savings Post Recurring Bills</span>
                         <span className="font-bold text-green-400">
                           {formatCurrency(Math.max(0, profile.monthly_budget - recurringStats.monthlyTotal))}
                         </span>
@@ -848,20 +848,20 @@ export default function Finance() {
                 <div className="glass-card p-5">
                   <h3 className="font-semibold text-sm mb-3">Detected Subscriptions</h3>
                   {recurringStats.subscriptions.length === 0 ? (
-                    <p className="text-xs text-slate-500">No subscription-type items detected.</p>
+                    <p className="text-xs text-text-muted">No subscription-type items detected.</p>
                   ) : (
                     <div className="space-y-3">
                       {recurringStats.subscriptions.map(bill => (
-                        <div key={bill.id} className="p-3 bg-slate-950/40 rounded-xl border border-white/5 flex items-center justify-between gap-2">
+                        <div key={bill.id} className="p-3 bg-slate-950/40 rounded-xl border border-border flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2.5">
                             <span className="text-lg">{bill.icon}</span>
                             <div>
-                              <h4 className="text-xs font-bold text-white">{bill.name}</h4>
-                              <p className="text-[10px] text-slate-500">Next payment: {bill.payment_date}</p>
+                              <h4 className="text-xs font-bold text-text-primary">{bill.name}</h4>
+                              <p className="text-[10px] text-text-muted">Next payment: {bill.payment_date}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs font-extrabold text-white">{formatCurrency(bill.amount)}</div>
+                            <div className="text-xs font-extrabold text-text-primary">{formatCurrency(bill.amount)}</div>
                             <span className="text-[9px] uppercase font-bold text-purple-400 tracking-wider">{bill.frequency}</span>
                           </div>
                         </div>
@@ -875,7 +875,7 @@ export default function Finance() {
                   <h3 className="font-semibold text-sm mb-3">Bill Insights</h3>
                   <div className="space-y-3">
                     {expenseInsights.map((insight, idx) => (
-                      <div key={idx} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-start gap-2.5 text-xs text-slate-300">
+                      <div key={idx} className="p-3 bg-background-card rounded-xl border border-border flex items-start gap-2.5 text-xs text-text-secondary">
                         <div className="text-lg">💡</div>
                         <p>{insight}</p>
                       </div>
@@ -1324,7 +1324,7 @@ function SavingsGoalCard({ goal, onDelete, onAddFunds }: {
           <span className="text-xs font-bold" style={{ color: goal.color }}>
             {pct.toFixed(0)}%
           </span>
-          <button onClick={onDelete} className="text-slate-500 hover:text-red-400">
+          <button onClick={onDelete} className="text-text-muted hover:text-red-400">
             <Trash2 size={14} />
           </button>
         </div>
@@ -1370,20 +1370,20 @@ const UpcomingBillCard = React.memo(function UpcomingBillCard({ bill, onSelect }
   const daysLeft = differenceInDays(parseISO(bill.payment_date), new Date());
   return (
     <div
-      className="p-4 rounded-xl bg-white/2 border border-white/5 flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer text-left"
+      className="p-4 rounded-xl bg-background-card border border-border flex items-center justify-between hover:border-purple-500/20 transition-all cursor-pointer text-left"
       onClick={() => onSelect(bill)}
     >
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center text-xl">
+        <div className="w-10 h-10 rounded-xl bg-slate-900 border border-border flex items-center justify-center text-xl">
           {bill.icon}
         </div>
         <div>
-          <h4 className="text-xs font-black text-white">{bill.name}</h4>
-          <span className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5 block">{bill.category}</span>
+          <h4 className="text-xs font-black text-text-primary">{bill.name}</h4>
+          <span className="text-[10px] text-text-muted uppercase tracking-widest mt-0.5 block">{bill.category}</span>
         </div>
       </div>
       <div className="text-right">
-        <div className="text-xs font-extrabold text-white">{formatCurrency(bill.amount)}</div>
+        <div className="text-xs font-extrabold text-text-primary">{formatCurrency(bill.amount)}</div>
         <p className="text-[10px] text-purple-400 font-medium mt-0.5">
           {daysLeft === 0 ? 'Due Today' : daysLeft === 1 ? 'Due Tomorrow' : `In ${daysLeft} days`}
         </p>
@@ -1435,7 +1435,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
       maxWidth="md"
       footer={
         <div className="flex gap-3 w-full">
-          <button onClick={onClose} disabled={isSubmitting} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1 disabled:opacity-50">
+          <button onClick={onClose} disabled={isSubmitting} className="px-4 py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition flex-1 disabled:opacity-50">
             Cancel
           </button>
           <Button
@@ -1451,7 +1451,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
       <div className="space-y-4 text-xs text-left">
         {error && <div className="text-red-400 bg-red-400/10 p-2 rounded-lg">{error}</div>}
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Title *</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Title *</label>
           <input
             type="text"
             value={title}
@@ -1463,7 +1463,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Amount ($)</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Amount ($)</label>
             <input
               type="number"
               min="1"
@@ -1474,7 +1474,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Date</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Date</label>
             <input
               type="date"
               value={date}
@@ -1484,7 +1484,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
           </div>
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Category</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Category</label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
@@ -1496,7 +1496,7 @@ function AddExpenseModal({ categories, onClose, onAdd }: {
           </select>
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Note (optional)</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Note (optional)</label>
           <input
             type="text"
             value={note}
@@ -1617,7 +1617,7 @@ function AddEditRecurringModal({
             <button
               type="button"
               onClick={onDelete}
-              className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold"
+              className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-text-primary rounded-xl text-xs font-semibold"
             >
               Delete
             </button>
@@ -1625,7 +1625,7 @@ function AddEditRecurringModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1"
+            className="px-4 py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition flex-1"
           >
             Cancel
           </button>
@@ -1641,17 +1641,17 @@ function AddEditRecurringModal({
     >
       <div className="space-y-4 text-xs text-left">
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Expense Name</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Expense Name</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Netflix, Gym membership, Rent..." />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Amount ($)</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Amount ($)</label>
             <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="0.00" />
           </div>
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Category</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className="input-glass w-full px-3.5 py-2.5">
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
@@ -1661,24 +1661,24 @@ function AddEditRecurringModal({
         </div>
 
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Description (Optional)</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Description (Optional)</label>
           <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Additional details..." />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Start Date</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Start Date</label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
           </div>
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">First Billing Date</label>
+            <label className="font-semibold text-text-secondary mb-1 block">First Billing Date</label>
             <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Frequency</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Frequency</label>
             <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="input-glass w-full px-3.5 py-2.5">
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
@@ -1692,7 +1692,7 @@ function AddEditRecurringModal({
           </div>
           {frequency === 'custom' && (
             <div>
-              <label className="font-semibold text-slate-300 mb-1 block">Custom Interval (Days)</label>
+              <label className="font-semibold text-text-secondary mb-1 block">Custom Interval (Days)</label>
               <input type="number" min="1" value={customInterval} onChange={(e) => setCustomInterval(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
             </div>
           )}
@@ -1700,7 +1700,7 @@ function AddEditRecurringModal({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Recurrence Status</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Recurrence Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
@@ -1712,7 +1712,7 @@ function AddEditRecurringModal({
             </select>
           </div>
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">End Date (Optional)</label>
+            <label className="font-semibold text-text-secondary mb-1 block">End Date (Optional)</label>
             <input
               type="date"
               value={endDate}
@@ -1724,7 +1724,7 @@ function AddEditRecurringModal({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Reminder Preferences</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Reminder Preferences</label>
             <select value={reminder} onChange={(e) => setReminder(e.target.value)} className="input-glass w-full px-3.5 py-2.5">
               <option value="same-day">Same Day</option>
               <option value="1-day">1 Day Before</option>
@@ -1736,37 +1736,37 @@ function AddEditRecurringModal({
           </div>
           {reminder === 'custom' && (
             <div>
-              <label className="font-semibold text-slate-300 mb-1 block">Custom Reminder (Days)</label>
+              <label className="font-semibold text-text-secondary mb-1 block">Custom Reminder (Days)</label>
               <input type="number" min="0" value={reminderCustomDays} onChange={(e) => setReminderCustomDays(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-4 pt-2">
-          <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-slate-700/60">
-            <span className="text-slate-300 font-medium">Auto Confirm</span>
+          <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-border/60">
+            <span className="text-text-secondary font-medium">Auto Confirm</span>
             <input type="checkbox" checked={autoConfirm} onChange={(e) => setAutoConfirm(e.target.checked)} className="w-4 h-4 accent-purple-500" />
           </div>
-          <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-slate-700/60">
-            <span className="text-slate-300 font-medium">Auto Add Expense</span>
+          <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-border/60">
+            <span className="text-text-secondary font-medium">Auto Add Expense</span>
             <input type="checkbox" checked={autoAdd} onChange={(e) => setAutoAdd(e.target.checked)} className="w-4 h-4 accent-purple-500" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Visual Icon</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Visual Icon</label>
             <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} className="input-glass w-full px-3.5 py-2.5 text-center" />
           </div>
           <div>
-            <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
+            <label className="font-semibold text-text-secondary mb-1 block">Accent Color</label>
             <div className="flex gap-2 flex-wrap mt-1">
               {RANDOM_COLORS.map(c => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className="w-5 h-5 rounded-full border border-white/10"
+                  className="w-5 h-5 rounded-full border border-border"
                   style={{ background: c, transform: color === c ? 'scale(1.2)' : 'none' }}
                 />
               ))}
@@ -1799,7 +1799,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (data: a
       maxWidth="md"
       footer={
         <div className="flex gap-3 w-full">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition flex-1">Cancel</button>
           <Button
             onClick={() => {
               if (title && target) {
@@ -1815,25 +1815,25 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (data: a
     >
       <div className="space-y-4 text-xs text-left">
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Goal Title</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Goal Title</label>
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Goal title (e.g. MacBook Pro)" autoFocus />
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Target Amount ($)</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Target Amount ($)</label>
           <input type="number" min="1" value={target} onChange={(e) => setTarget(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="0.00" />
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Target Date (Optional)</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Target Date (Optional)</label>
           <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="input-glass w-full px-3.5 py-2.5" />
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Accent Color</label>
           <div className="flex gap-2.5 flex-wrap">
             {RANDOM_COLORS.map((c) => (
               <button
                 key={c}
                 onClick={() => setColor(c)}
-                className="w-7 h-7 rounded-full border border-white/10 transition"
+                className="w-7 h-7 rounded-full border border-border transition"
                 style={{
                   background: c,
                   transform: color === c ? 'scale(1.2)' : 'none',
@@ -1860,7 +1860,7 @@ function AddCategoryModal({ onClose, onAdd }: { onClose: () => void; onAdd: (dat
       maxWidth="md"
       footer={
         <div className="flex gap-3 w-full">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition flex-1">Cancel</button>
           <Button
             onClick={() => { if (name) onAdd({ name, icon: '🏷', color }); }}
             className="flex-1 py-2.5 text-xs font-semibold"
@@ -1872,11 +1872,11 @@ function AddCategoryModal({ onClose, onAdd }: { onClose: () => void; onAdd: (dat
     >
       <div className="space-y-4 text-xs text-left">
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Category Name</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Category Name</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-glass w-full px-3.5 py-2.5" placeholder="Category name" autoFocus />
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1 block">Accent Color</label>
+          <label className="font-semibold text-text-secondary mb-1 block">Accent Color</label>
           <div className="flex gap-3 flex-wrap">
             {RANDOM_COLORS.map((c) => (
               <button

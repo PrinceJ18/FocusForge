@@ -315,7 +315,7 @@ function AddSplitModal({ onClose, onAdd }: {
       maxWidth="md"
       footer={
         <div className="flex gap-3 w-full">
-          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition flex-1">
+          <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition flex-1">
             Cancel
           </button>
           <Button
@@ -331,7 +331,7 @@ function AddSplitModal({ onClose, onAdd }: {
     >
       <div className="space-y-4 text-xs text-left">
         <div>
-          <label className="font-semibold text-slate-300 mb-1.5 block">Person / Description</label>
+          <label className="font-semibold text-text-secondary mb-1.5 block">Person / Description</label>
           <input
             type="text"
             value={name}
@@ -342,7 +342,7 @@ function AddSplitModal({ onClose, onAdd }: {
           />
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1.5 block">Amount ($)</label>
+          <label className="font-semibold text-text-secondary mb-1.5 block">Amount ($)</label>
           <input
             type="number"
             min="1"
@@ -353,7 +353,7 @@ function AddSplitModal({ onClose, onAdd }: {
           />
         </div>
         <div>
-          <label className="font-semibold text-slate-300 mb-1.5 block">Type</label>
+          <label className="font-semibold text-text-secondary mb-1.5 block">Type</label>
           <div className="flex gap-3">
             <button
               onClick={() => setType('owe')}

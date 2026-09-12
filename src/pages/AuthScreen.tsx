@@ -36,7 +36,7 @@ export default function AuthScreen() {
 
                         <h1
                             className="text-3xl sm:text-5xl lg:text-7xl font-black leading-tight"
-                            style={{ color: 'white' }}
+                            style={{ color: 'var(--text-primary)' }}
                         >
                             Build Better
                             <span
@@ -138,7 +138,7 @@ function FeatureCard({
 
             <h3
                 className="mt-4 font-semibold"
-                style={{ color: 'white' }}
+                style={{ color: 'var(--text-primary)' }}
             >
                 {title}
             </h3>
@@ -172,7 +172,7 @@ function DashboardPreview() {
 
                 <h2
                     className="text-4xl font-black mt-2"
-                    style={{ color: 'white' }}
+                    style={{ color: 'var(--text-primary)' }}
                 >
                     92%
                 </h2>
@@ -240,7 +240,7 @@ function MiniCard({
 
             <h3
                 className="text-2xl font-bold mt-2"
-                style={{ color: 'white' }}
+                style={{ color: 'var(--text-primary)' }}
             >
                 {value}
             </h3>

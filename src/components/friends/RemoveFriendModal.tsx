@@ -32,7 +32,7 @@ export default function RemoveFriendModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-semibold text-xs hover:bg-slate-800 hover:text-white transition"
+            className="flex-1 py-2.5 rounded-xl border border-border text-text-secondary font-semibold text-xs hover:bg-slate-800 hover:text-text-primary transition"
           >
             Cancel
           </button>
@@ -40,18 +40,18 @@ export default function RemoveFriendModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition shadow-lg shadow-red-600/20 disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-text-primary font-semibold text-xs transition shadow-lg shadow-red-600/20 disabled:opacity-50"
           >
             {loading ? 'Removing...' : 'Remove'}
           </button>
         </div>
       }
     >
-      <div className="space-y-3 text-xs text-slate-300 text-left">
+      <div className="space-y-3 text-xs text-text-secondary text-left">
         <p>
-          Are you sure you want to remove <span className="font-bold text-white">{friendName}</span> from your friends list?
+          Are you sure you want to remove <span className="font-bold text-text-primary">{friendName}</span> from your friends list?
         </p>
-        <p className="text-slate-400 bg-slate-800/40 p-3 rounded-xl border border-slate-700/60">
+        <p className="text-text-muted bg-slate-800/40 p-3 rounded-xl border border-border/60">
           You will no longer appear in each other's Productivity Arena.
         </p>
       </div>

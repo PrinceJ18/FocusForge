@@ -308,7 +308,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                 Live Grid
               </span>
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-text-muted">
               Daily focus intensity across your productivity journey.
             </p>
           </div>
@@ -319,24 +319,24 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
           {monthOffset !== 0 && (
             <button
               onClick={() => setMonthOffset(0)}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-white/5 border border-white/10 text-purple-300 hover:bg-white/10 transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-background-card-hover border border-border text-purple-300 hover:bg-background-card-hover transition-all"
               title="Jump to current month"
             >
               <RotateCcw size={12} />
               Today
             </button>
           )}
-          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-0.5">
+          <div className="flex items-center bg-background-card-hover border border-border rounded-xl p-0.5">
             <button
               onClick={() => setMonthOffset((prev) => prev - 1)}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-background-card-hover rounded-lg text-text-secondary hover:text-text-primary transition-colors"
               aria-label="Previous month"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => setMonthOffset((prev) => prev + 1)}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-background-card-hover rounded-lg text-text-secondary hover:text-text-primary transition-colors"
               aria-label="Next month"
             >
               <ChevronRight size={16} />
@@ -359,11 +359,11 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
         {calendarMonths.map((month) => (
           <div
             key={month.monthName}
-            className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col space-y-3"
+            className="p-4 rounded-2xl bg-white/[0.02] border border-border flex flex-col space-y-3"
           >
             {/* Month Header */}
-            <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-              <span className="text-xs font-bold text-slate-200 tracking-wide flex items-center gap-1.5">
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
+              <span className="text-xs font-bold text-text-primary tracking-wide flex items-center gap-1.5">
                 <CalendarIcon size={13} className="text-purple-400" />
                 {month.monthName}
               </span>
@@ -379,7 +379,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                 {WEEKDAY_NAMES.map((d, i) => (
                   <span
                     key={d}
-                    className="text-[9px] font-semibold text-slate-500 h-6 flex items-center justify-center"
+                    className="text-[9px] font-semibold text-text-muted h-6 flex items-center justify-center"
                   >
                     {d}
                   </span>
@@ -391,7 +391,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                 {/* Horizontal Weekday Headers */}
                 <div className="grid grid-cols-7 gap-1.5 text-center select-none">
                   {WEEKDAY_NAMES.map((w) => (
-                    <span key={w} className="text-[9px] font-medium text-slate-500 uppercase">
+                    <span key={w} className="text-[9px] font-medium text-text-muted uppercase">
                       {w.charAt(0)}
                     </span>
                   ))}
@@ -463,10 +463,10 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                             <span
                               className={`transition-colors ${
                                 day.focusMinutes >= 40
-                                  ? 'text-white'
+                                  ? 'text-text-primary'
                                   : day.focusMinutes > 0
                                   ? 'text-purple-200'
-                                  : 'text-slate-500 opacity-60'
+                                  : 'text-text-muted opacity-60'
                               }`}
                             >
                               {day.date.getDate()}
@@ -486,7 +486,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
       {/* ═══ Floating Hover Card ═══ */}
       {hoveredDay && (
         <div
-          className="fixed z-50 pointer-events-none p-3 rounded-xl backdrop-blur-xl bg-slate-900/95 border border-purple-500/30 text-white shadow-2xl space-y-1.5 min-w-[180px] animate-fadeIn"
+          className="fixed z-50 pointer-events-none p-3 rounded-xl backdrop-blur-xl bg-slate-900/95 border border-purple-500/30 text-text-primary shadow-2xl space-y-1.5 min-w-[180px] animate-fadeIn"
           style={{
             top: Math.max(10, hoveredDay.rect.top - 110),
             left: Math.min(
@@ -495,36 +495,36 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
             ),
           }}
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-1">
-            <span className="text-xs font-bold text-slate-200">
+          <div className="flex items-center justify-between border-b border-border pb-1">
+            <span className="text-xs font-bold text-text-primary">
               {format(hoveredDay.day.date, 'EEE, MMM d')}
             </span>
             {hoveredDay.day.isToday && (
-              <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-purple-500 text-white">
+              <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-purple-500 text-text-primary">
                 TODAY
               </span>
             )}
           </div>
           <div className="space-y-1 text-[11px]">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Focus:</span>
+              <span className="text-text-muted">Focus:</span>
               <span className="font-bold text-purple-400 font-mono">
                 {formatFocusTime(hoveredDay.day.focusMinutes)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Sessions:</span>
-              <span className="font-semibold text-slate-200">{hoveredDay.day.sessionCount}</span>
+              <span className="text-text-muted">Sessions:</span>
+              <span className="font-semibold text-text-primary">{hoveredDay.day.sessionCount}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Tasks:</span>
+              <span className="text-text-muted">Tasks:</span>
               <span className="font-semibold text-cyan-400">
                 {hoveredDay.day.completedTasks.length} done
               </span>
             </div>
             {hoveredDay.day.xpEarned > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">XP Earned:</span>
+                <span className="text-text-muted">XP Earned:</span>
                 <span className="font-bold text-amber-400">+{hoveredDay.day.xpEarned} XP</span>
               </div>
             )}
@@ -533,7 +533,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
       )}
 
       {/* ═══ Minimal Bottom Legend ═══ */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/5 text-[11px] text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border text-[11px] text-text-muted">
         <div className="flex items-center gap-2">
           <span>Less Focus</span>
           <div className="flex items-center gap-1.5">
@@ -552,7 +552,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
           <span>More Focus (120+ min)</span>
         </div>
 
-        <span className="text-[10px] text-slate-500">
+        <span className="text-[10px] text-text-muted">
           Click any date for detailed productivity log
         </span>
       </div>
@@ -569,7 +569,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
             {/* Quick Metrics Bar */}
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                <span className="text-[10px] text-slate-400 block uppercase font-semibold">
+                <span className="text-[10px] text-text-muted block uppercase font-semibold">
                   Focus Time
                 </span>
                 <span className="text-base font-bold text-purple-400 font-mono mt-0.5 block">
@@ -577,7 +577,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                <span className="text-[10px] text-slate-400 block uppercase font-semibold">
+                <span className="text-[10px] text-text-muted block uppercase font-semibold">
                   Tasks Done
                 </span>
                 <span className="text-base font-bold text-cyan-400 font-mono mt-0.5 block">
@@ -585,7 +585,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <span className="text-[10px] text-slate-400 block uppercase font-semibold">
+                <span className="text-[10px] text-text-muted block uppercase font-semibold">
                   XP Gained
                 </span>
                 <span className="text-base font-bold text-amber-400 font-mono mt-0.5 block">
@@ -596,7 +596,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
 
             {/* Focus Sessions List */}
             <div>
-              <h4 className="font-bold text-slate-200 mb-2 flex items-center gap-1.5 text-xs">
+              <h4 className="font-bold text-text-primary mb-2 flex items-center gap-1.5 text-xs">
                 <Clock size={14} className="text-purple-400" />
                 Focus Sessions ({selectedDay.sessions.length})
               </h4>
@@ -605,7 +605,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                   {selectedDay.sessions.map((s, idx) => (
                     <div
                       key={s.id || idx}
-                      className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-slate-300"
+                      className="flex items-center justify-between p-2 rounded-lg bg-background-card-hover border border-border text-text-secondary"
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-purple-400" />
@@ -618,7 +618,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-500 text-[11px] italic">
+                <p className="text-text-muted text-[11px] italic">
                   No focus sessions logged on this day.
                 </p>
               )}
@@ -626,7 +626,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
 
             {/* Completed Tasks List */}
             <div>
-              <h4 className="font-bold text-slate-200 mb-2 flex items-center gap-1.5 text-xs">
+              <h4 className="font-bold text-text-primary mb-2 flex items-center gap-1.5 text-xs">
                 <CheckCircle2 size={14} className="text-cyan-400" />
                 Completed Tasks ({selectedDay.completedTasks.length})
               </h4>
@@ -635,16 +635,16 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                   {selectedDay.completedTasks.map((t) => (
                     <div
                       key={t.id}
-                      className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5"
+                      className="flex items-center justify-between p-2 rounded-lg bg-background-card-hover border border-border"
                     >
-                      <span className="text-slate-300 truncate max-w-[200px]">{t.title}</span>
+                      <span className="text-text-secondary truncate max-w-[200px]">{t.title}</span>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                           t.priority === 'high'
                             ? 'bg-red-500/15 text-red-400 border border-red-500/30'
                             : t.priority === 'medium'
                             ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                            : 'bg-slate-500/15 text-slate-400 border border-slate-500/30'
+                            : 'bg-slate-500/15 text-text-muted border border-slate-500/30'
                         }`}
                       >
                         {t.priority}
@@ -653,7 +653,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-500 text-[11px] italic">
+                <p className="text-text-muted text-[11px] italic">
                   No tasks completed on this day.
                 </p>
               )}
@@ -662,7 +662,7 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
             {/* Expenses List */}
             {selectedDay.expenses.length > 0 && (
               <div>
-                <h4 className="font-bold text-slate-200 mb-2 flex items-center gap-1.5 text-xs">
+                <h4 className="font-bold text-text-primary mb-2 flex items-center gap-1.5 text-xs">
                   <Wallet size={14} className="text-pink-400" />
                   Expenses Logged ({selectedDay.expenses.length})
                 </h4>
@@ -670,9 +670,9 @@ const FocusHeatMap = memo(function FocusHeatMap({ period }: FocusHeatMapProps) {
                   {selectedDay.expenses.map((e) => (
                     <div
                       key={e.id}
-                      className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5"
+                      className="flex items-center justify-between p-2 rounded-lg bg-background-card-hover border border-border"
                     >
-                      <span className="text-slate-300 truncate max-w-[200px]">{e.title}</span>
+                      <span className="text-text-secondary truncate max-w-[200px]">{e.title}</span>
                       <span className="font-bold text-pink-400 font-mono">
                         {formatCurrency(e.amount)}
                       </span>

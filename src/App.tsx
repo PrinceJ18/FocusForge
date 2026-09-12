@@ -232,7 +232,7 @@ export default function App() {
       {/* Skip to content — keyboard accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:px-4 focus:py-2 focus:rounded-lg focus:text-white focus:font-semibold focus:text-sm"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:px-4 focus:py-2 focus:rounded-lg focus:text-text-primary focus:font-semibold focus:text-sm"
         style={{ background: 'var(--accent-primary)' }}
       >
         Skip to content

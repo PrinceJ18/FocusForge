@@ -344,7 +344,7 @@ export default function Achievements() {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 z-10 relative">
           <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-            <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-4xl font-extrabold relative shadow-[0_0_30px_rgba(168,85,247,0.35)]" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'white' }}>
+            <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-4xl font-extrabold relative shadow-[0_0_30px_rgba(168,85,247,0.35)]" style={{ background: 'linear-gradient(135deg, #a855f7, #ec4899)', color: 'var(--text-primary)' }}>
               {(profile.display_name || user?.email || 'U')[0].toUpperCase()}
               <div className="absolute -bottom-2 -right-2 bg-yellow-500 text-black text-xs font-black rounded-full px-2 py-0.5 border-2 border-slate-950">
                 Lvl {levelInfo.level}
@@ -374,22 +374,22 @@ export default function Achievements() {
             </div>
           </div>
 
-          <div className="w-full lg:w-96 flex flex-col gap-4 bg-slate-950/40 p-5 rounded-2xl border border-white/5">
+          <div className="w-full lg:w-96 flex flex-col gap-4 bg-slate-950/40 p-5 rounded-2xl border border-border">
             <div className="flex justify-between items-center text-xs font-semibold">
               <span style={{ color: 'var(--text-secondary)' }}>XP PROGRESS TO LEVEL {levelInfo.level + 1}</span>
               <span className="text-purple-400">{levelInfo.progress} / 100 XP</span>
             </div>
-            <div className="w-full bg-slate-900 rounded-full h-3.5 overflow-hidden p-0.5 border border-white/5">
+            <div className="w-full bg-slate-900 rounded-full h-3.5 overflow-hidden p-0.5 border border-border">
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500" style={{ width: `${levelInfo.progress}%` }} />
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-2">
-              <div className="text-center p-3 bg-white/2 rounded-xl border border-white/5">
-                <div className="text-xs text-slate-400 mb-1">Productivity Score</div>
+              <div className="text-center p-3 bg-background-card rounded-xl border border-border">
+                <div className="text-xs text-text-muted mb-1">Productivity Score</div>
                 <div className="text-2xl font-black text-cyan-400">{productivityScore}</div>
               </div>
-              <div className="text-center p-3 bg-white/2 rounded-xl border border-white/5">
-                <div className="text-xs text-slate-400 mb-1">Achievements</div>
+              <div className="text-center p-3 bg-background-card rounded-xl border border-border">
+                <div className="text-xs text-text-muted mb-1">Achievements</div>
                 <div className="text-2xl font-black text-pink-400">{achievements.filter(a => a.isUnlocked).length} / {achievements.length}</div>
               </div>
             </div>
@@ -427,7 +427,7 @@ export default function Achievements() {
                   </div>
                   <div className="flex-shrink-0">
                     {!isDone ? (
-                      <div className="text-[10px] px-2 py-1 rounded-md uppercase font-bold tracking-wider" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)' }}>
+                      <div className="text-[10px] px-2 py-1 rounded-md uppercase font-bold tracking-wider" style={{ background: 'var(--bg-card-hover)', color: 'var(--text-muted)' }}>
                         In Progress
                       </div>
                     ) : claimedChallenges.includes(challenge.id) ? (
@@ -460,7 +460,7 @@ export default function Achievements() {
       {/* SEARCH & FILTERS BAR */}
       <section className="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-80">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
             type="text"
             placeholder="Search Achievements, Badges, XP..."
@@ -470,11 +470,11 @@ export default function Achievements() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 mr-2">
+          <div className="flex items-center gap-1.5 text-xs text-text-muted mr-2">
             <Filter size={14} /> Filters:
           </div>
           <select
-            className="input-glass px-3 py-1.5 text-xs text-slate-300"
+            className="input-glass px-3 py-1.5 text-xs text-text-secondary"
             style={{ colorScheme: 'dark' }}
             value={categoryFilter}
             onChange={(e: any) => setCategoryFilter(e.target.value)}
@@ -488,7 +488,7 @@ export default function Achievements() {
             <option value="reports">Reports</option>
           </select>
           <select
-            className="input-glass px-3 py-1.5 text-xs text-slate-300"
+            className="input-glass px-3 py-1.5 text-xs text-text-secondary"
             style={{ colorScheme: 'dark' }}
             value={timeFilter}
             onChange={(e: any) => setTimeFilter(e.target.value)}
@@ -510,12 +510,12 @@ export default function Achievements() {
 
           {/* SECTION 2: Achievement Timeline */}
           <div className="glass-card p-5 sm:p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-text-primary">
               <Trophy className="text-yellow-500" size={20} />
               Key Milestones Timeline
             </h2>
             {keyTimelineEvents.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm">No milestones logged yet. Keep focusing!</div>
+              <div className="text-center py-8 text-text-muted text-sm">No milestones logged yet. Keep focusing!</div>
             ) : (
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                 <div className="relative pl-6 border-l border-purple-500/20 space-y-6 ml-2">
@@ -529,7 +529,7 @@ export default function Achievements() {
                       <div className="glass-card p-4 hover:border-purple-500/40 transition-all duration-300" style={{ background: 'rgba(255,255,255,0.015)' }}>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-xs font-bold text-purple-400 uppercase tracking-widest">{evt.type}</span>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
+                          <span className="text-xs text-text-muted flex items-center gap-1">
                             <Calendar size={10} />
                             {evt.date}
                           </span>
@@ -537,8 +537,8 @@ export default function Achievements() {
                         <div className="flex items-center gap-2.5">
                           <span className="text-xl">{evt.icon}</span>
                           <div>
-                            <h4 className="text-sm font-semibold text-white">{evt.title}</h4>
-                            <p className="text-xs text-slate-400">{evt.desc}</p>
+                            <h4 className="text-sm font-semibold text-text-primary">{evt.title}</h4>
+                            <p className="text-xs text-text-muted">{evt.desc}</p>
                           </div>
                         </div>
                       </div>
@@ -551,35 +551,35 @@ export default function Achievements() {
 
           {/* SECTION 10: Journey Roadmap */}
           <div className="glass-card p-5 sm:p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-text-primary">
               <Map className="text-cyan-400" size={20} />
               Your Journey Roadmap
             </h2>
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-4 bg-slate-950/30 rounded-2xl border border-white/5">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-4 bg-slate-950/30 rounded-2xl border border-border">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-lg font-bold border border-purple-500/40">
                   {levelInfo.level}
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">Current Level: {levelInfo.level}</div>
-                  <div className="text-xs text-slate-400">Title: {levelInfo.title}</div>
+                  <div className="text-sm font-bold text-text-primary">Current Level: {levelInfo.level}</div>
+                  <div className="text-xs text-text-muted">Title: {levelInfo.title}</div>
                 </div>
               </div>
 
               <div className="flex-1 w-full flex flex-col gap-1.5">
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-xs text-text-muted">
                   <span>Progress to Level {levelInfo.level + 1}</span>
                   <span>{levelInfo.progress}%</span>
                 </div>
                 <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
                   <div className="bg-cyan-400 h-full transition-all duration-500" style={{ width: `${levelInfo.progress}%` }} />
                 </div>
-                <div className="text-right text-[10px] text-slate-500">{levelInfo.xpToNext} XP needed to Level Up</div>
+                <div className="text-right text-[10px] text-text-muted">{levelInfo.xpToNext} XP needed to Level Up</div>
               </div>
 
               <div className="flex items-center gap-3">
                 <ArrowRight className="text-purple-500 hidden md:block" />
-                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-lg font-bold border border-white/10 text-slate-500">
+                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-lg font-bold border border-border text-text-muted">
                   {levelInfo.level + 1}
                 </div>
               </div>
@@ -587,26 +587,26 @@ export default function Achievements() {
 
             {/* Upcoming Goals in Roadmap */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-              <div className="p-4 bg-white/2 rounded-xl border border-white/5 flex gap-3.5">
+              <div className="p-4 bg-background-card rounded-xl border border-border flex gap-3.5">
                 <div className="text-2xl text-purple-400 font-bold">🏆</div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-0.5">Next Badge Goal</h4>
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-text-primary">
                     {badgeCollection.find(b => !b.isUnlocked)?.name || 'All Badges Unlocked!'}
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-text-muted mt-1">
                     {badgeCollection.find(b => !b.isUnlocked)?.desc || 'Perfect Focus'}
                   </p>
                 </div>
               </div>
-              <div className="p-4 bg-white/2 rounded-xl border border-white/5 flex gap-3.5">
+              <div className="p-4 bg-background-card rounded-xl border border-border flex gap-3.5">
                 <div className="text-2xl text-pink-400 font-bold">⭐</div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-pink-400 mb-0.5">Next Achievement</h4>
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-text-primary">
                     {achievements.find(a => !a.isUnlocked)?.title || 'All Achievements Completed!'}
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-text-muted mt-1">
                     Progress: {achievements.find(a => !a.isUnlocked)?.progressPercent || 0}%
                   </p>
                 </div>
@@ -620,7 +620,7 @@ export default function Achievements() {
 
           {/* SECTION 8: Milestones */}
           <div className="glass-card p-5 sm:p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-text-primary">
               <Sparkles className="text-pink-400" size={20} />
               Important Milestones
             </h2>
@@ -641,21 +641,21 @@ export default function Achievements() {
                 const progressPct = Math.min(100, Math.floor((curVal / mile.targetValue) * 100));
 
                 return (
-                  <div key={mile.id} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-center justify-between gap-3 hover:bg-white/5 transition-all">
+                  <div key={mile.id} className="p-3 bg-background-card rounded-xl border border-border flex items-center justify-between gap-3 hover:bg-background-card-hover transition-all">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-slate-900 border border-white/10 flex items-center justify-center text-lg">
+                      <div className="w-10 h-10 rounded-lg bg-slate-900 border border-border flex items-center justify-center text-lg">
                         {mile.icon}
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white">{mile.title}</h4>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{mile.description}</p>
+                        <h4 className="text-xs font-bold text-text-primary">{mile.title}</h4>
+                        <p className="text-[10px] text-text-muted mt-0.5">{mile.description}</p>
                         {/* Progress Bar */}
                         <div className="w-32 bg-slate-950 h-1 rounded-full mt-2 overflow-hidden">
                           <div className="bg-pink-500 h-full" style={{ width: `${progressPct}%` }} />
                         </div>
                       </div>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isReached ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-slate-800 text-slate-400'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isReached ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-slate-800 text-text-muted'}`}>
                       {isReached ? 'Reached' : `${progressPct}%`}
                     </span>
                   </div>
@@ -666,42 +666,42 @@ export default function Achievements() {
 
           {/* SECTION 9: Statistics Overview */}
           <div className="glass-card p-5 sm:p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-text-primary">
               <Activity className="text-cyan-400" size={20} />
               Statistics Overview
             </h2>
             <div className="space-y-3.5 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-xs text-slate-400">Total XP Accumulated</span>
-                <span className="text-xs font-bold text-white">{profile.xp} XP</span>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-text-muted">Total XP Accumulated</span>
+                <span className="text-xs font-bold text-text-primary">{profile.xp} XP</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-xs text-slate-400">Badges Unlocked</span>
-                <span className="text-xs font-bold text-white">{badgeCollection.filter(b => b.isUnlocked).length} / {badgeCollection.length}</span>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-text-muted">Badges Unlocked</span>
+                <span className="text-xs font-bold text-text-primary">{badgeCollection.filter(b => b.isUnlocked).length} / {badgeCollection.length}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-xs text-slate-400">Achievements Completed</span>
-                <span className="text-xs font-bold text-white">{achievements.filter(a => a.isUnlocked).length} / {achievements.length}</span>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-text-muted">Achievements Completed</span>
+                <span className="text-xs font-bold text-text-primary">{achievements.filter(a => a.isUnlocked).length} / {achievements.length}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-xs text-slate-400">Total Focus Time</span>
-                <span className="text-xs font-bold text-white">{totalFocusHours} Hours</span>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-text-muted">Total Focus Time</span>
+                <span className="text-xs font-bold text-text-primary">{totalFocusHours} Hours</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-xs text-slate-400">Completed Tasks</span>
-                <span className="text-xs font-bold text-white">{completedTasks}</span>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-text-muted">Completed Tasks</span>
+                <span className="text-xs font-bold text-text-primary">{completedTasks}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-xs text-slate-400">Expenses Logged</span>
-                <span className="text-xs font-bold text-white">{totalExpensesCount}</span>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-text-muted">Expenses Logged</span>
+                <span className="text-xs font-bold text-text-primary">{totalExpensesCount}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
-                <span className="text-xs text-slate-400">Current / Longest Streak</span>
-                <span className="text-xs font-bold text-white">{profile.streak} / {Math.max(profile.streak, 1)} Days</span>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-xs text-text-muted">Current / Longest Streak</span>
+                <span className="text-xs font-bold text-text-primary">{profile.streak} / {Math.max(profile.streak, 1)} Days</span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-xs text-slate-400">Active Member</span>
-                <span className="text-xs font-bold text-white">{daysActive} Days</span>
+                <span className="text-xs text-text-muted">Active Member</span>
+                <span className="text-xs font-bold text-text-primary">{daysActive} Days</span>
               </div>
             </div>
           </div>
@@ -712,11 +712,11 @@ export default function Achievements() {
       <section className="glass-card p-5 sm:p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2.5">
+            <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2.5">
               <Award className="text-purple-400" size={24} />
               Badge Collection
             </h2>
-            <p className="text-xs text-slate-400 mt-1">Unlock badges by using focus, tracking expenses, and finishing tasks.</p>
+            <p className="text-xs text-text-muted mt-1">Unlock badges by using focus, tracking expenses, and finishing tasks.</p>
           </div>
           <div className="px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-xl text-xs font-semibold text-purple-400">
             Completion: {Math.floor((badgeCollection.filter(b => b.isUnlocked).length / badgeCollection.length) * 100)}%
@@ -728,7 +728,7 @@ export default function Achievements() {
           {badgeCollection.map((badge) => (
             <div
               key={badge.id}
-              className={`p-4 rounded-2xl border text-center flex flex-col items-center justify-center transition-all duration-300 relative group ${badge.isUnlocked ? 'bg-white/2 border-white/10 hover:border-purple-500/40 hover:-translate-y-1' : 'bg-slate-900/40 border-white/5 opacity-55'}`}
+              className={`p-4 rounded-2xl border text-center flex flex-col items-center justify-center transition-all duration-300 relative group ${badge.isUnlocked ? 'bg-background-card border-border hover:border-purple-500/40 hover:-translate-y-1' : 'bg-slate-900/40 border-border opacity-55'}`}
             >
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center text-3xl mb-3 relative shadow-inner"
@@ -740,19 +740,19 @@ export default function Achievements() {
                 {badge.icon}
                 {!badge.isUnlocked && <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-sm">🔒</div>}
               </div>
-              <h4 className="text-xs font-bold text-slate-200 mb-1">{badge.name}</h4>
-              <p className="text-[10px] text-slate-400 leading-tight line-clamp-2">{badge.desc}</p>
+              <h4 className="text-xs font-bold text-text-primary mb-1">{badge.name}</h4>
+              <p className="text-[10px] text-text-muted leading-tight line-clamp-2">{badge.desc}</p>
 
               {/* Tooltip detail */}
-              <div className="absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-950 border border-white/10 rounded-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none text-left shadow-2xl">
-                <div className="text-xs font-bold text-white mb-1">{badge.name}</div>
-                <div className="text-[10px] text-slate-400 mb-2">{badge.desc}</div>
-                <div className="text-[10px] border-t border-white/5 pt-1.5 flex flex-col gap-1">
+              <div className="absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-950 border border-border rounded-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none text-left shadow-2xl">
+                <div className="text-xs font-bold text-text-primary mb-1">{badge.name}</div>
+                <div className="text-[10px] text-text-muted mb-2">{badge.desc}</div>
+                <div className="text-[10px] border-t border-border pt-1.5 flex flex-col gap-1">
                   <span className="text-purple-400 font-semibold uppercase tracking-wider text-[9px]">{badge.category}</span>
                   {badge.isUnlocked ? (
                     <span className="text-green-400">Unlocked: {badge.unlockedAt ? format(new Date(badge.unlockedAt), 'MMM d, h:mm a') : 'Legacy'}</span>
                   ) : (
-                    <span className="text-slate-500">Requirements: {badge.desc}</span>
+                    <span className="text-text-muted">Requirements: {badge.desc}</span>
                   )}
                 </div>
               </div>
@@ -769,36 +769,36 @@ export default function Achievements() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {achievements.map((ach) => (
-            <div key={ach.id} className="p-5 bg-white/2 rounded-2xl border border-white/5 flex flex-col justify-between gap-4 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300">
+            <div key={ach.id} className="p-5 bg-background-card rounded-2xl border border-border flex flex-col justify-between gap-4 relative overflow-hidden group hover:border-yellow-500/30 transition-all duration-300">
               {ach.isUnlocked && (
                 <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-bl-lg">
                   Unlocked
                 </div>
               )}
               <div className="flex gap-4">
-                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center text-2xl flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-border flex items-center justify-center text-2xl flex-shrink-0">
                   {ach.icon}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">{ach.title}</h3>
-                  <p className="text-xs text-slate-400 mt-1">{ach.description}</p>
+                  <h3 className="text-sm font-bold text-text-primary">{ach.title}</h3>
+                  <p className="text-xs text-text-muted mt-1">{ach.description}</p>
                 </div>
               </div>
 
               <div className="space-y-2 mt-2">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Progress</span>
-                  <span className="font-semibold text-slate-300">{ach.currentVal} / {ach.targetValue}</span>
+                  <span className="text-text-muted">Progress</span>
+                  <span className="font-semibold text-text-secondary">{ach.currentVal} / {ach.targetValue}</span>
                 </div>
                 <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden p-0.5">
                   <div className="bg-yellow-500 h-full rounded-full transition-all duration-500" style={{ width: `${ach.progressPercent}%` }} />
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-white/5 text-xs text-slate-400">
+              <div className="flex justify-between items-center pt-2 border-t border-border text-xs text-text-muted">
                 <span>Reward: <strong className="text-yellow-500">+{ach.xpReward} XP</strong></span>
                 {ach.isUnlocked && ach.unlockedAt && (
-                  <span className="text-[10px] text-slate-500">{format(new Date(ach.unlockedAt), 'MMM d, yyyy')}</span>
+                  <span className="text-[10px] text-text-muted">{format(new Date(ach.unlockedAt), 'MMM d, yyyy')}</span>
                 )}
               </div>
             </div>
@@ -811,21 +811,21 @@ export default function Achievements() {
 
         {/* SECTION 3: XP History */}
         <div className="glass-card p-5 sm:p-6">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-text-primary">
             <Zap className="text-purple-400" size={20} />
             XP Log History
           </h2>
           {xpEvents.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-sm">No XP earned logs yet.</div>
+            <div className="text-center py-8 text-text-muted text-sm">No XP earned logs yet.</div>
           ) : (
             <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               {xpEvents.slice(0, 15).map((e) => (
-                <div key={e.id} className="p-3 bg-white/2 rounded-xl border border-white/5 flex items-center justify-between text-xs hover:bg-white/5 transition-all">
+                <div key={e.id} className="p-3 bg-background-card rounded-xl border border-border flex items-center justify-between text-xs hover:bg-background-card-hover transition-all">
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-semibold text-slate-200">
+                    <span className="font-semibold text-text-primary">
                       {e.metadata?.description || XP_EVENT_MAP[e.type] || e.type.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[10px] text-slate-500">
+                    <span className="text-[10px] text-text-muted">
                       {format(new Date(e.timestamp), 'MMM d, h:mm a')}
                     </span>
                   </div>
@@ -840,22 +840,22 @@ export default function Achievements() {
 
         {/* SECTION 4: Level History */}
         <div className="glass-card p-5 sm:p-6">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-text-primary">
             <Star className="text-yellow-500" size={20} />
             Level History
           </h2>
           {levelHistory.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-sm">Unlock Level up events to populate!</div>
+            <div className="text-center py-8 text-text-muted text-sm">Unlock Level up events to populate!</div>
           ) : (
             <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               {levelHistory.map((e, idx) => (
-                <div key={e.id || idx} className="p-3 bg-slate-900/40 rounded-xl border border-white/5 relative overflow-hidden">
+                <div key={e.id || idx} className="p-3 bg-slate-900/40 rounded-xl border border-border relative overflow-hidden">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-bold text-yellow-500 uppercase">Level {e.metadata.level || 2}</span>
-                    <span className="text-[9px] text-slate-500">{format(new Date(e.timestamp), 'MMM d, yyyy')}</span>
+                    <span className="text-[9px] text-text-muted">{format(new Date(e.timestamp), 'MMM d, yyyy')}</span>
                   </div>
-                  <p className="text-xs text-slate-300">Congratulations message logged dynamically!</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Crossed {(e.metadata.level || 2) * 100 - 100} XP milestones.</p>
+                  <p className="text-xs text-text-secondary">Congratulations message logged dynamically!</p>
+                  <p className="text-[10px] text-text-muted mt-1">Crossed {(e.metadata.level || 2) * 100 - 100} XP milestones.</p>
                 </div>
               ))}
             </div>
@@ -864,25 +864,25 @@ export default function Achievements() {
 
         {/* SECTION 7: Activity Timeline */}
         <div className="glass-card p-5 sm:p-6">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-text-primary">
             <Activity className="text-cyan-400" size={20} />
             Complete Activity Log
           </h2>
           {filteredEvents.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-sm">No activity events found matching criteria.</div>
+            <div className="text-center py-8 text-text-muted text-sm">No activity events found matching criteria.</div>
           ) : (
             <div className="space-y-3.5 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               {filteredEvents.slice(0, 30).map((e) => (
-                <div key={e.id} className="p-3 bg-white/2 rounded-xl border border-white/5 flex gap-3 hover:bg-white/5 transition-all text-xs">
+                <div key={e.id} className="p-3 bg-background-card rounded-xl border border-border flex gap-3 hover:bg-background-card-hover transition-all text-xs">
                   <div className="text-lg">
                     {e.category === 'focus' ? '🧠' : e.category === 'finance' ? '💰' : e.category === 'tasks' ? '✅' : '⚡'}
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-0.5">
-                      <span className="font-semibold text-slate-200 uppercase text-[10px] tracking-wider text-purple-400">{e.category}</span>
-                      <span className="text-[9px] text-slate-500">{format(new Date(e.timestamp), 'h:mm a')}</span>
+                      <span className="font-semibold text-text-primary uppercase text-[10px] tracking-wider text-purple-400">{e.category}</span>
+                      <span className="text-[9px] text-text-muted">{format(new Date(e.timestamp), 'h:mm a')}</span>
                     </div>
-                    <p className="text-xs text-slate-300">{e.metadata.description || e.type.replace(/_/g, ' ')}</p>
+                    <p className="text-xs text-text-secondary">{e.metadata.description || e.type.replace(/_/g, ' ')}</p>
                   </div>
                 </div>
               ))}

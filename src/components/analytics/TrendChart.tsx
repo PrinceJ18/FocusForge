@@ -20,7 +20,7 @@ export default function TrendChart({
   height = 200
 }: TrendChartProps) {
   if (!data || data.length === 0) {
-    return <div className="text-slate-500 text-xs text-center py-4">No data available</div>;
+    return <div className="text-text-muted text-xs text-center py-4">No data available</div>;
   }
 
   return (

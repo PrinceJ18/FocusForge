@@ -241,8 +241,8 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
             {confidenceLabel}
           </span>
           {/* Last Updated indicator */}
-          <span className="text-[10px] text-slate-400 flex items-center gap-1 font-medium">
-            <Clock size={11} className="text-slate-500" />
+          <span className="text-[10px] text-text-muted flex items-center gap-1 font-medium">
+            <Clock size={11} className="text-text-muted" />
             Last updated • Just now
           </span>
         </div>
@@ -253,7 +253,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
         {/* ============================================================
             SECTION 1: MORNING BRIEF
             ============================================================ */}
-        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 backdrop-blur-sm space-y-2">
+        <div className="p-4 rounded-xl bg-white/[0.02] border border-border backdrop-blur-sm space-y-2">
           <div className="flex items-center gap-2">
             <Sparkles size={16} className="text-purple-400 shrink-0" />
             <h4 className="text-xs font-bold font-space uppercase tracking-wider text-purple-300">
@@ -264,7 +264,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
             {briefSentences.slice(0, 4).map((sentence, idx) => (
               <li
                 key={idx}
-                className="text-xs text-slate-300 flex items-start gap-2 leading-relaxed"
+                className="text-xs text-text-secondary flex items-start gap-2 leading-relaxed"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-400/80 mt-1.5 shrink-0" />
                 <span>{sentence}</span>
@@ -278,14 +278,14 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
             ============================================================ */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* SECTION 2: TOP RECOMMENDATION (7 cols on desktop) */}
-          <div className="lg:col-span-7 p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between transition-all">
+          <div className="lg:col-span-7 p-4 rounded-xl bg-white/[0.02] border border-border flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between gap-2 mb-2.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
                   <Target size={14} className="text-cyan-400" />
                   Top Recommendation
                   {activeRecommendations.length > 1 && (
-                    <span className="text-[10px] text-slate-500 font-normal">
+                    <span className="text-[10px] text-text-muted font-normal">
                       (1 of {activeRecommendations.length})
                     </span>
                   )}
@@ -314,7 +314,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                       className={`text-[11px] font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md border transition-all ${
                         isWhyExpanded
                           ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                          : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10 hover:text-white'
+                          : 'bg-background-card-hover text-text-secondary border-border hover:bg-background-card-hover hover:text-text-primary'
                       }`}
                       title="See why this recommendation was generated"
                     >
@@ -331,8 +331,8 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                   <div className="flex items-start gap-2.5">
                     <span className="text-xl shrink-0 mt-0.5">{currentRec.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <h5 className="text-sm font-bold text-white leading-snug">{currentRec.title}</h5>
-                      <p className="text-xs text-slate-300 leading-relaxed mt-1">{currentRec.description}</p>
+                      <h5 className="text-sm font-bold text-text-primary leading-snug">{currentRec.title}</h5>
+                      <p className="text-xs text-text-secondary leading-relaxed mt-1">{currentRec.description}</p>
                     </div>
                   </div>
 
@@ -346,7 +346,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                         <span className="text-[10px] uppercase font-bold text-purple-400 tracking-wider block mb-0.5">
                           Causal Trigger
                         </span>
-                        <p className="text-slate-200 leading-relaxed">{currentRec.explainability.why}</p>
+                        <p className="text-text-primary leading-relaxed">{currentRec.explainability.why}</p>
                       </div>
 
                       {currentRec.explainability.triggerMetrics.length > 0 && (
@@ -370,7 +370,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-purple-500/20">
                         {currentRec.explainability.expectedImprovement && (
                           <div>
-                            <span className="text-[10px] text-slate-400 block">Expected Improvement</span>
+                            <span className="text-[10px] text-text-muted block">Expected Improvement</span>
                             <span className="font-semibold text-emerald-400 text-xs">
                               {currentRec.explainability.expectedImprovement}
                             </span>
@@ -378,8 +378,8 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                         )}
                         {(currentRec.estimatedEffort || currentRec.estimatedBenefit) && (
                           <div>
-                            <span className="text-[10px] text-slate-400 block">Estimated Effort</span>
-                            <span className="font-semibold text-slate-200 text-xs capitalize">
+                            <span className="text-[10px] text-text-muted block">Estimated Effort</span>
+                            <span className="font-semibold text-text-primary text-xs capitalize">
                               {currentRec.estimatedEffort || currentRec.estimatedBenefit}
                             </span>
                           </div>
@@ -393,7 +393,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                   <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
                     <ShieldCheck size={18} />
                   </div>
-                  <p className="text-xs text-slate-300 font-medium">
+                  <p className="text-xs text-text-secondary font-medium">
                     All recommendations cleared for today. Excellent work!
                   </p>
                   {actedRecIds.size > 0 && (
@@ -411,8 +411,8 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
 
             {/* RECOMMENDATION ACTIONS FOOTER */}
             {currentRec && (
-              <div className="mt-3.5 pt-2.5 border-t border-white/5 flex items-center justify-between gap-2">
-                <span className="text-[11px] text-slate-400 truncate max-w-[50%]">
+              <div className="mt-3.5 pt-2.5 border-t border-border flex items-center justify-between gap-2">
+                <span className="text-[11px] text-text-muted truncate max-w-[50%]">
                   {currentRec.explainability?.expectedImprovement || currentRec.action}
                 </span>
 
@@ -420,7 +420,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                   {/* Dismiss Button */}
                   <button
                     onClick={() => handleDismissRecommendation(currentRec.id)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-background-card-hover border border-border hover:bg-background-card-hover text-text-secondary transition-colors"
                     title="Temporarily dismiss this recommendation and show the next"
                   >
                     <X size={12} />
@@ -429,7 +429,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                   {/* Done Button */}
                   <button
                     onClick={() => handleCompleteRecommendation(currentRec.id)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600/80 hover:bg-emerald-500 text-white border border-emerald-400/30 transition-all shadow-sm"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600/80 hover:bg-emerald-500 text-text-primary border border-emerald-400/30 transition-all shadow-sm"
                     title="Mark recommendation as done and advance"
                   >
                     <Check size={13} strokeWidth={2.5} />
@@ -441,14 +441,14 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
           </div>
 
           {/* SECTION 3: RISK MONITOR (5 cols on desktop) */}
-          <div className="lg:col-span-5 p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+          <div className="lg:col-span-5 p-4 rounded-xl bg-white/[0.02] border border-border flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between gap-2 mb-2.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
                   <ShieldAlert size={14} className="text-amber-400" />
                   Active Risk Monitor
                 </span>
-                <span className="text-[10px] text-slate-500 font-semibold">
+                <span className="text-[10px] text-text-muted font-semibold">
                   {activeRisks.length} active
                 </span>
               </div>
@@ -473,10 +473,10 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                             <span className={`font-semibold truncate ${style.text}`}>{risk.title}</span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] font-bold uppercase text-slate-400">
+                            <span className="text-[10px] font-bold uppercase text-text-muted">
                               {risk.severity}
                             </span>
-                            {isSelected ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
+                            {isSelected ? <ChevronUp size={13} className="text-text-muted" /> : <ChevronDown size={13} className="text-text-muted" />}
                           </div>
                         </button>
 
@@ -484,16 +484,16 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                         {isSelected && (
                           <div
                             id={`risk-detail-${risk.id}`}
-                            className="p-3 mt-1 rounded-lg bg-slate-900/80 border border-white/10 space-y-2 text-xs animate-fadeIn"
+                            className="p-3 mt-1 rounded-lg bg-slate-900/80 border border-border space-y-2 text-xs animate-fadeIn"
                           >
-                            <div className="flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-wider pb-1 border-b border-white/5">
+                            <div className="flex justify-between items-center text-[10px] text-text-muted uppercase tracking-wider pb-1 border-b border-border">
                               <span>Severity: <strong className={style.text}>{risk.severity}</strong></span>
-                              <span>Probability: <strong className="text-slate-200">{risk.probability || 'High'}</strong></span>
+                              <span>Probability: <strong className="text-text-primary">{risk.probability || 'High'}</strong></span>
                             </div>
-                            <p className="text-slate-300 leading-relaxed">{risk.description}</p>
+                            <p className="text-text-secondary leading-relaxed">{risk.description}</p>
                             {risk.suggestedAction && (
-                              <div className="pt-1.5 border-t border-white/5">
-                                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">
+                              <div className="pt-1.5 border-t border-border">
+                                <span className="text-[10px] text-text-muted uppercase font-bold block mb-0.5">
                                   Mitigation Strategy
                                 </span>
                                 <span className="text-emerald-400 font-semibold">{risk.suggestedAction}</span>
@@ -509,14 +509,14 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                     <CheckCircle size={16} className="text-emerald-400 shrink-0" />
                     <div className="text-xs">
                       <span className="font-bold text-emerald-400 block">All Systems Optimal</span>
-                      <span className="text-[11px] text-slate-400">No active risks detected today.</span>
+                      <span className="text-[11px] text-text-muted">No active risks detected today.</span>
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-3 pt-2 text-[10px] text-slate-500 text-right">
+            <div className="mt-3 pt-2 text-[10px] text-text-muted text-right">
               {activeRisks.length > 0 ? 'Click any risk for details' : 'Continuously monitored by Risk Engine'}
             </div>
           </div>
@@ -529,11 +529,11 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
           <div className="flex items-center justify-between gap-1.5 mb-2.5">
             <div className="flex items-center gap-1.5">
               <TrendingUp size={14} className="text-purple-400" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
                 Deterministic Forecasts
               </span>
             </div>
-            <span className="text-[10px] text-slate-500">Click any card to inspect reasoning</span>
+            <span className="text-[10px] text-text-muted">Click any card to inspect reasoning</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -545,16 +545,16 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
               className={`p-3 rounded-xl border text-center flex flex-col justify-center transition-all ${
                 expandedForecastKey === 'productivity'
                   ? 'bg-purple-950/40 border-purple-500/50 ring-1 ring-purple-500/30'
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                  : 'bg-white/[0.02] border-border hover:bg-white/[0.04]'
               }`}
             >
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">
+              <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-0.5">
                 Productivity
               </span>
               <div className="text-base font-black text-purple-400 font-space">
                 {predictions ? `${predictions.expectedProductivityScore}/100` : '—'}
               </div>
-              <span className="text-[10px] text-slate-500 mt-0.5">Expected Score</span>
+              <span className="text-[10px] text-text-muted mt-0.5">Expected Score</span>
             </button>
 
             {/* 2. Projected Weekly Grade */}
@@ -565,16 +565,16 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
               className={`p-3 rounded-xl border text-center flex flex-col justify-center transition-all ${
                 expandedForecastKey === 'grade'
                   ? 'bg-cyan-950/40 border-cyan-500/50 ring-1 ring-cyan-500/30'
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                  : 'bg-white/[0.02] border-border hover:bg-white/[0.04]'
               }`}
             >
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">
+              <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-0.5">
                 Weekly Grade
               </span>
               <div className="text-base font-black text-cyan-400 font-space">
                 {predictions?.expectedWeeklyGrade || 'A'}
               </div>
-              <span className="text-[10px] text-slate-500 mt-0.5">Pace Trajectory</span>
+              <span className="text-[10px] text-text-muted mt-0.5">Pace Trajectory</span>
             </button>
 
             {/* 3. Budget Outlook */}
@@ -585,10 +585,10 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
               className={`p-3 rounded-xl border text-center flex flex-col justify-center transition-all ${
                 expandedForecastKey === 'budget'
                   ? 'bg-emerald-950/40 border-emerald-500/50 ring-1 ring-emerald-500/30'
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                  : 'bg-white/[0.02] border-border hover:bg-white/[0.04]'
               }`}
             >
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">
+              <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-0.5">
                 Budget Runway
               </span>
               <div className="text-base font-black text-emerald-400 font-space">
@@ -596,7 +596,7 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                   ? `${predictions.daysUntilBudgetDepleted}d left`
                   : 'On Track'}
               </div>
-              <span className="text-[10px] text-slate-500 mt-0.5">Depletion Forecast</span>
+              <span className="text-[10px] text-text-muted mt-0.5">Depletion Forecast</span>
             </button>
 
             {/* 4. Focus Momentum */}
@@ -607,10 +607,10 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
               className={`p-3 rounded-xl border text-center flex flex-col justify-center transition-all ${
                 expandedForecastKey === 'focus'
                   ? 'bg-pink-950/40 border-pink-500/50 ring-1 ring-pink-500/30'
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                  : 'bg-white/[0.02] border-border hover:bg-white/[0.04]'
               }`}
             >
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-0.5">
+              <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-0.5">
                 Focus Momentum
               </span>
               <div className="text-base font-black text-pink-400 font-space">
@@ -620,39 +620,39 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
                     ? `${Math.round(predictions.expectedMonthlyFocusMinutes / 60)}h total`
                     : 'Stable'}
               </div>
-              <span className="text-[10px] text-slate-500 mt-0.5">Velocity Factor</span>
+              <span className="text-[10px] text-text-muted mt-0.5">Velocity Factor</span>
             </button>
           </div>
 
           {/* EXPANDED FORECAST DETAILS DRAWER */}
           {forecastDetails && (
-            <div className="p-4 mt-3 rounded-xl bg-white/[0.03] border border-white/10 text-xs space-y-2 animate-fadeIn">
-              <div className="flex justify-between items-center pb-2 border-b border-white/5">
+            <div className="p-4 mt-3 rounded-xl bg-white/[0.03] border border-border text-xs space-y-2 animate-fadeIn">
+              <div className="flex justify-between items-center pb-2 border-b border-border">
                 <div className="flex items-center gap-2">
                   <BarChart2 size={14} className="text-purple-400" />
-                  <span className="font-bold text-white text-xs">{forecastDetails.title}</span>
+                  <span className="font-bold text-text-primary text-xs">{forecastDetails.title}</span>
                 </div>
-                <span className="text-[10px] uppercase font-bold text-slate-400">
+                <span className="text-[10px] uppercase font-bold text-text-muted">
                   Confidence: <strong className="text-purple-300">{forecastDetails.confidence}</strong>
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-[10px] text-slate-400 block">Current Status</span>
-                  <span className="font-semibold text-slate-200">{forecastDetails.currentVal}</span>
+                  <span className="text-[10px] text-text-muted block">Current Status</span>
+                  <span className="font-semibold text-text-primary">{forecastDetails.currentVal}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-400 block">Forecast Model Output</span>
+                  <span className="text-[10px] text-text-muted block">Forecast Model Output</span>
                   <span className="font-semibold text-cyan-300">{forecastDetails.predictedVal}</span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-white/5">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">
+              <div className="pt-2 border-t border-border">
+                <span className="text-[10px] text-text-muted uppercase font-bold block mb-0.5">
                   Supporting Causal Factor
                 </span>
-                <p className="text-slate-300 leading-relaxed">{forecastDetails.reasoning}</p>
+                <p className="text-text-secondary leading-relaxed">{forecastDetails.reasoning}</p>
               </div>
             </div>
           )}

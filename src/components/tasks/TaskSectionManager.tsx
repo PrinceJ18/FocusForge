@@ -149,25 +149,25 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-lg text-white" style={{ fontFamily: 'Space Grotesk' }}>
+          <h3 className="font-bold text-lg text-text-primary" style={{ fontFamily: 'Space Grotesk' }}>
             Manage Sections
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
             <X size={20} />
           </button>
         </div>
 
         {/* Create Form */}
-        <form onSubmit={handleCreate} className="mb-6 p-4 rounded-xl border border-white/5 bg-white/5 space-y-4">
-          <h4 className="text-sm font-bold text-white mb-2">Create New Section</h4>
+        <form onSubmit={handleCreate} className="mb-6 p-4 rounded-xl border border-border bg-background-card-hover space-y-4">
+          <h4 className="text-sm font-bold text-text-primary mb-2">Create New Section</h4>
           
           <div>
-            <label className="text-xs font-medium text-gray-400 mb-1.5 block">Section Name</label>
+            <label className="text-xs font-medium text-text-muted mb-1.5 block">Section Name</label>
             <input
               type="text"
               value={newSectionName}
               onChange={(e) => setNewSectionName(e.target.value)}
-              className="input-glass w-full px-3 py-2 text-sm text-white"
+              className="input-glass w-full px-3 py-2 text-sm text-text-primary"
               placeholder="e.g. Personal, Placement, Coding"
             />
           </div>
@@ -175,7 +175,7 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
           <div className="grid grid-cols-2 gap-4">
             {/* Icon Picker */}
             <div>
-              <label className="text-xs font-medium text-gray-400 mb-1.5 block">Icon</label>
+              <label className="text-xs font-medium text-text-muted mb-1.5 block">Icon</label>
               <div className="grid grid-cols-4 gap-2">
                 {AVAILABLE_ICONS.map((iconKey) => {
                   const IconComponent = ICON_MAP[iconKey];
@@ -184,7 +184,7 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
                       key={iconKey}
                       type="button"
                       onClick={() => setSelectedIcon(iconKey)}
-                      className="p-2 rounded-lg border text-white flex items-center justify-center transition-all hover:bg-white/5"
+                      className="p-2 rounded-lg border text-text-primary flex items-center justify-center transition-all hover:bg-background-card-hover"
                       style={{
                         borderColor: selectedIcon === iconKey ? selectedColor : 'rgba(255,255,255,0.05)',
                         background: selectedIcon === iconKey ? `${selectedColor}15` : 'transparent',
@@ -200,7 +200,7 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
 
             {/* Color Picker */}
             <div>
-              <label className="text-xs font-medium text-gray-400 mb-1.5 block">Color</label>
+              <label className="text-xs font-medium text-text-muted mb-1.5 block">Color</label>
               <div className="grid grid-cols-4 gap-2">
                 {AVAILABLE_COLORS.map((color) => (
                   <button
@@ -215,7 +215,7 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
                     }}
                   >
                     {selectedColor === color && (
-                      <span className="absolute inset-0 flex items-center justify-center text-white text-[10px]">✓</span>
+                      <span className="absolute inset-0 flex items-center justify-center text-text-primary text-[10px]">✓</span>
                     )}
                   </button>
                 ))}
@@ -232,10 +232,10 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
 
         {/* Existing Sections List */}
         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Existing Sections</h4>
+          <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Existing Sections</h4>
           
           {taskSections.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">No custom sections yet.</p>
+            <p className="text-sm text-text-muted text-center py-4">No custom sections yet.</p>
           ) : (
             taskSections.map((section) => {
               const IconComponent = ICON_MAP[section.icon] || Folder;
@@ -244,7 +244,7 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
               return (
                 <div 
                   key={section.id} 
-                  className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.02]"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white/[0.02]"
                 >
                   {isEditing ? (
                     <div className="flex-1 space-y-3">
@@ -253,7 +253,7 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
                           type="text"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          className="input-glass flex-1 px-2.5 py-1 text-sm text-white"
+                          className="input-glass flex-1 px-2.5 py-1 text-sm text-text-primary"
                         />
                         <button 
                           onClick={() => handleSaveEdit(section.id)}
@@ -263,7 +263,7 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
                         </button>
                         <button 
                           onClick={() => setEditingId(null)}
-                          className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-colors"
+                          className="p-2 rounded-lg bg-background-card-hover border border-border text-text-muted hover:text-text-primary transition-colors"
                         >
                           <X size={14} />
                         </button>
@@ -319,13 +319,13 @@ export default function TaskSectionManager({ onClose }: TaskSectionManagerProps)
                       </div>
                       
                       {/* Name */}
-                      <span className="flex-1 text-sm font-medium text-white">{section.name}</span>
+                      <span className="flex-1 text-sm font-medium text-text-primary">{section.name}</span>
                       
                       {/* Actions */}
                       <div className="flex items-center gap-1.5">
                         <button 
                           onClick={() => handleStartEdit(section)}
-                          className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-background-card-hover rounded-lg transition-colors"
                         >
                           <Edit2 size={14} />
                         </button>

@@ -797,7 +797,7 @@ export default function Dashboard() {
       >
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Expense Description</label>
+            <label className="block text-xs font-semibold text-text-secondary mb-1">Expense Description</label>
             <input
               type="text"
               placeholder="e.g. Coffee, Books"
@@ -807,7 +807,7 @@ export default function Dashboard() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Amount ($)</label>
+            <label className="block text-xs font-semibold text-text-secondary mb-1">Amount ($)</label>
             <input
               type="number"
               placeholder="0.00"
@@ -832,7 +832,7 @@ export default function Dashboard() {
       >
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Task Title</label>
+            <label className="block text-xs font-semibold text-text-secondary mb-1">Task Title</label>
             <input
               type="text"
               placeholder="Enter task title..."

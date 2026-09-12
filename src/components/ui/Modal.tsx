@@ -139,12 +139,12 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl shadow-purple-950/40 flex flex-col max-h-[90vh] sm:max-h-[85vh] z-10 overflow-hidden outline-none animate-scaleIn transition-all duration-200 ${className}`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-slate-900 border border-border/60 rounded-2xl shadow-2xl shadow-purple-950/40 flex flex-col max-h-[90vh] sm:max-h-[85vh] z-10 overflow-hidden outline-none animate-scaleIn transition-all duration-200 ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         {(title || icon) && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 shrink-0 bg-slate-900/90 backdrop-blur">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0 bg-slate-900/90 backdrop-blur">
             <div className="flex items-center gap-3 pr-4 min-w-0">
               {icon && (
                 <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
@@ -157,14 +157,14 @@ export const Modal: React.FC<ModalProps> = ({
                     {title}
                   </h3>
                 )}
-                {subtitle && <p className="text-xs text-slate-400 truncate mt-0.5">{subtitle}</p>}
+                {subtitle && <p className="text-xs text-text-muted truncate mt-0.5">{subtitle}</p>}
               </div>
             </div>
             {showCloseButton && (
               <button
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors shrink-0 touch-target"
+                className="p-2 text-text-muted hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors shrink-0 touch-target"
               >
                 <X size={18} />
               </button>
@@ -177,7 +177,7 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="absolute top-4 right-4 z-20 p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors touch-target"
+            className="absolute top-4 right-4 z-20 p-2 text-text-muted hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors touch-target"
           >
             <X size={18} />
           </button>
@@ -190,7 +190,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Modal Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-800 shrink-0 bg-slate-900/90 backdrop-blur">
+          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0 bg-slate-900/90 backdrop-blur">
             {footer}
           </div>
         )}

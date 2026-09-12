@@ -147,10 +147,10 @@ export default function ProfileModal({
         {/* Avatar Section */}
         <div className="flex flex-col items-center justify-center gap-4">
           <div className="relative group">
-            <UserAvatar profile={profile} email={user?.email} size="xl" className="border-4 border-slate-800 shadow-xl" />
+            <UserAvatar profile={profile} email={user?.email} size="xl" className="border-4 border-border shadow-xl" />
             {uploadingImage && (
               <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center backdrop-blur-sm z-10">
-                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                <Loader2 className="w-6 h-6 text-text-primary animate-spin" />
               </div>
             )}
           </div>
@@ -184,26 +184,26 @@ export default function ProfileModal({
           </div>
         </div>
         <div>
-          <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+          <label className="text-xs font-semibold text-text-secondary block mb-1.5">
             Username
           </label>
           <input
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-slate-700/80 text-slate-100 placeholder-slate-400 text-sm outline-none focus:border-purple-500 transition"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/80 border border-border/80 text-slate-100 placeholder-slate-400 text-sm outline-none focus:border-purple-500 transition"
           />
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+          <label className="text-xs font-semibold text-text-secondary block mb-1.5">
             Email Address
           </label>
           <input
             type="email"
             value={user?.email || ''}
             disabled
-            className="w-full px-4 py-3 rounded-xl bg-slate-800/40 border border-slate-700/50 text-slate-400 text-sm opacity-70 cursor-not-allowed"
+            className="w-full px-4 py-3 rounded-xl bg-slate-800/40 border border-border/50 text-text-muted text-sm opacity-70 cursor-not-allowed"
           />
         </div>
 

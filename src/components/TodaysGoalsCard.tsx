@@ -111,7 +111,7 @@ const TodaysGoalsCard = memo(function TodaysGoalsCard() {
           </div>
           <button
             onClick={() => setShowSettings(true)}
-            className="p-2 rounded-xl transition-all hover:bg-white/5"
+            className="p-2 rounded-xl transition-all hover:bg-background-card-hover"
             style={{ color: 'var(--text-muted)' }}
             title="Goal Settings"
           >
@@ -394,15 +394,15 @@ function GoalRow({
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={() => onUpdateCustom(Math.max(0, customValue - 1))}
-            className="w-6 h-6 rounded-md flex items-center justify-center transition-all hover:bg-white/5"
-            style={{ color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="w-6 h-6 rounded-md flex items-center justify-center transition-all hover:bg-background-card-hover"
+            style={{ color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}
           >
             <Minus size={10} />
           </button>
           <button
             onClick={() => onUpdateCustom(customValue + 1)}
-            className="w-6 h-6 rounded-md flex items-center justify-center transition-all hover:bg-white/5"
-            style={{ color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="w-6 h-6 rounded-md flex items-center justify-center transition-all hover:bg-background-card-hover"
+            style={{ color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}
           >
             <Plus size={10} />
           </button>

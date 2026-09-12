@@ -66,7 +66,7 @@ export default function TaskItem({
   return (
     <div
       onClick={onClick}
-      className="group relative overflow-hidden rounded-xl border transition-all duration-300 hover:-translate-y-0.5 cursor-pointer select-none bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]"
+      className="group relative overflow-hidden rounded-xl border transition-all duration-300 hover:-translate-y-0.5 cursor-pointer select-none bg-white/[0.02] border-border hover:border-border hover:bg-white/[0.04]"
     >
       {/* Background radial highlight */}
       <div
@@ -103,7 +103,7 @@ export default function TaskItem({
             ) : isWontDo ? (
               <XCircle size={18} className="text-orange-500 filter drop-shadow-[0_0_4px_rgba(249,115,22,0.4)]" />
             ) : (
-              <Circle size={18} className="hover:text-white hover:scale-105 active:scale-95 transition-all" />
+              <Circle size={18} className="hover:text-text-primary hover:scale-105 active:scale-95 transition-all" />
             )}
           </button>
 
@@ -137,7 +137,7 @@ export default function TaskItem({
                 e.stopPropagation();
                 onEdit(e);
               }}
-              className="p-1 text-gray-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-md border border-white/5 hover:border-white/10 transition-all duration-200"
+              className="p-1 text-text-muted hover:text-text-primary bg-background-card-hover hover:bg-background-card-hover rounded-md border border-border hover:border-border transition-all duration-200"
             >
               <Edit2 size={12} />
             </button>
@@ -157,7 +157,7 @@ export default function TaskItem({
             ROW 2 — Metadata (conditional)
             ═══════════════════════════════════════════════ */}
         {hasMetadata && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-7 text-[11px] text-gray-500">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-7 text-[11px] text-text-muted">
             {/* Section */}
             {section && (
               <span className="flex items-center gap-1" style={{ color: section.color }}>

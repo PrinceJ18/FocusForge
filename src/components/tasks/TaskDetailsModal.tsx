@@ -174,7 +174,7 @@ export default function TaskDetailsModal({
             <button
               onClick={handleWontDo}
               disabled={busy}
-              className="px-4 py-2.5 text-orange-400 hover:text-white bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/80 rounded-xl transition-all font-bold text-xs"
+              className="px-4 py-2.5 text-orange-400 hover:text-text-primary bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/80 rounded-xl transition-all font-bold text-xs"
               title="Mark as Won't Do"
             >
               Won't Do
@@ -184,7 +184,7 @@ export default function TaskDetailsModal({
           <button
             onClick={onEdit}
             disabled={busy}
-            className="p-2.5 text-slate-400 hover:text-white bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-xl transition-all"
+            className="p-2.5 text-text-muted hover:text-text-primary bg-slate-800 border border-border hover:bg-slate-700 rounded-xl transition-all"
             title="Edit Task"
           >
             <Edit2 size={16} />
@@ -204,11 +204,11 @@ export default function TaskDetailsModal({
       <div className="space-y-4 text-left">
         {/* Description */}
         {task.description ? (
-          <div className="p-3.5 bg-slate-800/50 border border-slate-700/60 rounded-xl text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+          <div className="p-3.5 bg-slate-800/50 border border-border/60 rounded-xl text-sm text-text-primary whitespace-pre-wrap leading-relaxed">
             {task.description}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic">No description provided.</p>
+          <p className="text-xs text-text-muted italic">No description provided.</p>
         )}
 
         {/* Occurrence details warning for recurring tasks */}
@@ -222,10 +222,10 @@ export default function TaskDetailsModal({
         )}
 
         {/* Meta Info Grid */}
-        <div className="grid grid-cols-2 gap-3 text-xs bg-slate-800/40 p-4 rounded-xl border border-slate-700/60">
+        <div className="grid grid-cols-2 gap-3 text-xs bg-slate-800/40 p-4 rounded-xl border border-border/60">
           {/* Status */}
           <div>
-            <span className="text-slate-400 block mb-0.5">Status</span>
+            <span className="text-text-muted block mb-0.5">Status</span>
             {status === 'completed' ? (
               <span className="text-green-400 font-bold flex items-center gap-1">✓ Completed</span>
             ) : status === 'wont_do' ? (
@@ -239,21 +239,21 @@ export default function TaskDetailsModal({
 
           {/* Scheduled Date */}
           <div>
-            <span className="text-slate-400 block mb-0.5">Scheduled Date</span>
+            <span className="text-text-muted block mb-0.5">Scheduled Date</span>
             <span className="text-slate-100 font-medium">{task.scheduled_date || 'None'}</span>
           </div>
 
           {/* Due Date */}
           <div>
-            <span className="text-slate-400 block mb-0.5">Due Date</span>
+            <span className="text-text-muted block mb-0.5">Due Date</span>
             <span className="text-slate-100 font-medium">{task.deadline || 'No due date'}</span>
           </div>
 
           {/* Reminder */}
           <div>
-            <span className="text-slate-400 block mb-0.5">Reminder</span>
+            <span className="text-text-muted block mb-0.5">Reminder</span>
             <span className="text-slate-100 font-medium flex items-center gap-1">
-              <Clock size={12} className="text-slate-400" />
+              <Clock size={12} className="text-text-muted" />
               {!task.reminder_enabled 
                 ? 'Off' 
                 : !task.reminder_time 
@@ -263,8 +263,8 @@ export default function TaskDetailsModal({
           </div>
 
           {/* Recurrence Rule */}
-          <div className="col-span-2 pt-2 border-t border-slate-700/60">
-            <span className="text-slate-400 block mb-0.5">Recurrence Rule</span>
+          <div className="col-span-2 pt-2 border-t border-border/60">
+            <span className="text-text-muted block mb-0.5">Recurrence Rule</span>
             <span className="text-purple-300 font-medium flex items-center gap-1">
               <RotateCcw size={12} className="text-purple-400" />
               {getRecurrenceText()}

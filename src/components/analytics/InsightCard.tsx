@@ -71,14 +71,14 @@ export default function InsightCard({ insight }: InsightCardProps) {
         </div>
 
         <h4 className="text-sm font-bold text-slate-100 mb-1 leading-snug">{insight.title}</h4>
-        <p className="text-xs text-slate-400 leading-relaxed">{insight.desc}</p>
+        <p className="text-xs text-text-muted leading-relaxed">{insight.desc}</p>
       </div>
 
       {insight.recommendation && (
-        <div className="mt-3 pt-3 border-t border-white/5 flex items-start gap-2">
+        <div className="mt-3 pt-3 border-t border-border flex items-start gap-2">
           <span className="text-xs shrink-0" style={{ color: insight.color }}>💡</span>
-          <p className="text-[11px] text-slate-300 leading-snug">
-            <strong className="font-semibold text-slate-200">Action:</strong> {insight.recommendation}
+          <p className="text-[11px] text-text-secondary leading-snug">
+            <strong className="font-semibold text-text-primary">Action:</strong> {insight.recommendation}
           </p>
         </div>
       )}

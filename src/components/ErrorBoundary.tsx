@@ -109,7 +109,7 @@ export default class ErrorBoundary extends React.Component<
                 background: 'linear-gradient(135deg, #a855f7, #ec4899)',
                 border: 'none',
                 borderRadius: '12px',
-                color: 'white',
+                color: 'var(--text-primary)',
                 fontWeight: 600,
                 fontSize: '14px',
                 padding: '12px 32px',

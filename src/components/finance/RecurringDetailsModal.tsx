@@ -90,14 +90,14 @@ export default function RecurringDetailsModal({
                 <button
                   type="button"
                   onClick={() => setConfirmPay(true)}
-                  className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs"
+                  className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-text-primary font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs"
                 >
                   <CheckCircle2 size={14} /> Mark Paid
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmSkip(true)}
-                  className="py-2.5 px-3 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 font-bold rounded-xl flex items-center justify-center gap-1 transition-colors text-xs"
+                  className="py-2.5 px-3 bg-slate-800 text-text-secondary hover:bg-slate-700 hover:text-text-primary border border-border font-bold rounded-xl flex items-center justify-center gap-1 transition-colors text-xs"
                   title="Skip this billing cycle"
                 >
                   Skip
@@ -108,7 +108,7 @@ export default function RecurringDetailsModal({
             <button
               type="button"
               onClick={onEdit}
-              className="py-2.5 px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs"
+              className="py-2.5 px-3.5 bg-slate-800 hover:bg-slate-700 text-text-primary border border-border font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs"
             >
               <Edit2 size={14} /> Edit
             </button>
@@ -123,10 +123,10 @@ export default function RecurringDetailsModal({
         ) : undefined
       }
     >
-      <div className="space-y-4 text-left text-xs text-slate-300">
+      <div className="space-y-4 text-left text-xs text-text-secondary">
         {/* Amount */}
-        <div className="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-4 text-center">
-          <span className="text-[10px] text-slate-400 uppercase tracking-widest block font-medium">Billing Amount</span>
+        <div className="bg-slate-800/50 border border-border/60 rounded-2xl p-4 text-center">
+          <span className="text-[10px] text-text-muted uppercase tracking-widest block font-medium">Billing Amount</span>
           <span className="text-3xl font-black text-slate-100 mt-1 block" style={{ fontFamily: 'Space Grotesk' }}>
             {formatCurrency(bill.amount)}
           </span>
@@ -138,7 +138,7 @@ export default function RecurringDetailsModal({
         {/* Meta Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <span className="text-slate-400 block font-medium">Next Due Date</span>
+            <span className="text-text-muted block font-medium">Next Due Date</span>
             <div className="flex items-center gap-1.5 text-slate-100 font-semibold">
               <Calendar size={13} className="text-purple-400" />
               <span>{formatDisplayDate(bill.payment_date)}</span>
@@ -146,7 +146,7 @@ export default function RecurringDetailsModal({
           </div>
 
           <div className="space-y-1">
-            <span className="text-slate-400 block font-medium">Last Payment Date</span>
+            <span className="text-text-muted block font-medium">Last Payment Date</span>
             <div className="flex items-center gap-1.5 text-slate-100 font-semibold">
               <Clock size={13} className="text-cyan-400" />
               <span>{formatDisplayDate(bill.last_payment_date)}</span>
@@ -154,44 +154,44 @@ export default function RecurringDetailsModal({
           </div>
 
           <div className="space-y-1">
-            <span className="text-slate-400 block font-medium">Start Date</span>
-            <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
+            <span className="text-text-muted block font-medium">Start Date</span>
+            <div className="flex items-center gap-1.5 text-text-secondary font-semibold">
               <span>{formatDisplayDate(bill.start_date)}</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <span className="text-slate-400 block font-medium">End Date</span>
-            <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
+            <span className="text-text-muted block font-medium">End Date</span>
+            <div className="flex items-center gap-1.5 text-text-secondary font-semibold">
               <span>{bill.end_date ? formatDisplayDate(bill.end_date) : 'No End Date'}</span>
             </div>
           </div>
         </div>
 
         {/* Settings list */}
-        <div className="space-y-2 pt-2 border-t border-slate-800">
+        <div className="space-y-2 pt-2 border-t border-border">
           {bill.description && (
-            <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 mb-1">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Description</p>
-              <p className="text-slate-200 leading-relaxed text-xs">{bill.description}</p>
+            <div className="bg-slate-800/40 p-3 rounded-xl border border-border/50 mb-1">
+              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1">Description</p>
+              <p className="text-text-primary leading-relaxed text-xs">{bill.description}</p>
             </div>
           )}
 
           <div className="flex justify-between items-center text-xs">
-            <span className="text-slate-400 font-medium">Reminder Period</span>
+            <span className="text-text-muted font-medium">Reminder Period</span>
             <span className="text-slate-100 font-semibold capitalize">{bill.reminder.replace('-', ' ')}</span>
           </div>
 
           <div className="flex justify-between items-center text-xs">
-            <span className="text-slate-400 font-medium">Auto Confirm Payments</span>
-            <span className={bill.auto_confirm ? 'text-green-400 font-semibold' : 'text-slate-400'}>
+            <span className="text-text-muted font-medium">Auto Confirm Payments</span>
+            <span className={bill.auto_confirm ? 'text-green-400 font-semibold' : 'text-text-muted'}>
               {bill.auto_confirm ? 'Enabled (Automatic Confirm)' : 'Disabled'}
             </span>
           </div>
 
           <div className="flex justify-between items-center text-xs">
-            <span className="text-slate-400 font-medium">Auto Add to Expenses</span>
-            <span className={bill.auto_add ? 'text-cyan-400 font-semibold' : 'text-slate-400'}>
+            <span className="text-text-muted font-medium">Auto Add to Expenses</span>
+            <span className={bill.auto_add ? 'text-cyan-400 font-semibold' : 'text-text-muted'}>
               {bill.auto_add ? 'Enabled (Auto Logs Expense)' : 'Disabled'}
             </span>
           </div>
@@ -213,7 +213,7 @@ export default function RecurringDetailsModal({
               <button 
                 type="button"
                 onClick={() => setConfirmPay(false)} 
-                className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold hover:text-white"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 border border-border text-text-secondary text-xs font-bold hover:text-text-primary"
                 disabled={processing}
               >
                 Cancel
@@ -221,7 +221,7 @@ export default function RecurringDetailsModal({
               <button 
                 type="button"
                 onClick={handlePay} 
-                className="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+                className="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-text-primary text-xs font-bold"
                 disabled={processing}
               >
                 {processing ? 'Processing...' : 'Confirm Paid'}
@@ -245,7 +245,7 @@ export default function RecurringDetailsModal({
               <button 
                 type="button"
                 onClick={() => setConfirmSkip(false)} 
-                className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold hover:text-white"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 border border-border text-text-secondary text-xs font-bold hover:text-text-primary"
                 disabled={processing}
               >
                 Cancel
@@ -253,7 +253,7 @@ export default function RecurringDetailsModal({
               <button 
                 type="button"
                 onClick={handleSkip} 
-                className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold"
+                className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-text-primary text-xs font-bold"
                 disabled={processing}
               >
                 {processing ? 'Processing...' : 'Confirm Skip'}
@@ -277,14 +277,14 @@ export default function RecurringDetailsModal({
               <button 
                 type="button"
                 onClick={() => setConfirmDelete(false)} 
-                className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold hover:text-white"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 border border-border text-text-secondary text-xs font-bold hover:text-text-primary"
               >
                 Cancel
               </button>
               <button 
                 type="button"
                 onClick={onDelete} 
-                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold"
+                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-text-primary text-xs font-bold"
               >
                 Delete Bill
               </button>

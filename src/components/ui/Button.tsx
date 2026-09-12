@@ -21,7 +21,7 @@ export default function Button({
   const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-normal rounded-md disabled:opacity-50 disabled:pointer-events-none outline-none';
   
   const variantClasses = {
-    primary: 'bg-primary text-white hover:bg-primary-secondary shadow-glow',
+    primary: 'bg-primary text-text-primary hover:bg-primary-secondary shadow-glow',
     neon: 'btn-neon',
     secondary: 'bg-background-card hover:bg-background-card-hover text-text-primary border border-border',
     ghost: 'btn-ghost',
