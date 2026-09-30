@@ -1,10 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Zap, Brain, Wallet } from 'lucide-react';
 import AuthModal from '../components/AuthModal';
 
 export default function AuthScreen() {
     const [authOpen, setAuthOpen] = useState(false);
+
+    useEffect(() => {
+        document.title = 'FocusForge';
+    }, []);
 
     return (
         <>

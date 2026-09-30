@@ -95,8 +95,12 @@ export default function App() {
 
   // Dynamically update the browser tab title
   useEffect(() => {
-    document.title = TAB_TITLES[currentPage] || 'FocusForge — Operating System';
-  }, [currentPage]);
+    if (!user) {
+      document.title = 'FocusForge';
+    } else {
+      document.title = TAB_TITLES[currentPage] || 'FocusForge';
+    }
+  }, [user, currentPage]);
 
   // Global safety net: catch unhandled promise rejections that slip through
   // individual try/catch blocks, preventing silent failures in production.
