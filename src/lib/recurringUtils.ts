@@ -83,44 +83,58 @@ export function getNextPaymentDate(currentDateStr: string, frequency: string, cu
 
 /**
  * Processes a recurring bill payment (Mark Paid).
- * Inserts the expense transaction, logs timeline events, triggers rewards, and updates the bill's schedule.
+ *
+ * Business Rules (Locked):
+ * - The expense_date (accounting date) is ALWAYS the scheduled occurrence date (bill.payment_date),
+ *   regardless of when the user actually clicks "Paid" (early, on-time, or late).
+ * - Exactly one expense is allowed per (recurring_expense_id, recurring_occurrence_date) pair.
+ * - Duplicate prevention operates at both frontend (Zustand) and database (unique index) levels.
+ * - After payment, the recurring bill advances to the next occurrence and remains active.
  */
-export async function payRecurringExpense(recurringId: string, customDate?: string) {
+export async function payRecurringExpense(recurringId: string) {
   const store = useStore.getState();
   const bill = store.recurringExpenses.find(r => r.id === recurringId);
   if (!bill) return;
 
-  const payDate = customDate || bill.payment_date;
+  // The occurrence/accounting date is ALWAYS the scheduled due date.
+  // This ensures early payments (Oct 10) and late payments (Oct 18) both
+  // record the expense on the scheduled occurrence date (Oct 15).
+  const occurrenceDate = bill.payment_date;
 
-  // Prevent duplicate confirmation for the same occurrence date
+  // Prevent duplicate confirmation for the same occurrence date (frontend guard)
   const alreadyProcessed = store.expenses.some(
-    e => e.recurring_expense_id === bill.id && e.recurring_occurrence_date === payDate
+    e => e.recurring_expense_id === bill.id && e.recurring_occurrence_date === occurrenceDate
   );
   if (alreadyProcessed) {
-    console.warn(`Payment occurrence on ${payDate} for bill ${bill.name} already processed.`);
+    console.warn(`Payment occurrence on ${occurrenceDate} for bill ${bill.name} already processed.`);
+    store.showNotification({
+      type: 'info',
+      title: 'Already Paid',
+      message: `${bill.name} for ${occurrenceDate} was already marked as paid.`,
+    });
     return;
   }
 
-  const nextPayDate = calculateNextPaymentDate(bill, payDate);
+  const nextPayDate = calculateNextPaymentDate(bill, occurrenceDate);
 
-  // 1. Add to normal expenses
+  // 1. Create the actual expense record
   const newExpense: Expense = {
     id: crypto.randomUUID(),
     title: bill.name,
     amount: bill.amount,
     category: bill.category,
     note: `Recurring bill payment for ${bill.name}`,
-    expense_date: payDate,
+    expense_date: occurrenceDate,
     created_at: new Date().toISOString(),
     recurring_expense_id: bill.id,
-    recurring_occurrence_date: payDate,
+    recurring_occurrence_date: occurrenceDate,
   };
 
   store.addExpenseLocal(newExpense);
 
   if (store.user) {
     try {
-      await supabase.from('expenses').insert({
+      const { error } = await supabase.from('expenses').insert({
         id: newExpense.id,
         user_id: store.user.id,
         title: newExpense.title,
@@ -128,7 +142,25 @@ export async function payRecurringExpense(recurringId: string, customDate?: stri
         category: newExpense.category,
         note: newExpense.note,
         expense_date: newExpense.expense_date,
+        recurring_expense_id: newExpense.recurring_expense_id,
+        recurring_occurrence_date: newExpense.recurring_occurrence_date,
       });
+
+      // Handle DB-level duplicate violation (unique index on recurring_expense_id + recurring_occurrence_date)
+      if (error) {
+        if (error.code === '23505') {
+          // Unique constraint violation — occurrence already paid (race condition or stale state)
+          console.warn(`DB duplicate prevented: ${bill.name} on ${occurrenceDate} already exists.`);
+          store.removeExpenseLocal(newExpense.id);
+          store.showNotification({
+            type: 'info',
+            title: 'Already Paid',
+            message: `${bill.name} for ${occurrenceDate} was already recorded.`,
+          });
+          return;
+        }
+        console.warn('Failed to sync payment expense to database:', error.message);
+      }
     } catch (err) {
       console.warn('Failed to sync payment expense to database, local fallback active:', err);
     }
@@ -150,7 +182,7 @@ export async function payRecurringExpense(recurringId: string, customDate?: stri
 
   const updates = {
     payment_date: nextPayDate,
-    last_payment_date: payDate,
+    last_payment_date: occurrenceDate,
     status: nextStatus,
     updated_at: new Date().toISOString(),
   };
