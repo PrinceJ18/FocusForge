@@ -33,6 +33,8 @@ export type Database = {
           note: string;
           expense_date: string;
           created_at: string;
+          recurring_expense_id: string | null;
+          recurring_occurrence_date: string | null;
         };
       };
       tasks: {

@@ -25,10 +25,13 @@ export const saveProfile = async (userId: string, data: Partial<Profile>) => {
   }
 };
 
-export const loadUserData = async (userId: string) => {
+/**
+ * Loads only user profile and preferences from Supabase.
+ * For full data hydration (expenses, tasks, sessions, etc.), use the
+ * canonical loadUserData() exported from useStore.ts.
+ */
+export const loadUserProfileData = async (userId: string) => {
   try {
-    const { supabase } = await import('../lib/supabase');
-    
     // Fetch profile and preferences — budget lives in profiles
     const [profileData, prefsData] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),

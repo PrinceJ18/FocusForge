@@ -1,6 +1,7 @@
 import { Task, FocusSession, Expense, Profile } from '../store/useStore';
 import type { AppEvent } from './events';
 import { formatCurrency, formatFocusTime } from './formatUtils';
+import { classifyExpenses } from './statistics/expenseClassification';
 import { startOfWeek, subWeeks, endOfWeek, isThisMonth, parseISO } from 'date-fns';
 
 export interface Insight {
@@ -187,15 +188,19 @@ export function generateInsights({
     const monthlySpent = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
     const dayOfMonth = now.getDate();
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const dailyRate = dayOfMonth > 0 ? monthlySpent / dayOfMonth : 0;
-    const projectedSpend = dailyRate * daysInMonth;
+
+    // Phase 2B: Use variable spending only for daily rate prediction.
+    // Fixed recurring bills are lump sums, not daily variable spending.
+    const classified = classifyExpenses(monthExpenses);
+    const variableDailyRate = dayOfMonth > 0 ? classified.variableAmount / dayOfMonth : 0;
+    const projectedSpend = classified.fixedAmount + (variableDailyRate * daysInMonth);
 
     if (projectedSpend > profile.monthly_budget * 1.05 && dayOfMonth >= 7) {
       const overAmount = Math.round(projectedSpend - profile.monthly_budget);
       insights.push({
         id: 'budget-burn',
         title: 'Budget Runway Warning',
-        desc: `At your current burn rate (${formatCurrency(dailyRate)}/day), you are projected to exceed your monthly budget by ${formatCurrency(overAmount)}.`,
+        desc: `At your current burn rate (${formatCurrency(variableDailyRate)}/day variable spending), you are projected to exceed your monthly budget by ${formatCurrency(overAmount)}.`,
         recommendation: 'Pace daily expenses over the remaining days of the month to avoid overspending.',
         badge: 'Forecast Risk',
         color: '#ef4444',

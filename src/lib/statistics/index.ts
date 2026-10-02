@@ -7,3 +7,4 @@ export * from './dashboard';
 export * from './analytics';
 export * from './analyticsEngine';
 export * from './reports';
+export * from './expenseClassification';

@@ -1,6 +1,7 @@
 import { subDays, parseISO, isAfter, format, startOfWeek, subWeeks, addDays, isToday, isThisWeek, isThisMonth } from 'date-fns';
 import type { FocusSession, Task, Expense, Profile } from '../../store/useStore';
 import { formatCurrency } from '../formatUtils';
+import { classifyExpenses } from './expenseClassification';
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b', transport: '#06b6d4', shopping: '#ec4899',
@@ -111,7 +112,9 @@ export function calculateAnalyticsData(params: {
   // Insight generation
   const totalSpent = filteredExpenses.reduce((s, e) => s + e.amount, 0);
   const totalFocus = filteredSessions.reduce((s, f) => s + f.minutes, 0);
-  const avgDailySpend = totalSpent / days;
+  // Phase 2B: Use variable spending for daily average to avoid recurring bill inflation
+  const classifiedFiltered = classifyExpenses(filteredExpenses);
+  const avgDailySpend = classifiedFiltered.variableAmount / days;
   const avgDailyFocus = totalFocus / days;
   const highFocusDays = combined.filter((d) => d.focus > 60);
   const avgSpendOnHighFocusDays = highFocusDays.length > 0

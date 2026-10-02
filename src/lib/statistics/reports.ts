@@ -4,6 +4,7 @@ import type { DailyGoalHistory } from '../../store/useDailyGoalsStore';
 import { getEarnedBadgeIds, ALL_BADGES } from '../statsUtils';
 import { formatCurrency } from '../formatUtils';
 import { calculateProductivityScore } from '../scoreUtils';
+import { classifyExpenses } from './expenseClassification';
 
 export interface MonthlyReportData {
   yearMonth: string;
@@ -394,7 +395,9 @@ export function calculateMonthlyReportData(params: {
   // ═══════════════════════════════════════════════════
   // FINANCE EXTENDED — Phase 3.8
   // ═══════════════════════════════════════════════════
-  const avgDailySpending = daysInMonth > 0 ? Math.round(monthlySpending / daysInMonth) : 0;
+  // Phase 2B: Use variable expenses for daily average — recurring bills are lump sums, not daily rates
+  const classifiedMonth = classifyExpenses(monthExpenses);
+  const avgDailySpending = daysInMonth > 0 ? Math.round(classifiedMonth.variableAmount / daysInMonth) : 0;
   const largestExpenseItem = monthExpenses.length > 0
     ? monthExpenses.reduce((max, e) => e.amount > max.amount ? e : max, monthExpenses[0])
     : null;

@@ -78,10 +78,19 @@ export const loadUserData = async (userId: string) => {
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);
+  else if (expensesRes.error) console.warn('[loadUserData] Expenses load failed:', expensesRes.error.message);
+
   if (tasksRes.data) store.setTasks(tasksRes.data);
+  else if (tasksRes.error) console.warn('[loadUserData] Tasks load failed:', tasksRes.error.message);
+
   if (sessionsRes.data) store.setFocusSessions(sessionsRes.data);
+  else if (sessionsRes.error) console.warn('[loadUserData] Focus sessions load failed:', sessionsRes.error.message);
+
   if (goalsRes.data) store.setSavingsGoals(goalsRes.data);
+  else if (goalsRes.error) console.warn('[loadUserData] Savings goals load failed:', goalsRes.error.message);
+
   if (catsRes.data) store.setCustomCategories(catsRes.data);
+  else if (catsRes.error) console.warn('[loadUserData] Custom categories load failed:', catsRes.error.message);
   
   if (sectionsRes && sectionsRes.data) {
     store.setTaskSections(sectionsRes.data);

@@ -11,6 +11,7 @@ import {
   getDaysInMonth,
   getDate,
 } from 'date-fns';
+import { classifyExpenses } from './expenseClassification';
 import type { FocusSession, Task, Expense, Profile, SavingsGoal } from '../../store/useStore';
 import type { AppEvent } from '../events';
 import { calculateProductivityScore, calculateFinancialHealthScore } from '../scoreUtils';
@@ -396,7 +397,11 @@ export function calculateAnalyticsEngineData(params: {
 
   // 5. Finance Metrics (Strictly from Current Filtered Dataset)
   const totalSpent = currentExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const avgDailySpend = daysCount > 0 ? parseFloat((totalSpent / daysCount).toFixed(2)) : 0;
+
+  // Phase 2B: Separate fixed recurring from variable for rate calculations.
+  // Accounting totals (totalSpent, budgetUtilization, etc.) still use ALL expenses.
+  const classifiedCurrent = classifyExpenses(currentExpenses);
+  const avgDailySpend = daysCount > 0 ? parseFloat((classifiedCurrent.variableAmount / daysCount).toFixed(2)) : 0;
 
   // Period budget scaling
   const baseMonthlyBudget = profile?.monthly_budget || 0;
@@ -607,10 +612,27 @@ export function calculateAnalyticsEngineData(params: {
   }
 
   // 11. Predictive Forecast
+  // Phase 2B: Separate fixed recurring from variable for burn rate / projection.
+  // Fixed recurring bills are accounted for as lump sums, not divided across days.
   const dayOfMonth = getDate(now);
   const totalDaysInCurrentMonth = getDaysInMonth(now);
-  const dailyBurnRate = dayOfMonth > 0 ? monthlySpent / dayOfMonth : 0;
-  const projectedMonthEndSpend = Math.round(dailyBurnRate * totalDaysInCurrentMonth);
+
+  const classifiedMonthly = classifyExpenses(
+    expenses.filter((e) => {
+      try { return isThisMonth(parseISO(e.expense_date)); } catch { return false; }
+    })
+  );
+  const variableMonthlySpend = classifiedMonthly.variableAmount;
+  const fixedMonthlySpend = classifiedMonthly.fixedAmount;
+
+  // Daily burn rate uses ONLY variable spending — fixed bills are not daily behavior
+  const dailyBurnRate = dayOfMonth > 0 ? variableMonthlySpend / dayOfMonth : 0;
+
+  // Projection: actual fixed spend + projected variable spend for the full month
+  const projectedMonthEndSpend = Math.round(
+    fixedMonthlySpend + (dailyBurnRate * totalDaysInCurrentMonth)
+  );
+
   const remainingMonthBudget = baseMonthlyBudget - monthlySpent;
   const daysUntilBudgetExhaustion =
     dailyBurnRate > 0 && remainingMonthBudget > 0

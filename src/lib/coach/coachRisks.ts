@@ -126,7 +126,9 @@ export function evaluateBudgetExhaustionRisk(input: CoachInput): BudgetExhaustio
   const dailyExpenses = dailyGoalHistory.map(h => h.totalSpent);
   const { velocity, factor } = calculateSpendingVelocity(dailyExpenses);
 
-  const currentDailyBurn = analytics.avgDailySpend || (dayOfMonth > 0 ? spentSoFar / dayOfMonth : 0);
+  // Phase 2B: analytics.avgDailySpend now represents variable-only daily spending.
+  // The fallback also uses variable-only spending to avoid recurring bill inflation.
+  const currentDailyBurn = analytics.avgDailySpend || (dayOfMonth > 0 ? analytics.forecast.dailyBurnRate : 0);
   const effectiveBurnRate = currentDailyBurn * (velocity === 'accelerating' ? 1.2 : velocity === 'decelerating' ? 0.85 : 1.0);
 
   const projectedTotal = spentSoFar + effectiveBurnRate * daysLeftInMonth;
