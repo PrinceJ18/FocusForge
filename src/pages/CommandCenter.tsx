@@ -1039,10 +1039,12 @@ const BehaviourIntelligence: React.FC<{ coach: UseCoachReturn }> = memo(
 const IntelligenceTimeline: React.FC<{ coach: UseCoachReturn }> = memo(
   function IntelligenceTimeline({ coach }) {
     const events = coach.timeline.slice(0, 20);
-    if (events.length === 0) return null;
 
-    // Group by day: Today / Yesterday / Earlier using timestamp
+    // NOTE: useMemo MUST be called before any early return to satisfy
+    // React's Rules of Hooks (hooks must be called in the same order every render).
     const grouped = useMemo(() => {
+      if (events.length === 0) return [];
+
       const now = new Date();
       const todayStr = now.toISOString().slice(0, 10);
       const yesterday = new Date(now);
@@ -1068,6 +1070,8 @@ const IntelligenceTimeline: React.FC<{ coach: UseCoachReturn }> = memo(
 
       return groups.filter((g) => g.events.length > 0);
     }, [events]);
+
+    if (grouped.length === 0) return null;
 
     return (
       <div className="glass-card p-5 space-y-4" role="region" aria-label="Intelligence Timeline">

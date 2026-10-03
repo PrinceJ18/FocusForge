@@ -921,9 +921,11 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
   const { timeline } = coach;
   const events = timeline.slice(0, 20);
 
-  if (events.length === 0) return null;
-
+  // NOTE: useMemo MUST be called before any early return to satisfy
+  // React's Rules of Hooks (hooks must be called in the same order every render).
   const grouped = useMemo(() => {
+    if (events.length === 0) return [];
+
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
 
@@ -950,6 +952,8 @@ const TimelineFeed: React.FC<SectionProps> = memo(function TimelineFeed({
 
     return groups.filter((g) => g.events.length > 0);
   }, [events]);
+
+  if (grouped.length === 0) return null;
 
   const visibleGrouped = grouped
     .map((g) => ({

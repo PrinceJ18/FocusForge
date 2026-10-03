@@ -113,6 +113,61 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
     setExpandedForecastKey(prev => (prev === key ? null : key));
   }, []);
 
+  // Selected forecast metadata builder
+  // NOTE: This useMemo MUST be called before any early return to satisfy
+  // React's Rules of Hooks (hooks must be called in the same order every render).
+  const forecastDetails = useMemo(() => {
+    if (!expandedForecastKey || !predictions) return null;
+
+    switch (expandedForecastKey) {
+      case 'productivity':
+        return {
+          title: 'Productivity Outlook',
+          currentVal: `Current trajectory`,
+          predictedVal: `${predictions.expectedProductivityScore}/100 expected`,
+          confidence: predictions.confidence,
+          reasoning:
+            'Calculated via exponentially weighted moving averages of task completions and focus velocity.',
+        };
+      case 'grade':
+        return {
+          title: 'Projected Weekly Grade',
+          currentVal: `Current trajectory: Grade ${predictions.expectedWeeklyGrade}`,
+          predictedVal: `Grade ${predictions.expectedWeeklyGrade}`,
+          confidence: predictions.confidence,
+          reasoning:
+            'Based on consistency score, goal adherence, and streak sustainability across 7 days.',
+        };
+      case 'budget':
+        return {
+          title: 'Budget Runway Forecast',
+          currentVal:
+            predictions.daysUntilBudgetDepleted !== null && predictions.daysUntilBudgetDepleted !== undefined
+              ? `${predictions.daysUntilBudgetDepleted} days remaining`
+              : 'Within monthly allocation',
+          predictedVal: `Burn rate: ₹${Math.round(predictions.expectedMonthlySpending / 30)}/day`,
+          confidence: predictions.confidence,
+          reasoning:
+            'Analyzed from daily spending velocity and remaining calendar days in billing cycle.',
+        };
+      case 'focus':
+        return {
+          title: 'Focus Momentum & Trajectory',
+          currentVal: predictions.focusMomentumFactor
+            ? `${Math.round(predictions.focusMomentumFactor * 100)}% pace momentum`
+            : 'Standard momentum',
+          predictedVal: `${Math.round(predictions.expectedMonthlyFocusMinutes / 60)}h month-end projected`,
+          confidence: predictions.confidence,
+          reasoning:
+            habits?.bestFocusHour
+              ? `Your peak productivity hour is ${habits.bestFocusHour.timeWindow}. Maintaining this routine maximizes focus velocity.`
+              : 'Computed via decay-weighted moving averages of daily pomodoro sessions.',
+        };
+      default:
+        return null;
+    }
+  }, [expandedForecastKey, predictions, habits]);
+
   // ----------------------------------------------------
   // EMPTY STATE
   // ----------------------------------------------------
@@ -166,58 +221,6 @@ export const AiCoachWidget: React.FC<AiCoachWidgetProps> = memo(function AiCoach
     dailyBrief.primeFocusWindow ? `Prime focus window: ${dailyBrief.primeFocusWindow}` : null,
   ].filter((s): s is string => Boolean(s) && (s as string).length > 0);
 
-  // Selected forecast metadata builder
-  const forecastDetails = useMemo(() => {
-    if (!expandedForecastKey || !predictions) return null;
-
-    switch (expandedForecastKey) {
-      case 'productivity':
-        return {
-          title: 'Productivity Outlook',
-          currentVal: `Current trajectory`,
-          predictedVal: `${predictions.expectedProductivityScore}/100 expected`,
-          confidence: predictions.confidence,
-          reasoning:
-            'Calculated via exponentially weighted moving averages of task completions and focus velocity.',
-        };
-      case 'grade':
-        return {
-          title: 'Projected Weekly Grade',
-          currentVal: `Current trajectory: Grade ${predictions.expectedWeeklyGrade}`,
-          predictedVal: `Grade ${predictions.expectedWeeklyGrade}`,
-          confidence: predictions.confidence,
-          reasoning:
-            'Based on consistency score, goal adherence, and streak sustainability across 7 days.',
-        };
-      case 'budget':
-        return {
-          title: 'Budget Runway Forecast',
-          currentVal:
-            predictions.daysUntilBudgetDepleted !== null && predictions.daysUntilBudgetDepleted !== undefined
-              ? `${predictions.daysUntilBudgetDepleted} days remaining`
-              : 'Within monthly allocation',
-          predictedVal: `Burn rate: ₹${Math.round(predictions.expectedMonthlySpending / 30)}/day`,
-          confidence: predictions.confidence,
-          reasoning:
-            'Analyzed from daily spending velocity and remaining calendar days in billing cycle.',
-        };
-      case 'focus':
-        return {
-          title: 'Focus Momentum & Trajectory',
-          currentVal: predictions.focusMomentumFactor
-            ? `${Math.round(predictions.focusMomentumFactor * 100)}% pace momentum`
-            : 'Standard momentum',
-          predictedVal: `${Math.round(predictions.expectedMonthlyFocusMinutes / 60)}h month-end projected`,
-          confidence: predictions.confidence,
-          reasoning:
-            habits?.bestFocusHour
-              ? `Your peak productivity hour is ${habits.bestFocusHour.timeWindow}. Maintaining this routine maximizes focus velocity.`
-              : 'Computed via decay-weighted moving averages of daily pomodoro sessions.',
-        };
-      default:
-        return null;
-    }
-  }, [expandedForecastKey, predictions, dailyBrief, habits]);
 
   return (
     <DashboardWidget
