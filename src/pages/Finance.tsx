@@ -242,7 +242,7 @@ export default function Finance() {
     }
 
     return list;
-  }, [recurringStats, expenses, profile.monthly_budget, stats.totalSpent]);
+  }, [recurringStats, expenses, profile.monthly_budget, stats.totalSpent, recurringExpenses]);
 
   // ----------------------------------------------------
   // CALENDAR CALCULATION

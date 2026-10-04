@@ -277,12 +277,12 @@ export default function Dashboard() {
   }, [expenses]);
 
   // Quick Timer controllers
-  const handleStartTimer = (mins: number) => {
+  const handleStartTimer = useCallback((mins: number) => {
     setTimerMode('focus');
     setTimerSeconds(mins * 60);
     setTimerRunning(true);
     setPage('productivity');
-  };
+  }, [setTimerMode, setTimerSeconds, setTimerRunning, setPage]);
 
   const handleToggleTimer = () => {
     setTimerRunning(!timerRunning);
@@ -402,7 +402,7 @@ export default function Dashboard() {
   };
 
   // Toggle Task Completion Callback
-  const handleToggleTask = async (task: Task, currentlyCompleted: boolean, dateStr: string) => {
+  const handleToggleTask = useCallback(async (task: Task, currentlyCompleted: boolean, dateStr: string) => {
     const date = parseISO(dateStr);
 
     try {
@@ -414,7 +414,7 @@ export default function Dashboard() {
     } catch (err: unknown) {
       console.error('Failed to toggle task:', err);
     }
-  };
+  }, [user?.id]);
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -441,13 +441,14 @@ export default function Dashboard() {
   // ----------------------------------------------------
   // COMPUTED PROPERTIES
   // ----------------------------------------------------
-  const todayDate = new Date();
+  const primitiveTodayStr = new Date().toDateString();
+  const todayDate = useMemo(() => new Date(), [primitiveTodayStr]);
   const todayStr = format(todayDate, 'yyyy-MM-dd');
 
   // Resolve today's task occurrences using the shared recurrence helper
   const todayTaskOccurrences = useMemo(() => {
     return getTasksForDate(tasks, todayDate, taskCompletions);
-  }, [tasks, taskCompletions]);
+  }, [tasks, taskCompletions, todayDate]);
 
   const todayCompletedCount = getTodayCompletedTasks(tasks);
   const monthlyCompletedCount = getMonthlyCompletedTasks(tasks);

@@ -45,8 +45,6 @@ export const useStore = create<AppState>()(
         timerRunDurationSeconds: state.timerRunDurationSeconds,
         timerOwnerId: state.timerOwnerId,
         userTimerStates: state.userTimerStates,
-        events: state.events,
-        recurringExpenses: state.recurringExpenses,
         preferences: state.preferences,
       }),
     }
