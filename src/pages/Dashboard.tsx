@@ -79,6 +79,7 @@ export default function Dashboard() {
   const events = useStore(s => s.events);
   const recurringExpenses = useStore(s => s.recurringExpenses);
   const addExpenseLocal = useStore(s => s.addExpenseLocal);
+  const removeExpenseLocal = useStore(s => s.removeExpenseLocal);
   const addTaskLocal = useStore(s => s.addTaskLocal);
   const updateTaskLocal = useStore(s => s.updateTaskLocal);
   const removeTaskLocal = useStore(s => s.removeTaskLocal);
@@ -305,14 +306,24 @@ export default function Dashboard() {
         };
         addExpenseLocal(newExp);
         if (user) {
-          await supabase.from('expenses').insert({
+          const { data: inserted, error } = await supabase.from('expenses').insert({
             user_id: user.id,
             title: newExp.title,
             amount: newExp.amount,
             category: newExp.category,
             note: newExp.note,
             expense_date: newExp.expense_date,
-          });
+          }).select().single();
+          
+          if (error) {
+            removeExpenseLocal(newExp.id);
+            throw error;
+          }
+          
+          if (inserted) {
+            removeExpenseLocal(newExp.id);
+            addExpenseLocal(inserted);
+          }
         }
         setQuickExpenseName('');
         setQuickExpenseAmount('');

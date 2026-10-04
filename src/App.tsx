@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { useStore, loadUserData, checkAndUpdateGuestStreak, applyPreferencesToDOM } from './store/useStore';
+import { useDailyGoalsStore } from './store/useDailyGoalsStore';
 import { useTimerEngine } from './hooks/useTimerEngine';
 import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
 import { useArenaEngine } from './hooks/useArenaEngine';
@@ -169,6 +170,19 @@ export default function App() {
               daily_challenge_claims: { date: '', claimed: [] },
             },
           });
+          
+          useDailyGoalsStore.setState({
+            history: [],
+            customGoalProgress: {},
+            lastCompletedAllDate: '',
+            lastSnapshotDate: '',
+            notifiedGoalIds: [],
+            notifiedAllComplete: false,
+            notifiedDate: '',
+            dailyXPStart: 0,
+            dailyXPDate: ''
+          });
+          
           checkAndUpdateGuestStreak();
         }
       })();
