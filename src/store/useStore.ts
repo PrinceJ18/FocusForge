@@ -45,7 +45,6 @@ export const useStore = create<AppState>()(
         timerRunDurationSeconds: state.timerRunDurationSeconds,
         timerOwnerId: state.timerOwnerId,
         userTimerStates: state.userTimerStates,
-        splits: state.splits,
         events: state.events,
         recurringExpenses: state.recurringExpenses,
         preferences: state.preferences,
@@ -61,7 +60,7 @@ export const loadUserData = async (userId: string) => {
 
   const [
     expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes,
-    sectionsRes, completionsRes, streakRes
+    sectionsRes, completionsRes, streakRes, splitsRes
   ] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
@@ -75,6 +74,7 @@ export const loadUserData = async (userId: string) => {
     supabase.from('task_sections').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
     supabase.from('task_completions').select('*').eq('user_id', userId),
     (async () => { try { return await supabase.rpc('get_current_streak', { p_today: todayLocal }); } catch { return { data: null, error: { message: 'RPC not available' } }; } })(),
+    supabase.from('splits').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);
@@ -118,6 +118,12 @@ export const loadUserData = async (userId: string) => {
   
   if (prefsRes && prefsRes.data) {
     store.updatePreferencesLocal(prefsRes.data);
+  }
+
+  if (splitsRes && splitsRes.data) {
+    store.setSplits(splitsRes.data);
+  } else if (splitsRes && splitsRes.error) {
+    console.warn('[loadUserData] Splits load failed:', splitsRes.error.message);
   }
 
   // Determine current streak securely from server, fallback to profile if needed

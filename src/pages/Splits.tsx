@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, X, Users, TrendingDown, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { formatCurrency } from '../lib/formatUtils';
 import Modal from '../components/ui/Modal';
@@ -19,6 +20,7 @@ interface Split {
 
 export default function Splits() {
   const { splits, addSplitLocal, removeSplitLocal, setSplits, showNotification } = useStore();
+  const user = useStore(s => s.user);
   const [showAdd, setShowAdd] = useState(false);
   const [billAmount, setBillAmount] = useState('');
   const [peopleCount, setPeopleCount] = useState('');
@@ -30,13 +32,21 @@ export default function Splits() {
   const unsettled = splits.filter((s) => !s.settled);
   const settled = splits.filter((s) => s.settled);
 
-  const handleSettle = (id: string) => {
+  const handleSettle = async (id: string) => {
     setSplits(splits.map((s) => (s.id === id ? { ...s, settled: true } : s)));
+    if (user) {
+      const { error } = await supabase.from('splits').update({ settled: true }).eq('id', id).eq('user_id', user.id);
+      if (error) console.warn('[Splits] Settle DB update failed:', error.message);
+    }
     showNotification({ type: 'success', title: 'Split Settled', message: 'Split was marked as settled.' });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     removeSplitLocal(id);
+    if (user) {
+      const { error } = await supabase.from('splits').delete().eq('id', id).eq('user_id', user.id);
+      if (error) console.warn('[Splits] Delete DB failed:', error.message);
+    }
     showNotification({ type: 'info', title: 'Split Deleted', message: 'Split entry was removed.' });
   };
 
@@ -233,9 +243,33 @@ export default function Splits() {
       {showAdd && (
         <AddSplitModal
           onClose={() => setShowAdd(false)}
-          onAdd={(data) => {
-            addSplitLocal({ id: crypto.randomUUID(), ...data, settled: false, date: format(new Date(), 'yyyy-MM-dd') });
+          onAdd={async (data) => {
+            const optimisticSplit = { id: crypto.randomUUID(), ...data, settled: false, date: format(new Date(), 'yyyy-MM-dd') };
+            addSplitLocal(optimisticSplit);
             setShowAdd(false);
+
+            if (user) {
+              const { data: inserted, error } = await supabase.from('splits').insert({
+                user_id: user.id,
+                name: data.name,
+                amount: data.amount,
+                type: data.type,
+                date: optimisticSplit.date,
+                settled: false,
+              }).select().single();
+
+              if (error) {
+                removeSplitLocal(optimisticSplit.id);
+                showNotification({ type: 'error', title: 'Error', message: 'Failed to save split.' });
+                return;
+              }
+
+              if (inserted) {
+                removeSplitLocal(optimisticSplit.id);
+                addSplitLocal(inserted);
+              }
+            }
+
             showNotification({ type: 'success', title: 'Split Added', message: `Added ${formatCurrency(data.amount)} for ${data.name}` });
           }}
         />
