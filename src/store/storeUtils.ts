@@ -195,7 +195,12 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
     throw error;
   }
 
-  const result = data as any;
+  const result = data as {
+    completed_at: string | null;
+    total_xp: number;
+    xp_earned: number;
+    already_completed: boolean;
+  };
 
   if (task.recurrence_type && task.recurrence_type !== 'none') {
     store.addTaskCompletionLocal({
@@ -261,7 +266,9 @@ export const uncompleteTask = async (task: Task, date: Date, userId: string) => 
     throw error;
   }
 
-  const result = data as any;
+  const result = data as {
+    total_xp: number;
+  };
 
   if (task.recurrence_type && task.recurrence_type !== 'none') {
     store.removeTaskCompletionLocal(task.id, dateStr);
@@ -311,7 +318,9 @@ export const markTaskWontDo = async (task: Task, date: Date, userId: string) => 
   });
 
   if (error) throw error;
-  const result = data as any;
+  const result = data as {
+    completed_at: string | null;
+  };
 
   if (task.recurrence_type && task.recurrence_type !== 'none') {
     store.addTaskCompletionLocal({
