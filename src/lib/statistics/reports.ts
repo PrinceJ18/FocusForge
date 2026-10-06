@@ -1,5 +1,5 @@
 import { parseISO, format, getDaysInMonth, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
-import { useStore, type FocusSession, type Task, type Expense, type SavingsGoal, type Profile } from '../../store/useStore';
+import { useStore, type FocusSession, type Task, type Expense, type SavingsGoal, type Profile, type TaskCompletion } from '../../store/useStore';
 import type { DailyGoalHistory } from '../../store/useDailyGoalsStore';
 import { getEarnedBadgeIds, ALL_BADGES } from '../statsUtils';
 import { formatCurrency } from '../formatUtils';
