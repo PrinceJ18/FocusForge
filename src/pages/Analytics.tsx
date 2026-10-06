@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Brain,
   DollarSign,
@@ -17,8 +17,11 @@ import {
   AlertCircle,
   Plus,
   Play,
+  Loader2,
 } from 'lucide-react';
-import { useStore } from '../store/useStore';
+import { useStore, type Expense, type FocusSession } from '../store/useStore';
+import type { AppEvent } from '../lib/events';
+import { supabase } from '../lib/supabase';
 import {
   AreaChart,
   Area,
@@ -68,35 +71,143 @@ export default function Analytics() {
   const setPage = useStore(s => s.setPage);
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
   const coach = useCoach();
+  const user = useStore(s => s.user);
+
+  // Phase 5.7: Isolated historical cache for "All" time period
+  const [historicalAllCache, setHistoricalAllCache] = useState<{
+    expenses: Expense[];
+    focusSessions: FocusSession[];
+    events: AppEvent[];
+  } | null>(null);
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
+  const [fetchAllError, setFetchAllError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (period !== 'all' || historicalAllCache) return;
+
+    const fetchAllHistory = async () => {
+      setIsFetchingAll(true);
+      setFetchAllError(null);
+      try {
+        if (!user) throw new Error('User not authenticated.');
+
+        const fetchAllPaginated = async <T,>(
+          table: string,
+          select: string,
+          match: Record<string, string | number | boolean>
+        ): Promise<T[]> => {
+          let allData: T[] = [];
+          let from = 0;
+          const limit = 1000;
+          while (true) {
+            const { data, error } = await supabase
+              .from(table)
+              .select(select)
+              .match(match)
+              .range(from, from + limit - 1);
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            allData = allData.concat(data as T[]);
+            if (data.length < limit) break;
+            from += limit;
+          }
+          return allData;
+        };
+
+        const [expData, sesData, evtData] = await Promise.all([
+          fetchAllPaginated<Expense>('expenses', 'id, expense_date, amount, title, category, recurring_expense_id', { user_id: user.id }),
+          fetchAllPaginated<FocusSession>('focus_sessions', 'id, session_date, minutes, sessions_count', { user_id: user.id }),
+          fetchAllPaginated<AppEvent>('events', 'id, category, timestamp', { user_id: user.id, category: 'focus' }),
+        ]);
+
+        setHistoricalAllCache({
+          expenses: expData,
+          focusSessions: sesData,
+          events: evtData,
+        });
+      } catch (err) {
+        console.error('Failed to fetch full historical analytics data:', err);
+        setFetchAllError(err instanceof Error ? err.message : 'Failed to load historical data');
+      } finally {
+        setIsFetchingAll(false);
+      }
+    };
+    fetchAllHistory();
+  }, [period, historicalAllCache, user]);
+
+  const activeExpenses = period === 'all' && historicalAllCache ? historicalAllCache.expenses : expenses;
+  const activeSessions = period === 'all' && historicalAllCache ? historicalAllCache.focusSessions : focusSessions;
+  const activeEvents = period === 'all' && historicalAllCache ? historicalAllCache.events : events;
 
   // Compute rich analytics data via memoized engine
   const data = useMemo(() => {
     return calculateAnalyticsEngineData({
-      expenses,
-      focusSessions,
-      tasks,
+      expenses: activeExpenses,
+      focusSessions: activeSessions,
+      tasks, // Unbounded in store
       profile,
       savingsGoals,
-      events,
+      events: activeEvents,
       period,
     });
-  }, [expenses, focusSessions, tasks, profile, savingsGoals, events, period]);
+  }, [activeExpenses, activeSessions, tasks, profile, savingsGoals, activeEvents, period]);
 
   // Compute smart actionable insights
   const insights = useMemo(() => {
     return generateInsights({
       tasks,
-      focusSessions,
-      expenses,
+      focusSessions: activeSessions,
+      expenses: activeExpenses,
       profile,
-      events,
+      events: activeEvents,
     });
-  }, [tasks, focusSessions, expenses, profile, events]);
+  }, [tasks, activeSessions, activeExpenses, profile, activeEvents]);
+
+  const AnalyticsTabs = (
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <div className="tab-group">
+        {(
+          [
+            { id: '7d', label: '7 Days' },
+            { id: '30d', label: '30 Days' },
+            { id: '90d', label: '3 Months' },
+            { id: 'all', label: 'All Time' },
+          ] as const
+        ).map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setPeriod(p.id)}
+            className={`tab-pill ${period === p.id ? 'active' : ''}`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {data.hasData && !isFetchingAll && !fetchAllError && (
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
+          <div className="px-3 py-1.5 rounded-xl bg-background-card-hover border border-border flex items-center gap-2">
+            <span className="text-text-muted">Total Spend:</span>
+            <span className="font-bold text-red-400 font-mono">
+              {formatCurrency(data.totalSpent)}
+            </span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-background-card-hover border border-border flex items-center gap-2">
+            <span className="text-text-muted">Total Focus:</span>
+            <span className="font-bold text-purple-400 font-mono">
+              {formatFocusTime(data.totalFocusMin)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   // If user has zero data across all models
-  if (!data.hasData) {
+  if (!data.hasData && !isFetchingAll) {
     return (
       <div className="page-enter py-8 space-y-6 max-w-4xl mx-auto">
+        {AnalyticsTabs}
         <EmptyState
           icon={Activity}
           title="No Analytics Available Yet"
@@ -149,44 +260,44 @@ export default function Analytics() {
     );
   }
 
+  // Phase 5.7: Loading and Error States for Lifetime Analytics
+  if (period === 'all' && isFetchingAll) {
+    return (
+      <div className="page-enter space-y-6 text-left pb-16">
+        {AnalyticsTabs}
+        <div className="glass-card p-12 flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]">
+          <Loader2 size={32} className="animate-spin text-primary" style={{ color: '#06b6d4' }} />
+          <h3 className="text-xl font-bold text-text-primary">Loading Lifetime Analytics...</h3>
+          <p className="text-sm text-text-muted">Retrieving your complete historical dataset</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (period === 'all' && fetchAllError) {
+    return (
+      <div className="page-enter space-y-6 text-left pb-16">
+        {AnalyticsTabs}
+        <div className="glass-card p-12 flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+            <AlertCircle size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-text-primary">Failed to load lifetime data</h3>
+          <p className="text-sm text-text-muted">{fetchAllError}</p>
+          <Button variant="primary" onClick={() => setPeriod('30d')}>
+            Return to 30 Days
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-enter space-y-6 text-left pb-16">
       {/* ═══ 1. PERIOD CONTROLS & TOP SUMMARY ═══ */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        <div className="tab-group">
-          {(
-            [
-              { id: '7d', label: '7 Days' },
-              { id: '30d', label: '30 Days' },
-              { id: '90d', label: '3 Months' },
-              { id: 'all', label: 'All Time' },
-            ] as const
-          ).map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setPeriod(p.id)}
-              className={`tab-pill ${period === p.id ? 'active' : ''}`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+      {AnalyticsTabs}
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
-          <div className="px-3 py-1.5 rounded-xl bg-background-card-hover border border-border flex items-center gap-2">
-            <span className="text-text-muted">Total Spend:</span>
-            <span className="font-bold text-red-400 font-mono">
-              {formatCurrency(data.totalSpent)}
-            </span>
-          </div>
-          <div className="px-3 py-1.5 rounded-xl bg-background-card-hover border border-border flex items-center gap-2">
-            <span className="text-text-muted">Total Focus:</span>
-            <span className="font-bold text-purple-400 font-mono">
-              {formatFocusTime(data.totalFocusMin)}
-            </span>
-          </div>
-        </div>
-      </div>
+
 
       {/* ═══ 2. TOP KPI SCORECARDS GRID ═══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
