@@ -157,13 +157,14 @@ export default function Dashboard() {
       resetPref();
     }
   }, [updatePreferencesLocal, user]);
+  const lifetimeAggregates = useStore(s => s.lifetimeAggregates);
 
   // ----------------------------------------------------
   // STATISTICS & METRICS
   // ----------------------------------------------------
   const stats = useMemo(() => {
-    return calculateDashboardStatistics({ expenses, tasks, focusSessions, savingsGoals, profile });
-  }, [expenses, tasks, focusSessions, savingsGoals, profile]);
+    return calculateDashboardStatistics({ expenses, tasks, focusSessions, savingsGoals, profile, lifetimeAggregates });
+  }, [expenses, tasks, focusSessions, savingsGoals, profile, lifetimeAggregates]);
 
   // Time based greeting
   const greeting = useMemo(() => {

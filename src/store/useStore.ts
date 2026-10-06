@@ -56,23 +56,42 @@ export const loadUserData = async (userId: string) => {
   const store = useStore.getState();
   const todayLocal = formatLocalDate(new Date());
 
+  // Phase 5.5: Deterministic 90-day cutoff for bounded initial hydration.
+  // Computed once per loadUserData() call for consistency.
+  // Uses yyyy-MM-dd format for DATE columns, ISO string for TIMESTAMPTZ.
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - 90);
+  const cutoffDateStr = formatLocalDate(cutoffDate); // yyyy-MM-dd for DATE columns
+  const cutoffTimestamp = cutoffDate.toISOString();   // ISO 8601 for TIMESTAMPTZ columns
+
   const [
     expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes,
-    sectionsRes, completionsRes, streakRes, splitsRes
+    sectionsRes, completionsRes, streakRes, splitsRes,
+    // Phase 5.4: Server-side aggregate RPCs
+    focusAggRes, taskAggRes, monthsAggRes
   ] = await Promise.all([
-    supabase.from('expenses').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    // Phase 5.5: Bounded — expense_date (DATE) >= 90-day cutoff
+    supabase.from('expenses').select('*').eq('user_id', userId).gte('expense_date', cutoffDateStr).order('created_at', { ascending: false }),
+    // Phase 5.5: NOT bounded — tasks must include all pending/recurring tasks regardless of age
     supabase.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-    supabase.from('focus_sessions').select('*').eq('user_id', userId).order('session_date', { ascending: false }),
+    // Phase 5.5: Bounded — session_date (DATE) >= 90-day cutoff
+    supabase.from('focus_sessions').select('*').eq('user_id', userId).gte('session_date', cutoffDateStr).order('session_date', { ascending: false }),
     supabase.from('savings_goals').select('*').eq('user_id', userId),
     supabase.from('custom_categories').select('*').eq('user_id', userId),
     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-    supabase.from('events').select('*').eq('user_id', userId).order('timestamp', { ascending: false }),
+    // Phase 5.5: Bounded — timestamp (TIMESTAMPTZ) >= 90-day cutoff
+    supabase.from('events').select('*').eq('user_id', userId).gte('timestamp', cutoffTimestamp).order('timestamp', { ascending: false }),
     supabase.from('recurring_expenses').select('*').eq('user_id', userId).order('payment_date', { ascending: true }),
     supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
     supabase.from('task_sections').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
-    supabase.from('task_completions').select('*').eq('user_id', userId),
+    // Phase 5.5: Bounded — occurrence_date (DATE) >= 90-day cutoff
+    supabase.from('task_completions').select('*').eq('user_id', userId).gte('occurrence_date', cutoffDateStr),
     (async () => { try { return await supabase.rpc('get_current_streak', { p_today: todayLocal }); } catch { return { data: null, error: { message: 'RPC not available' } }; } })(),
     supabase.from('splits').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    // Phase 5.4: Aggregate RPCs — no parameters needed, auth.uid() is used server-side
+    (async () => { try { return await supabase.rpc('get_lifetime_focus_stats'); } catch { return { data: null, error: { message: 'Focus aggregate RPC not available' } }; } })(),
+    (async () => { try { return await supabase.rpc('get_lifetime_task_stats'); } catch { return { data: null, error: { message: 'Task aggregate RPC not available' } }; } })(),
+    (async () => { try { return await supabase.rpc('get_available_months'); } catch { return { data: null, error: { message: 'Available months RPC not available' } }; } })(),
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);
@@ -155,5 +174,79 @@ export const loadUserData = async (userId: string) => {
     });
   }
 
+  // ──────────────────────────────────────────────────────────────
+  // Phase 5.4: Consume server-side lifetime aggregates
+  // Falls back to client-side array computation if RPCs fail,
+  // so lifetime metrics are never silently displayed as zero.
+  // ──────────────────────────────────────────────────────────────
+  {
+    // Focus aggregate
+    const focusAggData = focusAggRes.data;
+    const focusRow = Array.isArray(focusAggData) ? focusAggData[0] : focusAggData;
+    if (focusRow && typeof focusRow === 'object' && 'total_minutes' in focusRow) {
+      store.setLifetimeAggregates({
+        lifetimeFocusMinutes: Number(focusRow.total_minutes) || 0,
+        lifetimeFocusSessions: Number(focusRow.total_sessions) || 0,
+      });
+    } else {
+      // Fallback: compute from already-loaded client-side arrays
+      if (focusAggRes.error) console.warn('[loadUserData] Focus aggregate RPC failed, using client fallback:', focusAggRes.error.message);
+      const sessions = useStore.getState().focusSessions;
+      store.setLifetimeAggregates({
+        lifetimeFocusMinutes: sessions.reduce((sum, s) => sum + s.minutes, 0),
+        lifetimeFocusSessions: sessions.reduce((sum, s) => sum + s.sessions_count, 0),
+      });
+    }
+
+    // Task aggregate
+    const taskAggData = taskAggRes.data;
+    const taskRow = Array.isArray(taskAggData) ? taskAggData[0] : taskAggData;
+    if (taskRow && typeof taskRow === 'object' && 'completed_tasks' in taskRow) {
+      store.setLifetimeAggregates({
+        lifetimeCompletedTasks: Number(taskRow.completed_tasks) || 0,
+      });
+    } else {
+      // Fallback: compute from already-loaded client-side arrays
+      if (taskAggRes.error) console.warn('[loadUserData] Task aggregate RPC failed, using client fallback:', taskAggRes.error.message);
+      const currentStore = useStore.getState();
+      const nonRecurring = currentStore.tasks.filter(
+        (t) => (!t.recurrence_type || t.recurrence_type === 'none') && t.status === 'completed'
+      ).length;
+      const recurring = currentStore.taskCompletions.filter(
+        (c) => c.status === 'completed'
+      ).length;
+      store.setLifetimeAggregates({
+        lifetimeCompletedTasks: nonRecurring + recurring,
+      });
+    }
+
+    // Available months aggregate
+    const monthsAggData = monthsAggRes.data;
+    if (Array.isArray(monthsAggData) && monthsAggData.length > 0) {
+      store.setLifetimeAggregates({
+        availableMonths: monthsAggData.map((row: { month: string }) => row.month).filter(Boolean),
+      });
+    } else {
+      // Fallback: compute from already-loaded client-side arrays
+      if (monthsAggRes.error) console.warn('[loadUserData] Available months RPC failed, using client fallback:', monthsAggRes.error.message);
+      const currentStore = useStore.getState();
+      const monthsSet = new Set<string>();
+      currentStore.focusSessions.forEach((s) => {
+        if (s.session_date) monthsSet.add(s.session_date.slice(0, 7));
+      });
+      currentStore.expenses.forEach((e) => {
+        if (e.expense_date) monthsSet.add(e.expense_date.slice(0, 7));
+      });
+      currentStore.tasks.forEach((t) => {
+        if (t.completed_at) monthsSet.add(t.completed_at.slice(0, 7));
+        if (t.created_at) monthsSet.add(t.created_at.slice(0, 7));
+      });
+      store.setLifetimeAggregates({
+        availableMonths: Array.from(monthsSet).sort().reverse(),
+      });
+    }
+  }
+
   store.setDataLoaded(true);
 };
+

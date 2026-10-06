@@ -120,9 +120,10 @@ export function calculateMonthlyReportData(params: {
   savingsGoals: SavingsGoal[];
   profile: Profile;
   goalsHistory: DailyGoalHistory[];
+  taskCompletions?: TaskCompletion[];
   yearMonth: string;
 }): MonthlyReportData {
-  const { expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory, yearMonth } = params;
+  const { expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory, taskCompletions, yearMonth } = params;
 
   // Date Parsing
   const dateParts = yearMonth.split('-');
@@ -138,7 +139,7 @@ export function calculateMonthlyReportData(params: {
   // Raw Month Filtered Lists
   const monthExpenses = expenses.filter(e => e?.expense_date && isDateInMonth(e.expense_date));
   const monthSessions = focusSessions.filter(s => s?.session_date && isDateInMonth(s.session_date));
-  const comps = useStore.getState().taskCompletions || [];
+  const comps = taskCompletions || useStore.getState().taskCompletions || [];
   const monthCompletions = comps.filter(c => c?.occurrence_date && isDateInMonth(c.occurrence_date));
   const monthTasks = tasks.filter(t => (!t.recurrence_type || t.recurrence_type === 'none') && t?.completed_at && isDateInMonth(t.completed_at));
   const monthGoalsHistory = goalsHistory.filter(h => h?.date && isDateInMonth(h.date));

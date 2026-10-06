@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { useStore, loadUserData, checkAndUpdateGuestStreak, applyPreferencesToDOM } from './store/useStore';
+import { defaultLifetimeAggregates } from './store/slices/navigationSlice';
 import { useDailyGoalsStore } from './store/useDailyGoalsStore';
 import { useTimerEngine } from './hooks/useTimerEngine';
 import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
@@ -157,6 +158,8 @@ export default function App() {
             taskSections: [],
             taskCompletions: [],
             dataLoaded: false,
+            // Phase 5.4: Reset server-side aggregates on logout to prevent user data leaks
+            lifetimeAggregates: { ...defaultLifetimeAggregates },
             profile: {
               xp: 0,
               streak: 0,

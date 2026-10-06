@@ -319,9 +319,29 @@ export interface EventsSlice {
   addEventLocal: (event: AppEvent) => void;
 }
 
+/**
+ * Server-side lifetime aggregates from Phase 5.3 RPCs.
+ * These are the authoritative source for all-time metrics,
+ * replacing client-side full-array reductions.
+ */
+export interface LifetimeAggregates {
+  /** Total lifetime focus minutes (from get_lifetime_focus_stats RPC) */
+  lifetimeFocusMinutes: number;
+  /** Total lifetime focus session count (from get_lifetime_focus_stats RPC) */
+  lifetimeFocusSessions: number;
+  /** Total lifetime completed tasks (from get_lifetime_task_stats RPC) */
+  lifetimeCompletedTasks: number;
+  /** Distinct YYYY-MM periods with user activity (from get_available_months RPC) */
+  availableMonths: string[];
+}
+
 export interface GlobalSlice {
   dataLoaded: boolean;
   setDataLoaded: (loaded: boolean) => void;
+
+  /** Server-side lifetime aggregates — authoritative for all-time metrics */
+  lifetimeAggregates: LifetimeAggregates;
+  setLifetimeAggregates: (aggregates: Partial<LifetimeAggregates>) => void;
 }
 
 export type AppState = AuthSlice & NavigationSlice & FinanceSlice & ProductivitySlice & FocusSlice & SettingsSlice & EventsSlice & GlobalSlice;

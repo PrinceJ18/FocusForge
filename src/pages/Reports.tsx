@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, type FocusSession, type Expense, type TaskCompletion } from '../store/useStore';
 import { useDailyGoalsStore } from '../store/useDailyGoalsStore';
 import { calculateMonthlyReportData } from '../lib/statistics';
 import { formatFocusTime, formatCurrency } from '../lib/formatUtils';
 import {
   Brain, CheckSquare, Wallet, Target, Trophy, Flame, TrendingUp,
   ArrowLeft, ArrowUpRight, Award, Zap, BookOpen, Share2, Download,
-  Printer, Lightbulb, ArrowUp, ArrowDown, Minus, Star, FileText
+  Printer, Lightbulb, ArrowUp, ArrowDown, Minus, Star, FileText, Loader2
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
 import {
@@ -44,11 +45,21 @@ export default function Reports() {
   const savingsGoals = useStore(s => s.savingsGoals);
   const profile = useStore(s => s.profile);
   const setPage = useStore(s => s.setPage);
+  const serverAvailableMonths = useStore(s => s.lifetimeAggregates.availableMonths);
   const { history: goalsHistory } = useDailyGoalsStore();
   const coach = useCoach();
 
   const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+
+  // Phase 5.6: Isolated historical cache
+  const [historicalCache, setHistoricalCache] = useState<Record<string, {
+    expenses: Expense[];
+    focusSessions: FocusSession[];
+    taskCompletions: TaskCompletion[];
+  }>>({});
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedMonth) {
@@ -59,28 +70,37 @@ export default function Reports() {
     }
   }, [selectedMonth]);
 
-  // Generate unique list of months with activity
+  // Phase 5.4: Use server-side available months, merging localStorage-only goalsHistory months.
+  // Falls back to full client-side scan if server aggregate is empty (e.g. new user or RPC failure).
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
 
-    focusSessions.forEach(s => {
-      if (s?.session_date && typeof s.session_date === 'string') {
-        monthsSet.add(s.session_date.slice(0, 7));
-      }
-    });
-    expenses.forEach(e => {
-      if (e?.expense_date && typeof e.expense_date === 'string') {
-        monthsSet.add(e.expense_date.slice(0, 7));
-      }
-    });
-    tasks.forEach(t => {
-      if (t?.completed_at && typeof t.completed_at === 'string') {
-        monthsSet.add(t.completed_at.slice(0, 7));
-      }
-      if (t?.created_at && typeof t.created_at === 'string') {
-        monthsSet.add(t.created_at.slice(0, 7));
-      }
-    });
+    // Server-side months (from get_available_months RPC — covers focus_sessions, expenses, tasks)
+    if (serverAvailableMonths.length > 0) {
+      serverAvailableMonths.forEach(m => monthsSet.add(m));
+    } else {
+      // Fallback: client-side scan (identical to previous implementation)
+      focusSessions.forEach(s => {
+        if (s?.session_date && typeof s.session_date === 'string') {
+          monthsSet.add(s.session_date.slice(0, 7));
+        }
+      });
+      expenses.forEach(e => {
+        if (e?.expense_date && typeof e.expense_date === 'string') {
+          monthsSet.add(e.expense_date.slice(0, 7));
+        }
+      });
+      tasks.forEach(t => {
+        if (t?.completed_at && typeof t.completed_at === 'string') {
+          monthsSet.add(t.completed_at.slice(0, 7));
+        }
+        if (t?.created_at && typeof t.created_at === 'string') {
+          monthsSet.add(t.created_at.slice(0, 7));
+        }
+      });
+    }
+
+    // Always merge goalsHistory months (localStorage-only, not covered by RPC)
     goalsHistory.forEach(h => {
       if (h?.date && typeof h.date === 'string') {
         monthsSet.add(h.date.slice(0, 7));
@@ -89,7 +109,7 @@ export default function Reports() {
 
     // Sort descending (newest first)
     return Array.from(monthsSet).sort().reverse();
-  }, [focusSessions, expenses, tasks, goalsHistory]);
+  }, [serverAvailableMonths, focusSessions, expenses, tasks, goalsHistory]);
 
   const currentMonthStr = useMemo(() => format(new Date(), 'yyyy-MM'), []);
 
@@ -114,19 +134,93 @@ export default function Reports() {
     });
   }, [availableMonths, expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory, currentMonthStr]);
 
+  // Phase 5.6: Fetch missing historical data on-demand without mutating the 90-day store arrays
+  const storeCompletions = useStore(s => s.taskCompletions);
+  const user = useStore(s => s.user);
+
+  const needsHistory = useMemo(() => {
+    if (!selectedMonth) return false;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 90);
+    const cutoffDateStr = format(cutoffDate, 'yyyy-MM-dd');
+
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const prevM = m === 1 ? 12 : m - 1;
+    const prevY = m === 1 ? y - 1 : y;
+    const prevYearMonthStr = `${prevY}-${String(prevM).padStart(2, '0')}`;
+    const prevMonthStart = `${prevYearMonthStr}-01`;
+
+    // If the previous month starts before our 90-day cutoff, we need to fetch historical data
+    return prevMonthStart < cutoffDateStr;
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    if (!selectedMonth || !needsHistory) return;
+    if (historicalCache[selectedMonth]) return; // Already fetched
+
+    const fetchHistory = async () => {
+      setIsFetchingHistory(true);
+      setHistoryError(null);
+      try {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        const prevM = m === 1 ? 12 : m - 1;
+        const prevY = m === 1 ? y - 1 : y;
+        const prevMonthStart = `${prevY}-${String(prevM).padStart(2, '0')}-01`;
+        
+        // Fetch up to the end of the selected month
+        // m is already 1-indexed, so new Date(y, m, 1) points to the FIRST day of the NEXT month
+        const nextDate = new Date(y, m, 1);
+        const nextMonthStart = format(nextDate, 'yyyy-MM-dd');
+
+        if (!user) throw new Error('User not authenticated.');
+
+        const [expRes, sesRes, compRes] = await Promise.all([
+          supabase.from('expenses').select('*').eq('user_id', user.id).gte('expense_date', prevMonthStart).lt('expense_date', nextMonthStart),
+          supabase.from('focus_sessions').select('*').eq('user_id', user.id).gte('session_date', prevMonthStart).lt('session_date', nextMonthStart),
+          supabase.from('task_completions').select('*').eq('user_id', user.id).gte('occurrence_date', prevMonthStart).lt('occurrence_date', nextMonthStart),
+        ]);
+
+        if (expRes.error) throw expRes.error;
+        if (sesRes.error) throw sesRes.error;
+        if (compRes.error) throw compRes.error;
+
+        setHistoricalCache(prev => ({
+          ...prev,
+          [selectedMonth]: {
+            expenses: expRes.data || [],
+            focusSessions: sesRes.data || [],
+            taskCompletions: compRes.data || []
+          }
+        }));
+      } catch (err) {
+        console.error('Failed to fetch historical report data:', err);
+        setHistoryError(err instanceof Error ? err.message : 'Failed to load historical data');
+      } finally {
+        setIsFetchingHistory(false);
+      }
+    };
+    fetchHistory();
+  }, [selectedMonth, needsHistory, historicalCache, user]);
+
   // Compute detailed report data if a month is selected
   const reportData = useMemo(() => {
     if (!selectedMonth) return null;
+    
+    const hist = historicalCache[selectedMonth];
+    if (needsHistory && !hist) return null; // loading or error state handled below
+
     return calculateMonthlyReportData({
-      expenses,
-      tasks,
-      focusSessions,
+      // Substitute isolated historical data if available; otherwise fallback to hydrated store
+      expenses: hist ? hist.expenses : expenses,
+      tasks: tasks, // tasks are inherently unbounded
+      focusSessions: hist ? hist.focusSessions : focusSessions,
+      taskCompletions: hist ? hist.taskCompletions : storeCompletions,
       savingsGoals,
       profile,
       goalsHistory,
       yearMonth: selectedMonth
     });
-  }, [selectedMonth, expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory]);
+  }, [selectedMonth, historicalCache, needsHistory, expenses, tasks, focusSessions, storeCompletions, savingsGoals, profile, goalsHistory]);
 
   const handleShare = () => {
     if (!reportData) return;
@@ -169,6 +263,38 @@ export default function Reports() {
       <div className="page-enter space-y-6 text-left">
         {ReportToggle}
         <WeeklyReport />
+      </div>
+    );
+  }
+
+  // Phase 5.6: Loading and Error States for Historical Reports
+  if (selectedMonth && needsHistory && isFetchingHistory) {
+    return (
+      <div className="page-enter space-y-6 text-left pb-12">
+        {ReportToggle}
+        <div className="glass-card p-12 flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]">
+          <Loader2 size={32} className="animate-spin text-primary" style={{ color: '#06b6d4' }} />
+          <h3 className="text-xl font-bold text-text-primary">Loading Historical Report...</h3>
+          <p className="text-sm text-text-muted">Fetching historical data for {selectedMonth}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedMonth && needsHistory && historyError) {
+    return (
+      <div className="page-enter space-y-6 text-left pb-12">
+        {ReportToggle}
+        <div className="glass-card p-12 flex flex-col items-center justify-center text-center space-y-4 min-h-[400px]">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+            <FileText size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-text-primary">Failed to load report</h3>
+          <p className="text-sm text-text-muted">{historyError}</p>
+          <Button variant="primary" onClick={() => setSelectedMonth(null)}>
+            Return to Reports
+          </Button>
+        </div>
       </div>
     );
   }

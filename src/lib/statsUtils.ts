@@ -150,17 +150,30 @@ export const ALL_BADGES = [
 /**
  * Dynamically compute earned badge IDs from current stats.
  * This is the SINGLE SOURCE OF TRUTH for badge status across the entire app.
+ *
+ * Phase 5.4: Accepts optional lifetimeAggregates for server-side lifetime counts.
+ * When provided, badge checks use aggregates instead of scanning full arrays.
  */
 export function getEarnedBadgeIds(params: {
   profile: Profile;
   focusSessions: FocusSession[];
   tasks: Task[];
   savingsGoals: SavingsGoal[];
+  /** Phase 5.4: Optional server-side aggregates for lifetime metrics */
+  lifetimeAggregates?: {
+    lifetimeFocusSessions?: number;
+    lifetimeCompletedTasks?: number;
+  };
 }): Set<string> {
-  const { profile, focusSessions, tasks, savingsGoals } = params;
+  const { profile, focusSessions, tasks, savingsGoals, lifetimeAggregates } = params;
 
-  const completedFocusSessions = getAllTimeFocusSessions(focusSessions);
-  const completedTasks = getCompletedTasksCount(tasks);
+  // Phase 5.4: Use server-side aggregates when available, else fall back to array scan
+  const completedFocusSessions = lifetimeAggregates?.lifetimeFocusSessions != null
+    ? lifetimeAggregates.lifetimeFocusSessions
+    : getAllTimeFocusSessions(focusSessions);
+  const completedTasks = lifetimeAggregates?.lifetimeCompletedTasks != null
+    ? lifetimeAggregates.lifetimeCompletedTasks
+    : getCompletedTasksCount(tasks);
 
   // Start with badges already persisted in profile
   const earned = new Set(profile.badges.map((b) => b.id));

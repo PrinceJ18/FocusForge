@@ -1,4 +1,5 @@
 import type { FocusSession, Task, Expense, SavingsGoal, Profile } from '../../store/useStore';
+import type { LifetimeAggregates } from '../../store/slices/types';
 import {
   calculateTodayFocus,
   calculateTodaySessions,
@@ -51,13 +52,27 @@ export function calculateDashboardStatistics(params: {
   focusSessions: FocusSession[];
   savingsGoals: SavingsGoal[];
   profile: Profile;
+  /** Phase 5.4: Optional server-side aggregates. When provided, lifetime metrics use these instead of array scans. */
+  lifetimeAggregates?: LifetimeAggregates;
 }): DashboardStats {
-  const { expenses, tasks, focusSessions, savingsGoals, profile } = params;
+  const { expenses, tasks, focusSessions, savingsGoals, profile, lifetimeAggregates } = params;
 
-  const completedTasks = calculateCompletedTasks(tasks);
+  // Phase 5.4: Use server-side aggregates for lifetime metrics when available,
+  // falling back to client-side calculation for backward compatibility
+  const completedTasks = lifetimeAggregates
+    ? lifetimeAggregates.lifetimeCompletedTasks
+    : calculateCompletedTasks(tasks);
   const totalTasks = tasks?.length || 0;
-  const totalFocusMinutes = calculateAllTimeFocusMinutes(focusSessions);
-  const earnedBadges = getEarnedBadgeIds({ profile, focusSessions, tasks, savingsGoals });
+  const totalFocusMinutes = lifetimeAggregates
+    ? lifetimeAggregates.lifetimeFocusMinutes
+    : calculateAllTimeFocusMinutes(focusSessions);
+  const earnedBadges = getEarnedBadgeIds({
+    profile,
+    focusSessions,
+    tasks,
+    savingsGoals,
+    lifetimeAggregates,
+  });
   const streak = profile?.streak || 0;
 
   const { totalSpent, available, budgetPct } = calculateBudgetUsage(expenses, profile.monthly_budget);
@@ -123,3 +138,4 @@ export function calculateDashboardStatistics(params: {
     budgetColor,
   };
 }
+
