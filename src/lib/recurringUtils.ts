@@ -96,10 +96,9 @@ export async function payRecurringExpense(recurringId: string) {
   const bill = store.recurringExpenses.find(r => r.id === recurringId);
   if (!bill) return;
 
-  // The occurrence/accounting date is ALWAYS the scheduled due date.
-  // This ensures early payments (Oct 10) and late payments (Oct 18) both
-  // record the expense on the scheduled occurrence date (Oct 15).
+  // The occurrence date (scheduled due date) remains the canonical identity for idempotency
   const occurrenceDate = bill.payment_date;
+  const actualPaymentDate = format(new Date(), 'yyyy-MM-dd');
 
   // Prevent duplicate confirmation for the same occurrence date (frontend guard)
   const alreadyProcessed = store.expenses.some(
@@ -117,14 +116,14 @@ export async function payRecurringExpense(recurringId: string) {
 
   const nextPayDate = calculateNextPaymentDate(bill, occurrenceDate);
 
-  // 1. Create the actual expense record
+  // 1. Create the actual expense record using actual execution date
   const newExpense: Expense = {
     id: crypto.randomUUID(),
     title: bill.name,
     amount: bill.amount,
     category: bill.category,
     note: `Recurring bill payment for ${bill.name}`,
-    expense_date: occurrenceDate,
+    expense_date: actualPaymentDate,
     created_at: new Date().toISOString(),
     recurring_expense_id: bill.id,
     recurring_occurrence_date: occurrenceDate,
