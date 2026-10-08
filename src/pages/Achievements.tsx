@@ -49,7 +49,7 @@ const XP_EVENT_MAP: Record<string, string> = {
   xp_earned: 'Action Completed',
   badge_earned: 'Badge Earned'
 };
-
+// Single source of truth for month-level financial calculations.
 export default function Achievements() {
   const expenses = useStore(s => s.expenses);
   const tasks = useStore(s => s.tasks);
