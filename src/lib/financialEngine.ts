@@ -16,6 +16,9 @@ export interface FinancialState {
   
   // 3. Budgets & Limits
   monthlyBudget: number;
+  rawRemainingBudget: number;
+  availableBudget: number;
+  budgetDeficit: number;
   discretionaryRemainingBudget: number;
   dailyAllowance: number;
   
@@ -107,7 +110,14 @@ export function calculateFinancialState(
   // --- C. DISCRETIONARY REMAINING BUDGET ---
   // MonthlyBudget - ActualSpending - UnpaidObligations
   const monthlyBudget = profileBudget || 0;
-  const discretionaryRemainingBudget = Math.max(0, monthlyBudget - monthlySpent - reservedBillsAmount);
+  
+  // Phase 7.3.1A: Expose explicit raw, available, and deficit states
+  const rawRemainingBudget = monthlyBudget - monthlySpent - reservedBillsAmount;
+  const availableBudget = Math.max(0, rawRemainingBudget);
+  const budgetDeficit = Math.max(0, -rawRemainingBudget);
+  
+  // Kept for backward compatibility
+  const discretionaryRemainingBudget = availableBudget;
 
   // --- D. DAILY ALLOWANCE ---
   // Pacing target based on discretionary budget spread over remaining days.
@@ -142,6 +152,9 @@ export function calculateFinancialState(
     upcomingBillsAmount,
 
     monthlyBudget,
+    rawRemainingBudget,
+    availableBudget,
+    budgetDeficit,
     discretionaryRemainingBudget,
     dailyAllowance,
 
