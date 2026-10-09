@@ -53,6 +53,8 @@ export interface DashboardContextData {
   savingsSummary: any;
   todayExpensesAmount: number;
   budgetRemaining: number;
+  availableBudget: number;
+  budgetDeficit: number;
   todayCompletedCount: number;
   todayTaskOccurrences: any[];
   todayDate: Date;
@@ -125,7 +127,7 @@ export interface WidgetConfig {
 // ----------------------------------------------------
 
 const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { greeting, displayName, levelInfo, profile, todayDate, setShowCustomize, stats, todayCompletedCount, todayTaskOccurrences, budgetRemaining, dailyBrief, dailyProgress } = context;
+  const { greeting, displayName, levelInfo, profile, todayDate, setShowCustomize, stats, todayCompletedCount, todayTaskOccurrences, budgetRemaining, availableBudget, budgetDeficit, dailyBrief, dailyProgress } = context;
 
   const focusMinutes = stats.todayMinutes ?? 0;
   const streak = profile.streak ?? 0;
@@ -135,7 +137,7 @@ const HeroWidget: React.FC<WidgetProps> = ({ context }) => {
   const heroStats = [
     { icon: Timer, label: "Today's Focus", value: formatFocusTime(focusMinutes), color: '#a855f7' },
     { icon: CheckSquare, label: "Today's Tasks", value: `${tasksDone} / ${tasksTotal}`, color: '#06b6d4' },
-    { icon: Wallet, label: 'Budget Remaining', value: formatCurrency(budgetRemaining ?? 0), color: '#10b981' },
+    { icon: Wallet, label: budgetDeficit > 0 ? 'Budget Deficit' : 'Available Budget', value: formatCurrency(budgetDeficit > 0 ? budgetDeficit : (availableBudget ?? 0)), color: budgetDeficit > 0 ? '#ef4444' : '#10b981' },
     { icon: Flame, label: 'Current Streak', value: `${streak} ${streak === 1 ? 'Day' : 'Days'}`, color: '#f59e0b' },
   ];
 
@@ -305,7 +307,7 @@ const DailyProgressRingWidget: React.FC<WidgetProps> = ({ context }) => {
 };
 
 const SnapshotWidget: React.FC<WidgetProps> = ({ context }) => {
-  const { stats, preferences, estimatedTimeLeft, todayCompletedCount, todayTaskOccurrences, todayExpensesAmount, budgetRemaining, profile, setPage } = context;
+  const { stats, preferences, estimatedTimeLeft, todayCompletedCount, todayTaskOccurrences, todayExpensesAmount, budgetRemaining, availableBudget, budgetDeficit, profile, setPage } = context;
   const monthlySpent = profile.monthly_budget - budgetRemaining;
   const focusMinutesToday = stats.todayMinutes ?? 0;
   return (
@@ -347,13 +349,13 @@ const SnapshotWidget: React.FC<WidgetProps> = ({ context }) => {
       {profile.monthly_budget > 0 ? (
         <KpiCard
           icon={Target}
-          title="Budget Remaining"
-          value={formatCurrency(budgetRemaining)}
-          valueColor={budgetRemaining >= 0 ? '#10b981' : '#ef4444'}
-          iconBg={budgetRemaining >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}
-          iconColor={budgetRemaining >= 0 ? '#10b981' : '#ef4444'}
+          title={budgetDeficit > 0 ? 'Budget Deficit' : 'Available Budget'}
+          value={formatCurrency(budgetDeficit > 0 ? budgetDeficit : (availableBudget ?? 0))}
+          valueColor={budgetDeficit > 0 ? '#ef4444' : '#10b981'}
+          iconBg={budgetDeficit > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}
+          iconColor={budgetDeficit > 0 ? '#ef4444' : '#10b981'}
           colSpan={3}
-          progressBar={{ value: Math.min(monthlySpent, profile.monthly_budget), max: Math.max(1, profile.monthly_budget), gradient: budgetRemaining >= 0 ? 'linear-gradient(90deg, #10b981, #06b6d4)' : 'linear-gradient(90deg, #ef4444, #f59e0b)' }}
+          progressBar={{ value: Math.min(monthlySpent, profile.monthly_budget), max: Math.max(1, profile.monthly_budget), gradient: budgetDeficit > 0 ? 'linear-gradient(90deg, #ef4444, #f59e0b)' : 'linear-gradient(90deg, #10b981, #06b6d4)' }}
           footer={`${Math.round((monthlySpent / profile.monthly_budget) * 100)}% of budget used`}
           onClick={() => setPage('finance')}
         />

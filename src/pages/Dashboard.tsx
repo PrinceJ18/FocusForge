@@ -22,6 +22,9 @@ import { logEvent } from '../lib/events';
 import { useDailyProductivityScore } from '../hooks/useDailyProductivityScore';
 import { useFinancialHealthScore } from '../hooks/useFinancialHealthScore';
 
+// Phase 7.3.1B: Single Source of Truth for Financials
+import { calculateFinancialState } from '../lib/financialEngine';
+
 // Import statistics single-source-of-truth helpers
 import {
   getTodayFocusMinutes,
@@ -446,6 +449,11 @@ export default function Dashboard() {
   const todayDate = useMemo(() => new Date(), [primitiveTodayStr]);
   const todayStr = format(todayDate, 'yyyy-MM-dd');
 
+  // Phase 7.3.1B: Centralized Financial Engine Data
+  const finState = useMemo(() => {
+    return calculateFinancialState(profile.monthly_budget, expenses, recurringExpenses, todayDate);
+  }, [profile.monthly_budget, expenses, recurringExpenses, todayDate]);
+
   // Resolve today's task occurrences using the shared recurrence helper
   const todayTaskOccurrences = useMemo(() => {
     return getTasksForDate(tasks, todayDate, taskCompletions);
@@ -453,26 +461,17 @@ export default function Dashboard() {
 
   const todayCompletedCount = getTodayCompletedTasks(tasks);
   const monthlyCompletedCount = getMonthlyCompletedTasks(tasks);
-  const monthlySpent = getMonthlyExpensesAmount(expenses);
   
-  // Phase 6.2.1: Reserve unpaid recurring bills from this month's discretionary budget
-  const reservedBillsAmount = useMemo(() => {
-    const currentYearMonthStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}`;
-    const monthExpenses = expenses.filter(e => e?.expense_date && e.expense_date.startsWith(currentYearMonthStr));
-    
-    const unpaidActiveBillsThisMonth = recurringExpenses.filter(b => {
-      if (b.status !== 'active' || !b.payment_date?.startsWith(currentYearMonthStr)) return false;
-      // Ensure we don't double count if the expense was created but bill schedule update is pending
-      const alreadyPaid = monthExpenses.some(e => 
-        e.recurring_expense_id === b.id && 
-        e.recurring_occurrence_date === b.payment_date
-      );
-      return !alreadyPaid;
-    });
-    return unpaidActiveBillsThisMonth.reduce((sum, b) => sum + (b.amount || 0), 0);
-  }, [recurringExpenses, expenses, todayDate]);
-
-  const budgetRemaining = profile.monthly_budget - monthlySpent - reservedBillsAmount;
+  // Destructure financial engine state
+  const {
+    monthlySpent,
+    monthlyBudget,
+    rawRemainingBudget: budgetRemaining,
+    availableBudget,
+    budgetDeficit,
+    dailyAllowance,
+    todaySpent
+  } = finState;
 
   // -------------------------------------------------------
   // DAILY BRIEF — contextual summary sentences (Section 1)
@@ -484,33 +483,7 @@ export default function Dashboard() {
     const todayTasks = todayTaskOccurrences?.length ?? 0;
     const streak = profile.streak ?? 0;
 
-    // Month-to-date spending
-    const currentYear = todayDate.getFullYear();
-    const currentMonth = todayDate.getMonth();
-    const currentYearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-    
-    // 1. Calculate already recognized/paid expenses for the month
-    const monthExpenses = expenses.filter(e => e?.expense_date && e.expense_date.startsWith(currentYearMonthStr));
-    const monthSpending = monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-
-    // Today's spending
-    const todayExpenses = expenses.filter(e => {
-      if (!e?.expense_date) return false;
-      try { return isToday(parseISO(e.expense_date)); } catch { return false; }
-    });
-    const todaySpent = todayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-
-    // Calendar days remaining in this month INCLUDING today
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const currentDay = todayDate.getDate();
-    const remainingDays = Math.max(1, daysInMonth - currentDay + 1);
-
-    // Calculate discretionary remaining budget and daily allowance
-    const monthlyBudget = profile.monthly_budget || 0;
-    // Reserve unpaid bills before calculating discretionary remainder
-    const discretionaryBudgetRemaining = Math.max(0, monthlyBudget - monthSpending - reservedBillsAmount);
-    const dailySpendingAllowance = monthlyBudget > 0 && remainingDays > 0 ? Math.round(discretionaryBudgetRemaining / remainingDays) : 0;
-    const remainingSafeSpendingToday = Math.max(0, dailySpendingAllowance - todaySpent);
+    const remainingSafeSpendingToday = Math.max(0, dailyAllowance - todaySpent);
 
     // Task summary
     if (todayTasks > 0) {
@@ -530,12 +503,14 @@ export default function Dashboard() {
       sentences.push('Focus goal reached for today! ✨');
     }
 
-    // Budget summary — Smart Daily Spending (Phase 3.9.1 Task 2 / Phase 6.2.1 Correction)
+    // Budget summary — Smart Daily Spending
     if (monthlyBudget > 0) {
-      if (dailySpendingAllowance > 0 && todaySpent < dailySpendingAllowance) {
+      if (availableBudget === 0) {
+        sentences.push(`Budget exhausted. You are currently running a deficit of ${formatCurrency(budgetDeficit)}.`);
+      } else if (dailyAllowance > 0 && todaySpent < dailyAllowance) {
         sentences.push(`You have ${formatCurrency(remainingSafeSpendingToday)} remaining in today's allowance.`);
-      } else if (todaySpent >= dailySpendingAllowance && dailySpendingAllowance > 0) {
-        sentences.push(`You've spent ${formatCurrency(todaySpent)} today, exceeding your daily pacing target by ${formatCurrency(todaySpent - dailySpendingAllowance)}.`);
+      } else if (todaySpent >= dailyAllowance && dailyAllowance > 0) {
+        sentences.push(`You've spent ${formatCurrency(todaySpent)} today, exceeding your daily pacing target by ${formatCurrency(todaySpent - dailyAllowance)}.`);
       } else {
         sentences.push('Monthly budget exhausted — consider pausing spending.');
       }
@@ -551,7 +526,7 @@ export default function Dashboard() {
     }
 
     return sentences;
-  }, [focusSessions, preferences, profile, expenses, reservedBillsAmount, todayDate, todayTaskOccurrences, todayCompletedCount]);
+  }, [focusSessions, preferences, profile.streak, todayTaskOccurrences, todayCompletedCount, monthlyBudget, availableBudget, budgetDeficit, dailyAllowance, todaySpent]);
 
   // -------------------------------------------------------
   // DAILY PROGRESS — percentages for composite ring (Section 3)
@@ -561,15 +536,12 @@ export default function Dashboard() {
     const targetFocus = preferences.default_daily_focus_goal || 120;
     const todayTasks = todayTaskOccurrences?.length ?? 0;
     const completedTasks = todayCompletedCount ?? 0;
-    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    // Use discretionary budget for the daily progress ring
-    const discretionaryMonthlyBudget = Math.max(0, profile.monthly_budget - reservedBillsAmount);
-    const dailyBudget = discretionaryMonthlyBudget > 0 ? Math.round(discretionaryMonthlyBudget / daysInMonth) : 0;
-    const todaySpent = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
 
     const focusPct = targetFocus > 0 ? Math.min(100, Math.round((todayMinutes / targetFocus) * 100)) : 0;
     const taskPct = todayTasks > 0 ? Math.min(100, Math.round((completedTasks / todayTasks) * 100)) : 100;
-    const budgetPct = dailyBudget > 0 ? Math.min(100, Math.max(0, Math.round(((dailyBudget - todaySpent) / dailyBudget) * 100))) : 100;
+    const budgetPct = dailyAllowance > 0 
+      ? Math.min(100, Math.max(0, Math.round(((dailyAllowance - todaySpent) / dailyAllowance) * 100))) 
+      : 100;
     const streak = profile.streak ?? 0;
 
     // Overall is weighted average: Focus 30%, Tasks 30%, Budget 20%, Streak 20%
@@ -579,11 +551,11 @@ export default function Dashboard() {
     return {
       focus: { pct: focusPct, current: todayMinutes, target: targetFocus },
       tasks: { pct: taskPct, current: completedTasks, target: todayTasks },
-      budget: { pct: budgetPct, spent: todaySpent, limit: dailyBudget },
+      budget: { pct: budgetPct, spent: todaySpent, limit: dailyAllowance },
       streak: { value: streak, score: streakScore },
       overall,
     };
-  }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile, expenses, reservedBillsAmount]);
+  }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile.streak, dailyAllowance, todaySpent]);
 
   // -------------------------------------------------------
   // PERSIST DAILY SNAPSHOT TO SUPABASE (Phase 3.9.2B)
@@ -595,22 +567,7 @@ export default function Dashboard() {
 
     const todayStr = format(todayDate, 'yyyy-MM-dd');
 
-    // Reuse the same month/date math as dailyBrief for safe spending
-    const currentYear = todayDate.getFullYear();
-    const currentMonth = todayDate.getMonth();
-    const currentYearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-    const monthExpenses = expenses.filter(e => e?.expense_date && e.expense_date.startsWith(currentYearMonthStr));
-    const monthSpending = monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const currentDay = todayDate.getDate();
-    const remainingDays = Math.max(1, daysInMonth - currentDay + 1);
-    const monthlyBudget = profile.monthly_budget || 0;
-    const remBudget = Math.max(0, monthlyBudget - monthSpending);
-    const dailyAllowance = monthlyBudget > 0 && remainingDays > 0 ? Math.round(remBudget / remainingDays) : 0;
-    const todaySpentForSnapshot = expenses
-      .filter(e => { try { return e?.expense_date && isToday(parseISO(e.expense_date)); } catch { return false; } })
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-    const remainingSafeSpending = Math.max(0, dailyAllowance - todaySpentForSnapshot);
+    const remainingSafeSpending = Math.max(0, dailyAllowance - todaySpent);
 
     const snapshotData: DailySnapshotData = {
       daily_progress_percentage: dailyProgress.overall,
@@ -621,8 +578,8 @@ export default function Dashboard() {
       tasks_total: dailyProgress.tasks.target,
       current_streak: dailyProgress.streak.value,
       monthly_budget: monthlyBudget,
-      remaining_budget: remBudget,
-      today_spending: todaySpentForSnapshot,
+      remaining_budget: availableBudget,
+      today_spending: todaySpent,
       daily_allowance: dailyAllowance,
       remaining_safe_spending: remainingSafeSpending,
     };
@@ -630,7 +587,7 @@ export default function Dashboard() {
     saveDailySnapshot(user.id, todayStr, snapshotData);
   }, [
     user?.id, todayDate, dailyProgress, productivityScore, financialScore,
-    expenses, profile.monthly_budget,
+    monthlyBudget, availableBudget, todaySpent, dailyAllowance
   ]);
 
   // -------------------------------------------------------
@@ -649,7 +606,6 @@ export default function Dashboard() {
     const pending = tasks.filter(t => t.status === 'pending').length;
     const todayMinutes = getTodayFocusMinutes(focusSessions);
     const targetFocus = preferences.default_daily_focus_goal || 120;
-    const todayExpenses = expenses.filter(e => isToday(parseISO(e.expense_date))).reduce((sum, e) => sum + e.amount, 0);
     const streak = profile.streak ?? 0;
     const xpToNext = getLevelInfo(profile.xp).xpToNext;
 
@@ -671,10 +627,8 @@ export default function Dashboard() {
     }
 
     // Budget warning
-    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    const dailyBudget = profile.monthly_budget > 0 ? Math.round(profile.monthly_budget / daysInMonth) : 0;
-    if (dailyBudget > 0 && todayExpenses > dailyBudget * 0.8) {
-      recs.push({ icon: Wallet, title: 'Budget caution', action: 'You\'ve used 80%+ of today\'s daily limit', color: '#f59e0b', priority: todayExpenses > dailyBudget ? 'high' : 'medium' });
+    if (dailyAllowance > 0 && todaySpent > dailyAllowance * 0.8) {
+      recs.push({ icon: Wallet, title: 'Budget caution', action: 'You\'ve used 80%+ of today\'s daily limit', color: '#f59e0b', priority: todaySpent > dailyAllowance ? 'high' : 'medium' });
     }
 
     // XP / Level up
@@ -693,7 +647,7 @@ export default function Dashboard() {
     }
 
     return recs.slice(0, 4);
-  }, [tasks, focusSessions, expenses, profile, preferences]);
+  }, [tasks, focusSessions, profile.streak, profile.xp, preferences, dailyAllowance, todaySpent]);
 
   // -------------------------------------------------------
   // QUICK CONTINUE — resume items (Section 6)
@@ -741,8 +695,8 @@ export default function Dashboard() {
       focus: { current: todayMinutes, target: targetFocus, label: 'Daily Focus', color: '#a855f7', icon: Timer },
       tasks: { current: completedTasks, target: todayTasks, label: 'Tasks Today', color: '#06b6d4', icon: CheckSquare },
       budget: {
-        current: getMonthlyExpensesAmount(expenses),
-        target: profile.monthly_budget || 0,
+        current: monthlySpent,
+        target: monthlyBudget,
         label: 'Monthly Budget',
         color: '#ec4899',
         icon: Wallet,
@@ -757,7 +711,7 @@ export default function Dashboard() {
       } : null,
       streak: { current: streak, longest: longestStreak, label: 'Day Streak', color: '#f59e0b', icon: Flame },
     };
-  }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile, expenses, savingsSummary]);
+  }, [focusSessions, preferences, todayTaskOccurrences, todayCompletedCount, profile.streak, monthlySpent, monthlyBudget, savingsSummary]);
 
   // Legacy recommendations (kept for backward compat)
   const recommendations = useMemo(() => {
@@ -776,7 +730,7 @@ export default function Dashboard() {
     productivityScore, prodLabel, financialScore, finLabel, smartInsights,
     focusTrendData, expenseTrendData, recommendations, productivityScoreExplanation,
     achievementsPreview, upcomingBills, recentEvents, savingsSummary, todayExpensesAmount,
-    budgetRemaining, todayCompletedCount, todayTaskOccurrences, todayDate, preferences, taskSections,
+    budgetRemaining, availableBudget, budgetDeficit, todayCompletedCount, todayTaskOccurrences, todayDate, preferences, taskSections,
     // Phase 3.7 additions
     dailyBrief, dailyProgress, smartRecommendations, quickContinueItems, goalTrackerData,
     // Actions
@@ -787,7 +741,7 @@ export default function Dashboard() {
     productivityScore, prodLabel, financialScore, finLabel, smartInsights,
     focusTrendData, expenseTrendData, recommendations, productivityScoreExplanation,
     achievementsPreview, upcomingBills, recentEvents, savingsSummary, todayExpensesAmount,
-    budgetRemaining, todayCompletedCount, todayTaskOccurrences, todayDate, preferences, taskSections,
+    budgetRemaining, availableBudget, budgetDeficit, todayCompletedCount, todayTaskOccurrences, todayDate, preferences, taskSections,
     dailyBrief, dailyProgress, smartRecommendations, quickContinueItems, goalTrackerData,
     setShowCustomize, setPage, setShowQuickAddTask, setShowQuickAddExpense,
     handleStartTimer, handleToggleTask, setSelectedTaskDetails, getScoreColor
