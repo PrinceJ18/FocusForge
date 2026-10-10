@@ -574,11 +574,11 @@ export default function Reports() {
               {reportData.finance.budgetCommittedPct !== undefined && selectedMonth === currentMonthStr ? (
                 <SummaryPill 
                   label="Budget Committed" 
-                  value={`${reportData.finance.budgetCommittedPct}%`} 
-                  color={reportData.finance.budgetCommittedPct > 80 ? '#ef4444' : '#10b981'} 
+                  value={profile.monthly_budget > 0 ? `${reportData.finance.budgetCommittedPct}%` : 'Unbudgeted'} 
+                  color={reportData.finance.budgetCommittedPct > 80 && profile.monthly_budget > 0 ? '#ef4444' : '#10b981'} 
                 />
               ) : (
-                <SummaryPill label="Budget Spent" value={`${reportData.finance.budgetSpentPct}%`} />
+                <SummaryPill label="Budget Spent" value={profile.monthly_budget > 0 ? `${reportData.finance.budgetSpentPct}%` : 'Unbudgeted'} />
               )}
               {reportData.finance.budgetDeficit !== undefined && reportData.finance.budgetDeficit > 0 && selectedMonth === currentMonthStr ? (
                 <SummaryPill label="Budget Deficit" value={formatCurrency(reportData.finance.budgetDeficit)} color="#ef4444" />

@@ -44,6 +44,7 @@ export interface MonthlyReportData {
     dailyCompletions: Array<{ day: string; count: number }>;
   };
   finance: {
+    monthlyBudget: number;
     monthlySpending: number;
     budgetSpentPct: number;
     budgetCommittedPct?: number;
@@ -644,6 +645,7 @@ export function calculateMonthlyReportData(params: {
       dailyCompletions
     },
     finance: {
+      monthlyBudget: profile.monthly_budget,
       monthlySpending,
       budgetSpentPct,
       budgetCommittedPct,

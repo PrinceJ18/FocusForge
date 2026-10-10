@@ -55,7 +55,12 @@ export function buildExportData(report: MonthlyReportData): ReportExportData {
         title: 'Finance Summary',
         data: {
           'Total Spending': formatCurrency(report.finance.monthlySpending),
-          'Budget Spent': `${report.finance.budgetSpentPct}%`,
+          ...(report.finance.budgetCommittedPct !== undefined
+            ? { 'Budget Committed': report.finance.monthlyBudget > 0 ? `${report.finance.budgetCommittedPct}%` : 'Unbudgeted' }
+            : { 'Budget Spent': report.finance.monthlyBudget > 0 ? `${report.finance.budgetSpentPct}%` : 'Unbudgeted' }),
+          ...(report.finance.budgetDeficit !== undefined && report.finance.budgetDeficit > 0
+            ? { 'Budget Deficit': formatCurrency(report.finance.budgetDeficit) }
+            : {}),
           'Money Saved': formatCurrency(report.finance.moneySaved),
           'Top Category': report.finance.highestCategory,
           'Budget Health': report.finance.budgetHealth,
