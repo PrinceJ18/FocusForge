@@ -44,6 +44,7 @@ export default function Reports() {
   const focusSessions = useStore(s => s.focusSessions);
   const savingsGoals = useStore(s => s.savingsGoals);
   const profile = useStore(s => s.profile);
+  const recurringExpenses = useStore(s => s.recurringExpenses);
   const setPage = useStore(s => s.setPage);
   const serverAvailableMonths = useStore(s => s.lifetimeAggregates.availableMonths);
   const { history: goalsHistory } = useDailyGoalsStore();
@@ -123,6 +124,8 @@ export default function Reports() {
         savingsGoals,
         profile,
         goalsHistory,
+        recurringExpenses,
+        isCurrentMonth: ym === currentMonthStr,
         yearMonth: ym
       });
       return {
@@ -132,7 +135,7 @@ export default function Reports() {
         isCurrent: ym === currentMonthStr
       };
     });
-  }, [availableMonths, expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory, currentMonthStr]);
+  }, [availableMonths, expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory, recurringExpenses, currentMonthStr]);
 
   // Phase 5.6: Fetch missing historical data on-demand without mutating the 90-day store arrays
   const storeCompletions = useStore(s => s.taskCompletions);
@@ -218,9 +221,11 @@ export default function Reports() {
       savingsGoals,
       profile,
       goalsHistory,
+      recurringExpenses,
+      isCurrentMonth: selectedMonth === currentMonthStr,
       yearMonth: selectedMonth
     });
-  }, [selectedMonth, historicalCache, needsHistory, expenses, tasks, focusSessions, storeCompletions, savingsGoals, profile, goalsHistory]);
+  }, [selectedMonth, historicalCache, needsHistory, expenses, tasks, focusSessions, storeCompletions, savingsGoals, profile, goalsHistory, recurringExpenses, currentMonthStr]);
 
   const handleShare = () => {
     if (!reportData) return;
@@ -566,8 +571,20 @@ export default function Reports() {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <SummaryPill label="Total Spent" value={formatCurrency(reportData.finance.monthlySpending)} />
-              <SummaryPill label="Budget Used" value={`${reportData.finance.budgetUsed}%`} />
-              <SummaryPill label="Estimated Saved" value={formatCurrency(reportData.finance.moneySaved)} />
+              {reportData.finance.budgetCommittedPct !== undefined && selectedMonth === currentMonthStr ? (
+                <SummaryPill 
+                  label="Budget Committed" 
+                  value={`${reportData.finance.budgetCommittedPct}%`} 
+                  color={reportData.finance.budgetCommittedPct > 80 ? '#ef4444' : '#10b981'} 
+                />
+              ) : (
+                <SummaryPill label="Budget Spent" value={`${reportData.finance.budgetSpentPct}%`} />
+              )}
+              {reportData.finance.budgetDeficit !== undefined && reportData.finance.budgetDeficit > 0 && selectedMonth === currentMonthStr ? (
+                <SummaryPill label="Budget Deficit" value={formatCurrency(reportData.finance.budgetDeficit)} color="#ef4444" />
+              ) : (
+                <SummaryPill label="Estimated Saved" value={formatCurrency(reportData.finance.moneySaved)} />
+              )}
               <SummaryPill label="Budget Status" value={reportData.finance.budgetHealth} />
             </div>
 
@@ -853,11 +870,11 @@ export default function Reports() {
   );
 }
 
-function SummaryPill({ label, value }: { label: string; value: string | number }) {
+function SummaryPill({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
     <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
       <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</div>
-      <div className="text-lg font-black tracking-tight mt-1" style={{ color: 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>
+      <div className="text-lg font-black tracking-tight mt-1" style={{ color: color || 'var(--text-primary)', fontFamily: 'Space Grotesk' }}>
         {value}
       </div>
     </div>

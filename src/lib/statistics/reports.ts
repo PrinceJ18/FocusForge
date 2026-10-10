@@ -5,6 +5,7 @@ import { getEarnedBadgeIds, ALL_BADGES } from '../statsUtils';
 import { formatCurrency } from '../formatUtils';
 import { calculateProductivityScore } from '../scoreUtils';
 import { classifyExpenses } from './expenseClassification';
+import { calculateFinancialState } from '../financialEngine';
 
 export interface MonthlyReportData {
   yearMonth: string;
@@ -44,7 +45,9 @@ export interface MonthlyReportData {
   };
   finance: {
     monthlySpending: number;
-    budgetUsed: number;
+    budgetSpentPct: number;
+    budgetCommittedPct?: number;
+    budgetDeficit?: number;
     moneySaved: number;
     highestCategory: string;
     lowestCategory: string;
@@ -121,9 +124,11 @@ export function calculateMonthlyReportData(params: {
   profile: Profile;
   goalsHistory: DailyGoalHistory[];
   taskCompletions?: TaskCompletion[];
+  recurringExpenses?: any[]; // Using any to avoid circular/deep import issues if RecurringExpense isn't available, but we can import it.
+  isCurrentMonth?: boolean;
   yearMonth: string;
 }): MonthlyReportData {
-  const { expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory, taskCompletions, yearMonth } = params;
+  const { expenses, tasks, focusSessions, savingsGoals, profile, goalsHistory, taskCompletions, recurringExpenses, isCurrentMonth, yearMonth } = params;
 
   // Date Parsing
   const dateParts = yearMonth.split('-');
@@ -211,8 +216,21 @@ export function calculateMonthlyReportData(params: {
   });
 
   // Finance calculations
-  const monthlySpending = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const budgetUsed = profile.monthly_budget > 0 ? Math.round((monthlySpending / profile.monthly_budget) * 100) : 0;
+  let monthlySpending = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+  let budgetCommittedPct: number | undefined = undefined;
+  let budgetDeficit: number | undefined = undefined;
+
+  // Phase 7.3.3: Only use the financial engine for the current month.
+  if (isCurrentMonth && recurringExpenses) {
+    // Generate a date that falls in the current month to satisfy engine logic
+    const engineDate = new Date();
+    const finState = calculateFinancialState(profile.monthly_budget, expenses, recurringExpenses, engineDate);
+    monthlySpending = finState.monthlySpent;
+    budgetCommittedPct = finState.budgetUtilizationPct;
+    budgetDeficit = finState.budgetDeficit;
+  }
+
+  const budgetSpentPct = profile.monthly_budget > 0 ? Math.round((monthlySpending / profile.monthly_budget) * 100) : 0;
   const moneySaved = Math.max(0, profile.monthly_budget - monthlySpending);
 
   // Spend categories breakdown
@@ -224,7 +242,7 @@ export function calculateMonthlyReportData(params: {
   const highestCategory = sortedCategories.length > 0 ? sortedCategories[0][0] : 'N/A';
   const lowestCategory = sortedCategories.length > 1 ? sortedCategories[sortedCategories.length - 1][0] : highestCategory;
 
-  const budgetHealth = budgetUsed >= 90 ? 'Critical' : budgetUsed >= 70 ? 'Warning' : 'Healthy';
+  const budgetHealth = budgetSpentPct >= 90 ? 'Critical' : budgetSpentPct >= 70 ? 'Warning' : 'Healthy';
 
   const expenseTrend = Array.from({ length: daysInMonth }, (_, i) => {
     const dayStr = `${yearMonth}-${String(i + 1).padStart(2, '0')}`;
@@ -411,7 +429,7 @@ export function calculateMonthlyReportData(params: {
   // Weighted: Productivity 30%, Tasks 25%, Finance 20%, Consistency 15%, Streak 10%
   // ═══════════════════════════════════════════════════
   const taskScore = completionRate;
-  const financeScore = budgetUsed <= 100 ? Math.max(0, 100 - budgetUsed) + 50 : Math.max(0, 200 - budgetUsed);
+  const financeScore = budgetSpentPct <= 100 ? Math.max(0, 100 - budgetSpentPct) + 50 : Math.max(0, 200 - budgetSpentPct);
   const financeNormalized = Math.min(100, Math.max(0, financeScore));
   const streakScore = Math.min(100, (profile.streak / 30) * 100);
   const overallScore = Math.round(
@@ -481,8 +499,8 @@ export function calculateMonthlyReportData(params: {
   // IMPROVEMENTS — Phase 3.8 (max 5)
   // ═══════════════════════════════════════════════════
   const improvements: MonthlyReportData['improvements'] = [];
-  if (budgetUsed > 100) {
-    improvements.push({ title: 'Over Budget', description: `Spent ${budgetUsed}% of monthly budget.`, icon: '💸', color: '#ef4444' });
+  if (budgetSpentPct > 100) {
+    improvements.push({ title: 'Over Budget', description: `Spent ${budgetSpentPct}% of monthly budget.`, icon: '💸', color: '#ef4444' });
   }
   if (focusGrowth < -10 && prevFocusMinutes > 0) {
     improvements.push({ title: 'Focus Declined', description: `Focus time dropped by ${Math.abs(focusGrowth)}% vs last month.`, icon: '📉', color: '#f59e0b' });
@@ -510,8 +528,8 @@ export function calculateMonthlyReportData(params: {
   if (totalMinutes < 300) {
     recommendations.push({ text: 'Try to complete at least one 25-minute focus session daily.', icon: '🧠', priority: 'high', color: '#a855f7' });
   }
-  if (budgetUsed > 80) {
-    recommendations.push({ text: `Reduce ${highestCategory} spending to stay within budget.`, icon: '💰', priority: budgetUsed > 100 ? 'high' : 'medium', color: '#ec4899' });
+  if (budgetSpentPct > 80) {
+    recommendations.push({ text: `Reduce ${highestCategory} spending to stay within budget.`, icon: '💰', priority: budgetSpentPct > 100 ? 'high' : 'medium', color: '#ec4899' });
   }
   if (completionRate < 70 && completed + pending > 0) {
     recommendations.push({ text: 'Focus on completing high-priority tasks first each morning.', icon: '✅', priority: 'medium', color: '#06b6d4' });
@@ -556,7 +574,7 @@ export function calculateMonthlyReportData(params: {
     },
     {
       title: 'Budget Keeper',
-      value: `${budgetUsed}% Used`,
+      value: `${budgetSpentPct}% Used`,
       description: moneySaved > 0 ? `Successfully saved ${formatCurrency(moneySaved)}.` : 'Stayed alert with spending.',
       icon: '💰'
     },
@@ -627,7 +645,9 @@ export function calculateMonthlyReportData(params: {
     },
     finance: {
       monthlySpending,
-      budgetUsed,
+      budgetSpentPct,
+      budgetCommittedPct,
+      budgetDeficit,
       moneySaved,
       highestCategory: highestCategory === 'N/A' ? 'Other' : highestCategory,
       lowestCategory: lowestCategory === 'N/A' ? 'Other' : lowestCategory,

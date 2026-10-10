@@ -55,7 +55,7 @@ export function buildExportData(report: MonthlyReportData): ReportExportData {
         title: 'Finance Summary',
         data: {
           'Total Spending': formatCurrency(report.finance.monthlySpending),
-          'Budget Used': `${report.finance.budgetUsed}%`,
+          'Budget Spent': `${report.finance.budgetSpentPct}%`,
           'Money Saved': formatCurrency(report.finance.moneySaved),
           'Top Category': report.finance.highestCategory,
           'Budget Health': report.finance.budgetHealth,
