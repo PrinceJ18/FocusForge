@@ -360,29 +360,40 @@ export default function Finance() {
           </p>
           <span
             className="text-sm font-bold"
-            style={{ color: stats.committedPct > 80 ? '#ef4444' : 'var(--text-primary)' }}
+            style={{ color: stats.committedPct > 80 && profile.monthly_budget > 0 ? '#ef4444' : 'var(--text-primary)' }}
           >
-            {stats.committedPct.toFixed(1)}%
+            {profile.monthly_budget > 0 ? `${stats.committedPct.toFixed(1)}%` : 'Unbudgeted'}
           </span>
         </div>
-        <div className="progress-bar" style={{ height: 10 }}>
-          <div
-            className="progress-fill"
-            style={{
-              width: `${stats.committedPct}%`,
-              background:
-                stats.committedPct > 80
-                  ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
-                  : 'linear-gradient(90deg, #a855f7, #ec4899)',
-              boxShadow: stats.committedPct > 80 ? '0 0 12px rgba(239,68,68,0.4)' : 'var(--glow-purple)',
-            }}
-          />
-        </div>
-        <div className="flex justify-between mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          <span>{formatCurrency(0)}</span>
-          <span>{formatCurrency(profile.monthly_budget / 2)}</span>
-          <span>{formatCurrency(profile.monthly_budget)}</span>
-        </div>
+        
+        {profile.monthly_budget > 0 ? (
+          <>
+            <div className="progress-bar" style={{ height: 10 }}>
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${stats.committedPct}%`,
+                  background:
+                    stats.committedPct > 80
+                      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                      : 'linear-gradient(90deg, #a855f7, #ec4899)',
+                  boxShadow: stats.committedPct > 80 ? '0 0 12px rgba(239,68,68,0.4)' : 'var(--glow-purple)',
+                }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <span>{formatCurrency(0)}</span>
+              <span>{formatCurrency(profile.monthly_budget / 2)}</span>
+              <span>{formatCurrency(profile.monthly_budget)}</span>
+            </div>
+          </>
+        ) : (
+          <div className="mt-2 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+            {stats.budgetDeficit > 0 
+              ? 'No monthly budget set.' 
+              : 'Create a budget to track progress.'}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
