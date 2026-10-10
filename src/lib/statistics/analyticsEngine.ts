@@ -12,9 +12,10 @@ import {
   getDate,
 } from 'date-fns';
 import { classifyExpenses } from './expenseClassification';
-import type { FocusSession, Task, Expense, Profile, SavingsGoal } from '../../store/useStore';
+import type { FocusSession, Task, Expense, RecurringExpense, Profile, SavingsGoal } from '../../store/useStore';
 import type { AppEvent } from '../events';
 import { calculateProductivityScore, calculateFinancialHealthScore } from '../scoreUtils';
+import { calculateFinancialState } from '../financialEngine';
 
 export const CATEGORY_COLORS: Record<string, string> = {
   food: '#f59e0b',
@@ -131,6 +132,7 @@ export function calculateAnalyticsEngineData(params: {
   tasks: Task[];
   profile: Profile;
   savingsGoals?: SavingsGoal[];
+  recurringExpenses?: RecurringExpense[];
   events?: AppEvent[];
   period: AnalyticsPeriod;
 }): AnalyticsEngineResult {
@@ -140,6 +142,7 @@ export function calculateAnalyticsEngineData(params: {
     tasks = [],
     profile,
     savingsGoals = [],
+    recurringExpenses = [],
     events = [],
     period = '30d',
   } = params;
@@ -155,8 +158,9 @@ export function calculateAnalyticsEngineData(params: {
     daysCount = 7;
     startDateStr = format(subDays(now, 6), 'yyyy-MM-dd');
   } else if (period === '30d') {
-    daysCount = 30;
-    startDateStr = format(subDays(now, 29), 'yyyy-MM-dd');
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    daysCount = Math.max(1, Math.ceil((now.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)));
+    startDateStr = format(monthStart, 'yyyy-MM-dd');
   } else if (period === '90d') {
     daysCount = 90;
     startDateStr = format(subDays(now, 89), 'yyyy-MM-dd');
@@ -215,9 +219,13 @@ export function calculateAnalyticsEngineData(params: {
   });
 
   const currentTasks = tasks.filter((t) => {
-    const d = (t.completed_at || t.scheduled_date || t.created_at)?.slice(0, 10);
-    if (!d) return true; // keep unscheduled tasks in pool
-    return period === 'all' ? d <= todayStr : d >= startDateStr && d <= todayStr;
+    const cDate = t.completed_at?.slice(0, 10);
+    const sDate = t.scheduled_date?.slice(0, 10);
+    
+    const isCompletedInPeriod = cDate && (period === 'all' ? cDate <= todayStr : cDate >= startDateStr && cDate <= todayStr);
+    const isScheduledInPeriod = sDate && (period === 'all' ? sDate <= todayStr : sDate >= startDateStr && sDate <= todayStr);
+    
+    return isCompletedInPeriod || isScheduledInPeriod;
   });
 
   const hasData = expenses.length > 0 || focusSessions.length > 0 || tasks.length > 0;
@@ -395,8 +403,18 @@ export function calculateAnalyticsEngineData(params: {
     });
   }
 
-  // 5. Finance Metrics (Strictly from Current Filtered Dataset)
-  const totalSpent = currentExpenses.reduce((sum, e) => sum + e.amount, 0);
+  // 5. Finance Metrics
+  // SSoT Integration: If 30d period, use the canonical financial engine.
+  const isCurrentMonth = period === '30d';
+  const baseMonthlyBudget = profile?.monthly_budget || 0;
+  
+  const financialState = isCurrentMonth 
+    ? calculateFinancialState(baseMonthlyBudget, expenses, recurringExpenses, now)
+    : null;
+
+  const totalSpent = isCurrentMonth 
+    ? financialState!.monthlySpent 
+    : currentExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   // Phase 2B: Separate fixed recurring from variable for rate calculations.
   // Accounting totals (totalSpent, budgetUtilization, etc.) still use ALL expenses.
@@ -404,8 +422,7 @@ export function calculateAnalyticsEngineData(params: {
   const avgDailySpend = daysCount > 0 ? parseFloat((classifiedCurrent.variableAmount / daysCount).toFixed(2)) : 0;
 
   // Period budget scaling
-  const baseMonthlyBudget = profile?.monthly_budget || 0;
-  const periodBudget = period === '30d' 
+  const periodBudget = isCurrentMonth 
     ? baseMonthlyBudget 
     : period === '7d' 
     ? Math.round((baseMonthlyBudget / 30) * 7) 
@@ -413,9 +430,13 @@ export function calculateAnalyticsEngineData(params: {
     ? Math.round(baseMonthlyBudget * 3) 
     : Math.round((baseMonthlyBudget / 30) * daysCount);
 
-  const availableBudget = Math.max(0, periodBudget - totalSpent);
-  const budgetUtilizationPct =
-    periodBudget > 0 ? Math.min(100, Math.round((totalSpent / periodBudget) * 100)) : 0;
+  const availableBudget = isCurrentMonth 
+    ? financialState!.availableBudget 
+    : Math.max(0, periodBudget - totalSpent);
+    
+  const budgetUtilizationPct = isCurrentMonth 
+    ? financialState!.budgetUtilizationPct 
+    : periodBudget > 0 ? Math.min(100, Math.round((totalSpent / periodBudget) * 100)) : 0;
 
   let budgetHealth: 'Healthy' | 'Warning' | 'Critical' = 'Healthy';
   if (budgetUtilizationPct >= 90) budgetHealth = 'Critical';
@@ -612,28 +633,33 @@ export function calculateAnalyticsEngineData(params: {
   }
 
   // 11. Predictive Forecast
-  // Phase 2B: Separate fixed recurring from variable for burn rate / projection.
-  // Fixed recurring bills are accounted for as lump sums, not divided across days.
   const dayOfMonth = getDate(now);
   const totalDaysInCurrentMonth = getDaysInMonth(now);
 
-  const classifiedMonthly = classifyExpenses(
-    expenses.filter((e) => {
-      try { return isThisMonth(parseISO(e.expense_date)); } catch { return false; }
-    })
-  );
-  const variableMonthlySpend = classifiedMonthly.variableAmount;
-  const fixedMonthlySpend = classifiedMonthly.fixedAmount;
+  const projectedMonthEndSpend = isCurrentMonth
+    ? financialState!.projectedMonthEndSpend
+    : (() => {
+        const classifiedMonthly = classifyExpenses(
+          expenses.filter((e) => {
+            try { return isThisMonth(parseISO(e.expense_date)); } catch { return false; }
+          })
+        );
+        const dailyBurn = dayOfMonth > 0 ? classifiedMonthly.variableAmount / dayOfMonth : 0;
+        return Math.round(classifiedMonthly.fixedAmount + (dailyBurn * totalDaysInCurrentMonth));
+      })();
 
-  // Daily burn rate uses ONLY variable spending — fixed bills are not daily behavior
-  const dailyBurnRate = dayOfMonth > 0 ? variableMonthlySpend / dayOfMonth : 0;
+  const dailyBurnRate = isCurrentMonth
+    ? financialState!.dailyVariableBurnRate
+    : (() => {
+        const classifiedMonthly = classifyExpenses(
+          expenses.filter((e) => {
+            try { return isThisMonth(parseISO(e.expense_date)); } catch { return false; }
+          })
+        );
+        return dayOfMonth > 0 ? classifiedMonthly.variableAmount / dayOfMonth : 0;
+      })();
 
-  // Projection: actual fixed spend + projected variable spend for the full month
-  const projectedMonthEndSpend = Math.round(
-    fixedMonthlySpend + (dailyBurnRate * totalDaysInCurrentMonth)
-  );
-
-  const remainingMonthBudget = baseMonthlyBudget - monthlySpent;
+  const remainingMonthBudget = baseMonthlyBudget - (isCurrentMonth ? financialState!.monthlySpent : monthlySpent);
   const daysUntilBudgetExhaustion =
     dailyBurnRate > 0 && remainingMonthBudget > 0
       ? Math.max(1, Math.round(remainingMonthBudget / dailyBurnRate))

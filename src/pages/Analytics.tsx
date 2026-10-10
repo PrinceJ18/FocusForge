@@ -67,6 +67,7 @@ export default function Analytics() {
   const tasks = useStore(s => s.tasks);
   const profile = useStore(s => s.profile);
   const savingsGoals = useStore(s => s.savingsGoals);
+  const recurringExpenses = useStore(s => s.recurringExpenses);
   const events = useStore(s => s.events);
   const setPage = useStore(s => s.setPage);
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
@@ -147,10 +148,11 @@ export default function Analytics() {
       tasks, // Unbounded in store
       profile,
       savingsGoals,
+      recurringExpenses,
       events: activeEvents,
       period,
     });
-  }, [activeExpenses, activeSessions, tasks, profile, savingsGoals, activeEvents, period]);
+  }, [activeExpenses, activeSessions, tasks, profile, savingsGoals, recurringExpenses, activeEvents, period]);
 
   // Compute smart actionable insights
   const insights = useMemo(() => {
@@ -158,10 +160,11 @@ export default function Analytics() {
       tasks,
       focusSessions: activeSessions,
       expenses: activeExpenses,
+      recurringExpenses,
       profile,
       events: activeEvents,
     });
-  }, [tasks, activeSessions, activeExpenses, profile, activeEvents]);
+  }, [tasks, activeSessions, activeExpenses, recurringExpenses, profile, activeEvents]);
 
   const AnalyticsTabs = (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -169,7 +172,7 @@ export default function Analytics() {
         {(
           [
             { id: '7d', label: '7 Days' },
-            { id: '30d', label: '30 Days' },
+            { id: '30d', label: 'This Month' },
             { id: '90d', label: '3 Months' },
             { id: 'all', label: 'All Time' },
           ] as const

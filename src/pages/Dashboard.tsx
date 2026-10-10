@@ -192,8 +192,8 @@ export default function Dashboard() {
   const { score: financialScore, label: finLabel } = useFinancialHealthScore();
 
   const smartInsights = useMemo(() => {
-    return generateInsights({ tasks, focusSessions, expenses });
-  }, [tasks, focusSessions, expenses]);
+    return generateInsights({ tasks, focusSessions, expenses, recurringExpenses });
+  }, [tasks, focusSessions, expenses, recurringExpenses]);
 
   // Generate 7-day focus trend data for chart
   const focusTrendData = useMemo(() => {

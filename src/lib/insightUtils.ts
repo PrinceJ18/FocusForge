@@ -1,8 +1,8 @@
-import { Task, FocusSession, Expense, Profile } from '../store/useStore';
+import { Task, FocusSession, Expense, Profile, RecurringExpense } from '../store/useStore';
 import type { AppEvent } from './events';
-import { formatCurrency, formatFocusTime } from './formatUtils';
-import { classifyExpenses } from './statistics/expenseClassification';
-import { startOfWeek, subWeeks, endOfWeek, isThisMonth, parseISO } from 'date-fns';
+import { formatCurrency } from './formatUtils';
+import { startOfWeek, subWeeks, endOfWeek } from 'date-fns';
+import { calculateFinancialState } from './financialEngine';
 
 export interface Insight {
   id: string;
@@ -19,12 +19,14 @@ export function generateInsights({
   tasks = [],
   focusSessions = [],
   expenses = [],
+  recurringExpenses = [],
   profile,
   events = [],
 }: {
   tasks: Task[];
   focusSessions: FocusSession[];
   expenses: Expense[];
+  recurringExpenses?: RecurringExpense[];
   profile?: Profile;
   events?: AppEvent[];
 }): Insight[] {
@@ -178,22 +180,11 @@ export function generateInsights({
 
   // 4. Budget Burn-rate Prediction
   if (profile && profile.monthly_budget > 0) {
-    const monthExpenses = expenses.filter((e) => {
-      try {
-        return isThisMonth(parseISO(e.expense_date));
-      } catch {
-        return false;
-      }
-    });
-    const monthlySpent = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const financialState = calculateFinancialState(profile.monthly_budget, expenses, recurringExpenses, now);
+    const projectedSpend = financialState.projectedMonthEndSpend;
+    const monthlySpent = financialState.monthlySpent;
     const dayOfMonth = now.getDate();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-
-    // Phase 2B: Use variable spending only for daily rate prediction.
-    // Fixed recurring bills are lump sums, not daily variable spending.
-    const classified = classifyExpenses(monthExpenses);
-    const variableDailyRate = dayOfMonth > 0 ? classified.variableAmount / dayOfMonth : 0;
-    const projectedSpend = classified.fixedAmount + (variableDailyRate * daysInMonth);
+    const variableDailyRate = financialState.dailyVariableBurnRate;
 
     if (projectedSpend > profile.monthly_budget * 1.05 && dayOfMonth >= 7) {
       const overAmount = Math.round(projectedSpend - profile.monthly_budget);

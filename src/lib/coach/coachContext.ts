@@ -33,6 +33,7 @@ import type {
   Profile,
   SavingsGoal,
   UserPreferences,
+  RecurringExpense,
 } from '../../store/slices/types';
 import type { AppEvent } from '../events';
 import type { DailyGoalHistory } from '../../store/useDailyGoalsStore';
@@ -141,6 +142,7 @@ export interface CoachRawData {
   tasks: Task[];
   focusSessions: FocusSession[];
   expenses: Expense[];
+  recurringExpenses: RecurringExpense[];
   savingsGoals: SavingsGoal[];
   profile: Profile;
   preferences: UserPreferences;
@@ -187,6 +189,7 @@ export function buildCoachContext(
     tasks = [],
     focusSessions = [],
     expenses = [],
+    recurringExpenses = [],
     savingsGoals = [],
     profile = SAFE_PROFILE,
     preferences = SAFE_PREFERENCES,
@@ -204,6 +207,7 @@ export function buildCoachContext(
       focusSessions,
       tasks,
       profile,
+      recurringExpenses,
       savingsGoals,
       events,
       period,

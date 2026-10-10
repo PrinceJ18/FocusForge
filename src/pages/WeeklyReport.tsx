@@ -7,11 +7,11 @@ import InsightCard from '../components/analytics/InsightCard';
 import TrendChart from '../components/analytics/TrendChart';
 import CategoryPieChart from '../components/analytics/CategoryPieChart';
 import { startOfWeek, endOfWeek, subWeeks, format, isWithinInterval, parseISO } from 'date-fns';
-import { Brain, CheckSquare, Wallet, Target, Trophy, TrendingUp } from 'lucide-react';
+import { Brain, CheckSquare, Wallet, TrendingUp } from 'lucide-react';
 import { getTasksForDate } from '../lib/taskRecurrence';
 
 export default function WeeklyReport() {
-  const { expenses, tasks, focusSessions, taskCompletions, profile } = useStore();
+  const { expenses, tasks, focusSessions, taskCompletions, profile, recurringExpenses } = useStore();
   const [weekOffset, setWeekOffset] = useState(0);
 
   const reportData = useMemo(() => {
@@ -63,7 +63,7 @@ export default function WeeklyReport() {
       challengeCompleted: false, // Not tracked effectively for historical weeks
     });
 
-    const smartInsights = generateInsights({ tasks, focusSessions: weekSessions, expenses: weekExpenses });
+    const smartInsights = generateInsights({ tasks, focusSessions: weekSessions, expenses: weekExpenses, recurringExpenses });
 
     // Focus Trend
     const focusTrendData = Array.from({ length: 7 }, (_, i) => {
@@ -97,7 +97,7 @@ export default function WeeklyReport() {
       hasNextWeek: weekOffset > 0,
       hasPrevWeek: weekOffset < 52 // Allow going back a year
     };
-  }, [weekOffset, expenses, tasks, taskCompletions, focusSessions, profile]);
+  }, [weekOffset, expenses, tasks, taskCompletions, focusSessions, profile, recurringExpenses]);
 
   return (
     <div className="space-y-6 pb-12">

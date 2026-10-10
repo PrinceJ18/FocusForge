@@ -144,6 +144,7 @@ export function useCoach(): UseCoachReturn {
   const tasks = useStore(s => s.tasks);
   const focusSessions = useStore(s => s.focusSessions);
   const expenses = useStore(s => s.expenses);
+  const recurringExpenses = useStore(s => s.recurringExpenses);
   const savingsGoals = useStore(s => s.savingsGoals);
   const profile = useStore(s => s.profile);
   const preferences = useStore(s => s.preferences);
@@ -160,6 +161,7 @@ export function useCoach(): UseCoachReturn {
         tasks,
         focusSessions,
         expenses,
+        recurringExpenses,
         savingsGoals,
         profile,
         preferences,
@@ -191,6 +193,7 @@ export function useCoach(): UseCoachReturn {
     tasks.length,
     focusSessions.length,
     expenses.length,
+    recurringExpenses.length,
     savingsGoals.length,
     events.length,
     dailyGoalHistory.length,

@@ -25,6 +25,7 @@ export interface FinancialState {
   // 4. Progress & Forecast
   budgetUtilizationPct: number;
   isBudgetExhausted: boolean;
+  dailyVariableBurnRate: number;
   projectedMonthEndSpend: number;
   
   // 5. Exposing the raw arrays for UI use
@@ -134,11 +135,26 @@ export function calculateFinancialState(
   // --- F. FORECAST / PROJECTION ---
   // Projected Month-End Spend = Actual Paid Fixed Bills + Known Unpaid Obligations + Projected Variable Spend
   const elapsedDays = Math.max(1, currentDayOfMonth); // E.g., on 15th, 15 days elapsed.
-  const dailyVariableBurnRate = monthlyVariableSpent / elapsedDays;
   
-  // We project the variable burn rate across the full month, matching the existing Analytics model,
-  // but we explicitly add the reserved bills which were missing from the old calculation.
-  const projectedVariableSpend = dailyVariableBurnRate * daysInMonth;
+  // Phase 7.3.4 Outlier Smoothing: Exclude massive one-off variable expenses (>15% of budget) from the daily mean.
+  const outlierThreshold = monthlyBudget > 0 ? monthlyBudget * 0.15 : Infinity;
+  let smoothedVariableSpent = 0;
+  let outlierSpent = 0;
+  
+  monthExpenses.forEach(e => {
+    if (!isFixedRecurringExpense(e)) {
+      if (e.amount > outlierThreshold) {
+        outlierSpent += e.amount;
+      } else {
+        smoothedVariableSpent += e.amount;
+      }
+    }
+  });
+
+  const dailyVariableBurnRate = smoothedVariableSpent / elapsedDays;
+  
+  // We project the smoothed variable burn rate across the full month, then re-add the outliers.
+  const projectedVariableSpend = (dailyVariableBurnRate * daysInMonth) + outlierSpent;
   const projectedMonthEndSpend = Math.round(monthlyRecurringPaidSpent + reservedBillsAmount + projectedVariableSpend);
 
   return {
@@ -160,6 +176,7 @@ export function calculateFinancialState(
 
     budgetUtilizationPct,
     isBudgetExhausted,
+    dailyVariableBurnRate,
     projectedMonthEndSpend,
 
     overdueBills,
