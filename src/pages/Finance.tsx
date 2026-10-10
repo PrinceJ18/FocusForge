@@ -21,11 +21,11 @@ import { formatCurrency } from '../lib/formatUtils';
 import { getErrorMessage } from '../lib/getErrorMessage';
 import { logEvent } from '../lib/events';
 import {
-  calculateBudgetUsage,
   calculateCategoryBreakdown,
   calculateDailySpending,
   calculateSavings
 } from '../lib/statistics/finance';
+import { calculateFinancialState } from '../lib/financialEngine';
 import { payRecurringExpense, skipRecurringExpense } from '../lib/recurringUtils';
 import RecurringDetailsModal from '../components/finance/RecurringDetailsModal';
 import Button from '../components/ui/Button';
@@ -93,14 +93,25 @@ export default function Finance() {
     ...customCategories.map((c) => ({ id: c.id, name: c.name, icon: '🏷', color: c.color })),
   ], [customCategories]);
 
+  const finState = useMemo(() => {
+    return calculateFinancialState(profile.monthly_budget, expenses, recurringExpenses, new Date());
+  }, [profile.monthly_budget, expenses, recurringExpenses]);
+
   const stats = useMemo(() => {
     const monthExp = expenses.filter((e) => isDateThisMonth(e.expense_date));
-    const { totalSpent, available, budgetPct } = calculateBudgetUsage(expenses, profile.monthly_budget);
     const categoryData = calculateCategoryBreakdown(expenses, allCategories);
     const dailyData = calculateDailySpending(expenses);
 
-    return { totalSpent, available, budgetPct, categoryData, dailyData, monthExp };
-  }, [expenses, profile.monthly_budget, allCategories]);
+    return { 
+      totalSpent: finState.monthlySpent, 
+      available: finState.availableBudget, 
+      budgetPct: finState.budgetUtilizationPct,
+      budgetDeficit: finState.budgetDeficit,
+      categoryData, 
+      dailyData, 
+      monthExp 
+    };
+  }, [expenses, allCategories, finState]);
 
   const totalSavings = calculateSavings(savingsGoals);
 
@@ -159,6 +170,12 @@ export default function Finance() {
     const upcomingBills: RecurringExpense[] = [];
 
     activeBills.forEach(bill => {
+      // Prevent double counting of paid bills in upcoming/overdue lists
+      const alreadyPaid = expenses.some(
+        e => e.recurring_expense_id === bill.id && e.recurring_occurrence_date === bill.payment_date
+      );
+      if (alreadyPaid) return;
+
       try {
         const payDate = parseISO(bill.payment_date);
         const today = parseISO(todayStr);
@@ -215,7 +232,7 @@ export default function Finance() {
       monthlySubTotal,
       upcomingCount: upcomingBills.length,
     };
-  }, [recurringExpenses]);
+  }, [recurringExpenses, expenses]);
 
   // Insight Generation (Section 10)
   const expenseInsights = useMemo(() => {
@@ -309,12 +326,21 @@ export default function Finance() {
           color={stats.budgetPct > 80 ? '#ef4444' : '#f59e0b'}
           icon={<TrendingDown size={18} />}
         />
-        <FinStatCard
-          label="Available"
-          value={`${formatCurrency(Math.max(0, stats.available))}`}
-          color="#10b981"
-          icon={<DollarSign size={18} />}
-        />
+        {profile.monthly_budget > 0 || stats.budgetDeficit > 0 ? (
+          <FinStatCard
+            label={stats.budgetDeficit > 0 ? 'Budget Deficit' : 'Available'}
+            value={`${formatCurrency(stats.budgetDeficit > 0 ? stats.budgetDeficit : stats.available)}`}
+            color={stats.budgetDeficit > 0 ? '#ef4444' : '#10b981'}
+            icon={<DollarSign size={18} />}
+          />
+        ) : (
+          <FinStatCard
+            label="Available"
+            value={`${formatCurrency(0)}`}
+            color="#10b981"
+            icon={<DollarSign size={18} />}
+          />
+        )}
         <FinStatCard
           label="Savings"
           value={`${formatCurrency(totalSavings)}`}
