@@ -346,7 +346,7 @@ const SnapshotWidget: React.FC<WidgetProps> = ({ context }) => {
         colSpan={3}
         onClick={() => setPage('finance')}
       />
-      {profile.monthly_budget > 0 ? (
+      {profile.monthly_budget > 0 || budgetDeficit > 0 ? (
         <KpiCard
           icon={Target}
           title={budgetDeficit > 0 ? 'Budget Deficit' : 'Available Budget'}
@@ -356,7 +356,7 @@ const SnapshotWidget: React.FC<WidgetProps> = ({ context }) => {
           iconColor={budgetDeficit > 0 ? '#ef4444' : '#10b981'}
           colSpan={3}
           progressBar={{ value: Math.min(monthlySpent, profile.monthly_budget), max: Math.max(1, profile.monthly_budget), gradient: budgetDeficit > 0 ? 'linear-gradient(90deg, #ef4444, #f59e0b)' : 'linear-gradient(90deg, #10b981, #06b6d4)' }}
-          footer={`${Math.round((monthlySpent / profile.monthly_budget) * 100)}% of budget used`}
+          footer={profile.monthly_budget > 0 ? `${Math.round((monthlySpent / profile.monthly_budget) * 100)}% of budget used` : 'No budget set'}
           onClick={() => setPage('finance')}
         />
       ) : (
