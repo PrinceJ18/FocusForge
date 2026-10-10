@@ -102,16 +102,19 @@ export default function Finance() {
     const categoryData = calculateCategoryBreakdown(expenses, allCategories);
     const dailyData = calculateDailySpending(expenses);
 
+    const spentPct = profile.monthly_budget > 0 ? Math.min(100, Math.round((finState.monthlySpent / profile.monthly_budget) * 100)) : 0;
+
     return { 
       totalSpent: finState.monthlySpent, 
       available: finState.availableBudget, 
-      budgetPct: finState.budgetUtilizationPct,
+      committedPct: finState.budgetUtilizationPct,
+      spentPct,
       budgetDeficit: finState.budgetDeficit,
       categoryData, 
       dailyData, 
       monthExp 
     };
-  }, [expenses, allCategories, finState]);
+  }, [expenses, allCategories, finState, profile.monthly_budget]);
 
   const totalSavings = calculateSavings(savingsGoals);
 
@@ -322,8 +325,8 @@ export default function Finance() {
         <FinStatCard
           label="Spent"
           value={`${formatCurrency(stats.totalSpent)}`}
-          sub={`${stats.budgetPct.toFixed(0)}%`}
-          color={stats.budgetPct > 80 ? '#ef4444' : '#f59e0b'}
+          sub={profile.monthly_budget > 0 ? `${stats.spentPct}%` : 'Unbudgeted'}
+          color={stats.spentPct > 80 ? '#ef4444' : '#f59e0b'}
           icon={<TrendingDown size={18} />}
         />
         {profile.monthly_budget > 0 || stats.budgetDeficit > 0 ? (
@@ -353,25 +356,25 @@ export default function Finance() {
       <div className="glass-card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-            Budget Usage — {format(new Date(), 'MMMM yyyy')}
+            Budget Committed — {format(new Date(), 'MMMM yyyy')}
           </p>
           <span
             className="text-sm font-bold"
-            style={{ color: stats.budgetPct > 80 ? '#ef4444' : 'var(--text-primary)' }}
+            style={{ color: stats.committedPct > 80 ? '#ef4444' : 'var(--text-primary)' }}
           >
-            {stats.budgetPct.toFixed(1)}%
+            {stats.committedPct.toFixed(1)}%
           </span>
         </div>
         <div className="progress-bar" style={{ height: 10 }}>
           <div
             className="progress-fill"
             style={{
-              width: `${stats.budgetPct}%`,
+              width: `${stats.committedPct}%`,
               background:
-                stats.budgetPct > 80
+                stats.committedPct > 80
                   ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
                   : 'linear-gradient(90deg, #a855f7, #ec4899)',
-              boxShadow: stats.budgetPct > 80 ? '0 0 12px rgba(239,68,68,0.4)' : 'var(--glow-purple)',
+              boxShadow: stats.committedPct > 80 ? '0 0 12px rgba(239,68,68,0.4)' : 'var(--glow-purple)',
             }}
           />
         </div>
