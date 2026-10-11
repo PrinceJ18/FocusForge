@@ -22,7 +22,7 @@ Global state is modularized into distinct slices to prevent massive re-renders:
 ## 2. Backend & Database (Supabase)
 
 ### PostgreSQL & Row Level Security (RLS)
-The database operates strictly on RLS. All reads and writes are gated by the current authenticated session:
+The database operates strictly on RLS. All reads and writes are gated by the current authenticated session:-
 - **`profiles`**: Public read access (required for Arena and Friends), locked mutations.
 - **`user_financial_settings`**: Strictly private. Migrated off `profiles` to ensure sensitive budget parameters are isolated.
 - **`tasks` / `expenses`**: Strictly bound to `user_id`.
