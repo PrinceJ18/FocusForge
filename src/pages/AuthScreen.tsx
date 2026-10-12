@@ -7,7 +7,7 @@ export default function AuthScreen() {
     const [authOpen, setAuthOpen] = useState(false);
 
     useEffect(() => {
-        document.title = 'FocusForge';
+        document.title = 'FocusForge - Authentication';
     }, []);
 
     return (

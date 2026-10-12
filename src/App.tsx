@@ -33,18 +33,18 @@ const Notifications = React.lazy(() => import('./pages/Notifications'));
 const CommandCenter = React.lazy(() => import('./pages/CommandCenter'));
 
 const TAB_TITLES: Record<string, string> = {
-  dashboard: 'FocusForge — Dashboard',
-  finance: 'FocusForge — Finance & Budget',
-  productivity: 'FocusForge — Focus & Tasks',
-  analytics: 'FocusForge — Analytics Intelligence',
-  friends: 'FocusForge — Friends & Social',
-  arena: 'FocusForge — Productivity Arena',
-  splits: 'FocusForge — Expense Buddy',
-  reports: 'FocusForge — Performance Reports',
-  achievements: 'FocusForge — Achievement Center',
-  settings: 'FocusForge — Settings',
-  notifications: 'FocusForge — Notification Center',
-  'command-center': 'FocusForge — AI Command Center',
+  dashboard: 'FocusForge - Dashboard',
+  finance: 'FocusForge - Finance & Budget',
+  productivity: 'FocusForge - Productivity Center',
+  analytics: 'FocusForge - Analytics & Trends',
+  friends: 'FocusForge - Friends & Community',
+  arena: 'FocusForge - Productivity Arena',
+  splits: 'FocusForge - Expense Buddy',
+  reports: 'FocusForge - Performance Reports',
+  achievements: 'FocusForge - Achievement Center',
+  settings: 'FocusForge - Settings',
+  notifications: 'FocusForge - Notification Center',
+  'command-center': 'FocusForge - AI Command Center',
 };
 
 const KNOWN_PAGES = new Set([
@@ -63,6 +63,9 @@ export default function App() {
   const isOnline = useOnlineStatus();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Determine active page — fallback to dashboard for unknown routes
+  const activePage = KNOWN_PAGES.has(currentPage) ? currentPage : 'dashboard';
 
   // Desktop sidebar collapse — persisted in localStorage (UI-only preference)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -97,12 +100,14 @@ export default function App() {
 
   // Dynamically update the browser tab title
   useEffect(() => {
-    if (!user) {
+    if (loading) {
       document.title = 'FocusForge';
+    } else if (!user) {
+      document.title = 'FocusForge - Authentication';
     } else {
-      document.title = TAB_TITLES[currentPage] || 'FocusForge';
+      document.title = TAB_TITLES[activePage] || 'FocusForge - Dashboard';
     }
-  }, [user, currentPage]);
+  }, [loading, user, activePage]);
 
   // Global safety net: catch unhandled promise rejections that slip through
   // individual try/catch blocks, preventing silent failures in production.
@@ -241,9 +246,7 @@ export default function App() {
   }
 
 
-  // Determine which page to render — fallback to dashboard for unknown routes
-  // (protects against persisted state corruption from localStorage)
-  const activePage = KNOWN_PAGES.has(currentPage) ? currentPage : 'dashboard';
+
 
   return (
     <div
