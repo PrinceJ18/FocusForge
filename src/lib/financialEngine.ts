@@ -71,7 +71,10 @@ export function calculateFinancialState(
     }
   });
 
-  const todaySpent = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+  // Fixed recurring bill payments are scheduled obligations and must not pollute daily discretionary allowance pacing.
+  const todaySpent = todayExpenses
+    .filter(e => !isFixedRecurringExpense(e))
+    .reduce((sum, e) => sum + e.amount, 0);
 
   // --- B. UNPAID BILL OBLIGATIONS ---
   // Active bills only
