@@ -9,9 +9,9 @@
 -- Changes:
 --   1. BEFORE INSERT/UPDATE trigger enforcing goal-ownership and task-ownership
 --   2. Task-link uniqueness scoped to active (completed=false) milestones
---   3. Column-level privilege restriction on goals and goal_milestones
+--   3. Column-level INSERT + UPDATE privilege restrictions on goals and goal_milestones
 --   4. Progress validation in complete_goal (milestone + manual)
---   5. Non-negative XP and deadline >= start_date constraints
+--   5. Non-negative XP and deadline >= start_date constraints (idempotent)
 --   6. Zero-XP guard before award_xp_internal calls
 --
 -- SAFE TO RUN: Uses IF NOT EXISTS, IF EXISTS, CREATE OR REPLACE.
@@ -90,21 +90,42 @@ CREATE UNIQUE INDEX goal_milestones_active_task_link_idx
 
 
 -- ████████████████████████████████████████████████████████████████████████████
--- SECTION 3: COLUMN-LEVEL PRIVILEGE RESTRICTION (C.1)
+-- SECTION 3: COLUMN-LEVEL INSERT + UPDATE PRIVILEGE RESTRICTIONS (C.1 + S1)
 -- ████████████████████████████████████████████████████████████████████████████
 --
--- Prevents authenticated clients from directly modifying:
---   Goals:      status, completed_at, base_xp, bonus_xp
---   Milestones: completed, completed_at, xp_reward
+-- Prevents authenticated clients from directly setting or modifying:
+--   Goals INSERT:  status, completed_at, base_xp, bonus_xp (use server defaults)
+--   Goals UPDATE:  status, completed_at, base_xp, bonus_xp
+--   Milestones INSERT:  completed, completed_at, xp_reward (use server defaults)
+--   Milestones UPDATE:  completed, completed_at, xp_reward
 --
--- These fields can only be modified by SECURITY DEFINER RPCs (running as
--- postgres). Legitimate editing of title, description, deadline, etc.
--- remains permitted.
+-- These fields can only be set/modified by SECURITY DEFINER RPCs (running as
+-- postgres). Legitimate creation and editing of title, description, deadline,
+-- etc. remains permitted.
 --
 -- This is the first use of column-level grants in the project, introduced
 -- because XP configuration fields are directly exploitable (XP → Level).
+-- Without INSERT restrictions, a client could INSERT a goal with
+-- base_xp=9999 and immediately call complete_goal to claim inflated XP.
 
--- 3a. Goals: revoke blanket UPDATE, grant specific safe columns
+-- 3a. Goals: revoke blanket INSERT, grant specific safe columns
+--     Protected columns default to safe values:
+--       status → 'in_progress', base_xp → 50, bonus_xp → 25,
+--       completed_at → NULL, id/created_at/updated_at → server-generated
+REVOKE INSERT ON public.goals FROM authenticated;
+GRANT INSERT (
+  user_id,
+  title,
+  description,
+  period,
+  progress_method,
+  manual_progress_pct,
+  start_date,
+  deadline,
+  is_strict
+) ON public.goals TO authenticated;
+
+-- 3b. Goals: revoke blanket UPDATE, grant specific safe columns
 REVOKE UPDATE ON public.goals FROM authenticated;
 GRANT UPDATE (
   title,
@@ -118,7 +139,20 @@ GRANT UPDATE (
   updated_at
 ) ON public.goals TO authenticated;
 
--- 3b. Goal milestones: revoke blanket UPDATE, grant specific safe columns
+-- 3c. Goal milestones: revoke blanket INSERT, grant specific safe columns
+--     Protected columns default to safe values:
+--       completed → false, xp_reward → 10, completed_at → NULL,
+--       id/created_at/updated_at → server-generated
+REVOKE INSERT ON public.goal_milestones FROM authenticated;
+GRANT INSERT (
+  goal_id,
+  user_id,
+  title,
+  sort_order,
+  linked_task_id
+) ON public.goal_milestones TO authenticated;
+
+-- 3d. Goal milestones: revoke blanket UPDATE, grant specific safe columns
 REVOKE UPDATE ON public.goal_milestones FROM authenticated;
 GRANT UPDATE (
   title,
@@ -129,22 +163,36 @@ GRANT UPDATE (
 
 
 -- ████████████████████████████████████████████████████████████████████████████
--- SECTION 4: SCHEMA CONSTRAINTS (G.1, G.2)
+-- SECTION 4: SCHEMA CONSTRAINTS (G.1, G.2) — Idempotent
 -- ████████████████████████████████████████████████████████████████████████████
+--
+-- Uses DO $$ IF NOT EXISTS guards following the convention established in
+-- 20260729000000_friends_bootstrap.sql (L92-105).
 
--- 4a. Non-negative XP constraints
-ALTER TABLE public.goals
-  ADD CONSTRAINT goals_base_xp_non_negative CHECK (base_xp >= 0);
+DO $$
+BEGIN
+  -- 4a. Non-negative XP constraints
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'goals_base_xp_non_negative') THEN
+    ALTER TABLE public.goals
+      ADD CONSTRAINT goals_base_xp_non_negative CHECK (base_xp >= 0);
+  END IF;
 
-ALTER TABLE public.goals
-  ADD CONSTRAINT goals_bonus_xp_non_negative CHECK (bonus_xp >= 0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'goals_bonus_xp_non_negative') THEN
+    ALTER TABLE public.goals
+      ADD CONSTRAINT goals_bonus_xp_non_negative CHECK (bonus_xp >= 0);
+  END IF;
 
-ALTER TABLE public.goal_milestones
-  ADD CONSTRAINT goal_milestones_xp_reward_non_negative CHECK (xp_reward >= 0);
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'goal_milestones_xp_reward_non_negative') THEN
+    ALTER TABLE public.goal_milestones
+      ADD CONSTRAINT goal_milestones_xp_reward_non_negative CHECK (xp_reward >= 0);
+  END IF;
 
--- 4b. Deadline must be on or after start_date
-ALTER TABLE public.goals
-  ADD CONSTRAINT goals_deadline_after_start CHECK (deadline IS NULL OR deadline >= start_date);
+  -- 4b. Deadline must be on or after start_date
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'goals_deadline_after_start') THEN
+    ALTER TABLE public.goals
+      ADD CONSTRAINT goals_deadline_after_start CHECK (deadline IS NULL OR deadline >= start_date);
+  END IF;
+END $$;
 
 
 -- ████████████████████████████████████████████████████████████████████████████
