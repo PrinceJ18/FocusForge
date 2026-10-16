@@ -12,6 +12,7 @@ import { createProductivitySlice } from './slices/productivitySlice';
 import { createFocusSlice } from './slices/focusSlice';
 import { createSettingsSlice, defaultPreferences, applyPreferencesToDOM } from './slices/settingsSlice';
 import { createEventsSlice } from './slices/eventsSlice';
+import { createGoalsSlice } from './slices/goalsSlice';
 
 // Re-export all types so existing imports don't break
 export * from './slices/types';
@@ -28,6 +29,7 @@ export const useStore = create<AppState>()(
       ...createFocusSlice(...a),
       ...createSettingsSlice(...a),
       ...createEventsSlice(...a),
+      ...createGoalsSlice(...a),
     }),
     {
       name: 'spendwise-storage',
@@ -68,7 +70,9 @@ export const loadUserData = async (userId: string) => {
     expensesRes, tasksRes, sessionsRes, goalsRes, catsRes, profileRes, eventsRes, recurringRes, prefsRes,
     sectionsRes, completionsRes, streakRes, splitsRes,
     // Phase 5.4: Server-side aggregate RPCs
-    focusAggRes, taskAggRes, monthsAggRes
+    focusAggRes, taskAggRes, monthsAggRes,
+    // Goals & Milestones
+    userGoalsRes, userMilestonesRes
   ] = await Promise.all([
     // Phase 5.5: Bounded — expense_date (DATE) >= 90-day cutoff
     supabase.from('expenses').select('*').eq('user_id', userId).gte('expense_date', cutoffDateStr).order('created_at', { ascending: false }),
@@ -92,6 +96,9 @@ export const loadUserData = async (userId: string) => {
     (async () => { try { return await supabase.rpc('get_lifetime_focus_stats'); } catch { return { data: null, error: { message: 'Focus aggregate RPC not available' } }; } })(),
     (async () => { try { return await supabase.rpc('get_lifetime_task_stats'); } catch { return { data: null, error: { message: 'Task aggregate RPC not available' } }; } })(),
     (async () => { try { return await supabase.rpc('get_available_months'); } catch { return { data: null, error: { message: 'Available months RPC not available' } }; } })(),
+    // Goals & Milestones
+    supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabase.from('goal_milestones').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
   ]);
 
   if (expensesRes.data) store.setExpenses(expensesRes.data);
@@ -141,6 +148,18 @@ export const loadUserData = async (userId: string) => {
     store.setSplits(splitsRes.data);
   } else if (splitsRes && splitsRes.error) {
     console.warn('[loadUserData] Splits load failed:', splitsRes.error.message);
+  }
+
+  if (userGoalsRes && userGoalsRes.data) {
+    store.setGoals(userGoalsRes.data);
+  } else if (userGoalsRes && userGoalsRes.error) {
+    console.warn('[loadUserData] Goals load failed:', userGoalsRes.error.message);
+  }
+
+  if (userMilestonesRes && userMilestonesRes.data) {
+    store.setGoalMilestones(userMilestonesRes.data);
+  } else if (userMilestonesRes && userMilestonesRes.error) {
+    console.warn('[loadUserData] Goal milestones load failed:', userMilestonesRes.error.message);
   }
 
   // Determine current streak securely from server, fallback to profile if needed

@@ -162,6 +162,8 @@ export default function App() {
             splits: [],
             taskSections: [],
             taskCompletions: [],
+            goals: [],
+            goalMilestones: [],
             dataLoaded: false,
             // Phase 5.4: Reset server-side aggregates on logout to prevent user data leaks
             lifetimeAggregates: { ...defaultLifetimeAggregates },

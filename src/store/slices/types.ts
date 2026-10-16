@@ -1,5 +1,6 @@
 import { User } from '@supabase/supabase-js';
 import type { AppEvent } from '../../lib/events';
+import type { Goal, GoalMilestone } from '../../types/goals';
 
 export type Priority = 'low' | 'medium' | 'high';
 export type TimerMode = 'focus' | 'break' | 'longbreak';
@@ -335,6 +336,27 @@ export interface LifetimeAggregates {
   availableMonths: string[];
 }
 
+export interface GoalsSlice {
+  // State
+  goals: Goal[];
+  goalMilestones: GoalMilestone[];
+
+  // Bulk setters (used by loadUserData)
+  setGoals: (goals: Goal[]) => void;
+  setGoalMilestones: (milestones: GoalMilestone[]) => void;
+
+  // Goal local mutators (optimistic updates)
+  addGoalLocal: (goal: Goal) => void;
+  updateGoalLocal: (id: string, updates: Partial<Goal>) => void;
+  removeGoalLocal: (id: string) => void;
+
+  // Milestone local mutators (optimistic updates)
+  addMilestoneLocal: (milestone: GoalMilestone) => void;
+  updateMilestoneLocal: (id: string, updates: Partial<GoalMilestone>) => void;
+  removeMilestoneLocal: (id: string) => void;
+  removeMilestonesByGoalLocal: (goalId: string) => void;
+}
+
 export interface GlobalSlice {
   dataLoaded: boolean;
   setDataLoaded: (loaded: boolean) => void;
@@ -344,4 +366,4 @@ export interface GlobalSlice {
   setLifetimeAggregates: (aggregates: Partial<LifetimeAggregates>) => void;
 }
 
-export type AppState = AuthSlice & NavigationSlice & FinanceSlice & ProductivitySlice & FocusSlice & SettingsSlice & EventsSlice & GlobalSlice;
+export type AppState = AuthSlice & NavigationSlice & FinanceSlice & ProductivitySlice & FocusSlice & SettingsSlice & EventsSlice & GoalsSlice & GlobalSlice;

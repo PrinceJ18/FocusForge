@@ -120,6 +120,41 @@ export type Database = {
           updated_at: string;
         };
       };
+      goals: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string;
+          period: 'daily' | 'weekly' | 'monthly' | 'custom' | 'long_term';
+          progress_method: 'milestone' | 'manual';
+          manual_progress_pct: number;
+          start_date: string;
+          deadline: string | null;
+          status: 'in_progress' | 'completed' | 'delayed' | 'abandoned';
+          is_strict: boolean;
+          base_xp: number;
+          bonus_xp: number;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+      };
+      goal_milestones: {
+        Row: {
+          id: string;
+          goal_id: string;
+          user_id: string;
+          title: string;
+          completed: boolean;
+          completed_at: string | null;
+          xp_reward: number;
+          sort_order: number;
+          linked_task_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+      };
     };
   };
 };
