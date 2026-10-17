@@ -33,6 +33,7 @@ import TaskFormModal from '../components/tasks/TaskFormModal';
 import TaskDetailsModal from '../components/tasks/TaskDetailsModal';
 import TaskListView from '../components/tasks/TaskListView';
 import TaskCalendarView from '../components/tasks/TaskCalendarView';
+import GoalsMilestonesCard from '../components/goals/GoalsMilestonesCard';
 import Modal from '../components/ui/Modal';
 import {
   createTask,
@@ -773,6 +774,9 @@ export default function Productivity() {
             )}
           </div>
         </Card>
+
+        {/* Goals & Milestones */}
+        <GoalsMilestonesCard />
 
         {/* ═══ Productivity Summary Panel ═══ */}
         <Card padding="md" className="lg:col-span-2">
