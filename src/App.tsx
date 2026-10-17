@@ -7,6 +7,7 @@ import { useTimerEngine } from './hooks/useTimerEngine';
 import { useDailyGoalWatcher } from './hooks/useDailyGoalWatcher';
 import { useArenaEngine } from './hooks/useArenaEngine';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useGoalDeadlineWatcher } from './hooks/useGoalDeadlineWatcher';
 import Sidebar from './components/Sidebar';
 import PageLayout from './components/layout/PageLayout';
 import MobileNav from './components/MobileNav';
@@ -97,6 +98,7 @@ export default function App() {
   useTimerEngine();
   useDailyGoalWatcher();
   useArenaEngine();
+  useGoalDeadlineWatcher();
 
   // Dynamically update the browser tab title
   useEffect(() => {

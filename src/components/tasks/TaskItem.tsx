@@ -1,5 +1,4 @@
-import React from 'react';
-import { Circle, CheckCircle2, Trash2, Edit2, Calendar, Bell, RotateCcw, AlertTriangle, XCircle, X } from 'lucide-react';
+import { Circle, CheckCircle2, Trash2, Edit2, Calendar, Bell, RotateCcw, AlertTriangle, XCircle, X, Target } from 'lucide-react';
 import { useStore, Task } from '../../store/useStore';
 import { format } from 'date-fns';
 import { ICON_MAP } from './TaskSectionManager';
@@ -18,14 +17,15 @@ interface TaskItemProps {
 export default function TaskItem({
   task,
   status,
-  occurrenceDate,
   onToggle,
   onEdit,
   onDelete,
   onWontDo,
   onClick,
 }: TaskItemProps) {
-  const { taskSections } = useStore();
+  const { taskSections, goalMilestones, goals } = useStore();
+  const linkedMilestone = goalMilestones?.find((m) => m.linked_task_id === task.id);
+  const linkedGoal = linkedMilestone ? goals?.find((g) => g.id === linkedMilestone.goal_id) : null;
 
   const section = taskSections.find((s) => s.id === task.section_id);
   const SectionIcon = section ? ICON_MAP[section.icon] || Calendar : null;
@@ -60,7 +60,8 @@ export default function TaskItem({
     isRecurring ||
     task.reminder_enabled ||
     isCompleted ||
-    isWontDo
+    isWontDo ||
+    !!linkedGoal
   );
 
   return (
@@ -243,6 +244,17 @@ export default function TaskItem({
             {isWontDo && (
               <span className="text-[9px] font-bold px-1.5 py-[1px] rounded bg-orange-500/10 border border-orange-500/20 text-orange-400 leading-relaxed">
                 Won't Do
+              </span>
+            )}
+
+            {/* Goal Association */}
+            {linkedGoal && (
+              <span
+                className="text-[9px] font-bold px-1.5 py-[1px] rounded bg-primary/10 border border-primary/20 text-primary flex items-center gap-1 leading-relaxed max-w-[130px] truncate"
+                title={`Linked to Goal: ${linkedGoal.title}${linkedMilestone ? ` (${linkedMilestone.title})` : ''}`}
+              >
+                <Target size={8} className="shrink-0" />
+                <span className="truncate">{linkedGoal.title}</span>
               </span>
             )}
           </div>

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, RotateCcw, AlertCircle, Edit2, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { Calendar, Clock, RotateCcw, AlertCircle, Edit2, Trash2, CheckCircle2, Circle, Target } from 'lucide-react';
 import { useStore, Task } from '../../store/useStore';
 import { format } from 'date-fns';
 import { ICON_MAP } from './TaskSectionManager';
 import Modal from '../ui/Modal';
+import { getErrorMessage } from '../../lib/getErrorMessage';
 
 interface TaskDetailsModalProps {
   task: Task;
@@ -26,8 +27,11 @@ export default function TaskDetailsModal({
   onDelete,
   onWontDo,
 }: TaskDetailsModalProps) {
-  const { taskSections } = useStore();
+  const { taskSections, goalMilestones, goals } = useStore();
   const [busy, setBusy] = useState(false);
+
+  const linkedMilestone = goalMilestones?.find((m) => m.linked_task_id === task.id);
+  const linkedGoal = linkedMilestone ? goals?.find((g) => g.id === linkedMilestone.goal_id) : null;
 
   // Look up custom section
   const section = taskSections.find((s) => s.id === task.section_id);
@@ -38,8 +42,8 @@ export default function TaskDetailsModal({
     setBusy(true);
     try {
       await onToggle();
-    } catch (err: any) {
-      alert(err.message || 'Failed to toggle task completion.');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to toggle task completion.');
     } finally {
       setBusy(false);
     }
@@ -50,8 +54,8 @@ export default function TaskDetailsModal({
     setBusy(true);
     try {
       await onWontDo();
-    } catch (err: any) {
-      alert(err.message || "Failed to mark as Won't Do.");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || "Failed to mark as Won't Do.");
     } finally {
       setBusy(false);
     }
@@ -68,8 +72,8 @@ export default function TaskDetailsModal({
       try {
         await onDelete();
         onClose();
-      } catch (err: any) {
-        alert(err.message || 'Failed to delete task.');
+      } catch (err: unknown) {
+        alert(getErrorMessage(err) || 'Failed to delete task.');
         setBusy(false);
       }
     }
@@ -217,6 +221,30 @@ export default function TaskDetailsModal({
             <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
             <div>
               Viewing occurrence on <span className="font-bold">{occurrenceDate}</span> of a repeating task sequence.
+            </div>
+          </div>
+        )}
+
+        {/* Linked Goal & Milestone Card */}
+        {linkedGoal && linkedMilestone && (
+          <div className="flex items-start gap-3 p-3.5 bg-primary/10 border border-primary/20 rounded-xl text-xs">
+            <Target size={18} className="text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-text-primary text-xs truncate">
+                  Goal: {linkedGoal.title}
+                </span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/20 text-primary shrink-0">
+                  {linkedGoal.period}
+                </span>
+              </div>
+              <p className="text-[11px] text-text-muted mt-1 truncate">
+                Milestone: <span className="text-text-primary font-medium">{linkedMilestone.title}</span>
+                {linkedMilestone.completed ? ' (Completed)' : ' (In Progress)'}
+              </p>
+              <p className="text-[10px] text-text-muted/80 mt-0.5">
+                Completing this task will advance the milestone and award +{linkedMilestone.xp_reward || 10} XP.
+              </p>
             </div>
           </div>
         )}

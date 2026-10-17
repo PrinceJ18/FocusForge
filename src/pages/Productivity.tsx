@@ -34,6 +34,7 @@ import TaskDetailsModal from '../components/tasks/TaskDetailsModal';
 import TaskListView from '../components/tasks/TaskListView';
 import TaskCalendarView from '../components/tasks/TaskCalendarView';
 import GoalsMilestonesCard from '../components/goals/GoalsMilestonesCard';
+import { useGoalDeadlineWatcher } from '../hooks/useGoalDeadlineWatcher';
 import Modal from '../components/ui/Modal';
 import {
   createTask,
@@ -63,6 +64,8 @@ const getTaskXP = (priority: string) => {
 };
 
 export default function Productivity() {
+  useGoalDeadlineWatcher();
+
   const tasks = useStore(s => s.tasks);
   const focusSessions = useStore(s => s.focusSessions);
   const profile = useStore(s => s.profile);

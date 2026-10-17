@@ -5,6 +5,11 @@ import { useStore } from './useStore';
 import type { Task, TaskSection, Profile } from './slices/types';
 import { checkUnlocksAndMilestones } from '../lib/events';
 import { logEvent } from '../lib/events';
+import {
+  syncTaskCompletionToMilestones,
+  syncTaskUncompletionToMilestones,
+  syncTaskDeletionToMilestones,
+} from './goalsSyncUtils';
 
 export const saveProfile = async (userId: string, data: Partial<Profile>) => {
   const profileUpdate: any = {
@@ -134,6 +139,7 @@ export const deleteTask = async (id: string) => {
   const original = store.tasks.find(t => t.id === id);
 
   store.removeTaskLocal(id);
+  syncTaskDeletionToMilestones(id);
 
   const { error } = await supabase
     .from('tasks')
@@ -182,6 +188,11 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
     }
     
     checkUnlocksAndMilestones();
+    try {
+      await syncTaskCompletionToMilestones(task.id);
+    } catch (err) {
+      console.warn('[storeUtils] Milestone sync on completeTask failed:', err);
+    }
     return;
   }
 
@@ -236,6 +247,12 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
   if (!result.already_completed) {
     checkUnlocksAndMilestones();
   }
+
+  try {
+    await syncTaskCompletionToMilestones(task.id);
+  } catch (err) {
+    console.warn('[storeUtils] Milestone sync on completeTask failed:', err);
+  }
 };
 
 export const uncompleteTask = async (task: Task, date: Date, userId: string) => {
@@ -253,6 +270,11 @@ export const uncompleteTask = async (task: Task, date: Date, userId: string) => 
         completed_at: null,
         updated_at: now,
       });
+    }
+    try {
+      await syncTaskUncompletionToMilestones(task.id);
+    } catch (err) {
+      console.warn('[storeUtils] Milestone sync on uncompleteTask failed:', err);
     }
     return;
   }
@@ -281,6 +303,12 @@ export const uncompleteTask = async (task: Task, date: Date, userId: string) => 
   }
   
   store.setProfileXPAuthoritative(result.total_xp);
+
+  try {
+    await syncTaskUncompletionToMilestones(task.id);
+  } catch (err) {
+    console.warn('[storeUtils] Milestone sync on uncompleteTask failed:', err);
+  }
 };
 
 export const markTaskWontDo = async (task: Task, date: Date, userId: string) => {
