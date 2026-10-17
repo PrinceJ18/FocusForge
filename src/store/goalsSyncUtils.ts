@@ -31,16 +31,18 @@ export async function syncTaskCompletionToMilestones(taskId: string): Promise<vo
     } else {
       // Local / guest mode fallback
       const now = new Date().toISOString();
+      const xpReward = linkedMilestone.xp_reward || 10;
       store.updateMilestoneLocal(linkedMilestone.id, {
         completed: true,
         completed_at: now,
         updated_at: now,
       });
+      store.addXP(xpReward);
       store.showNotification({
         type: 'xp',
-        title: `+${linkedMilestone.xp_reward || 10} XP Earned`,
+        title: `+${xpReward} XP Earned`,
         message: `Linked milestone completed: ${linkedMilestone.title}`,
-        xp: linkedMilestone.xp_reward || 10,
+        xp: xpReward,
       });
     }
   } catch (err) {

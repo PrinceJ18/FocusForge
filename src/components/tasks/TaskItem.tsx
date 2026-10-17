@@ -24,7 +24,9 @@ export default function TaskItem({
   onClick,
 }: TaskItemProps) {
   const { taskSections, goalMilestones, goals } = useStore();
-  const linkedMilestone = goalMilestones?.find((m) => m.linked_task_id === task.id);
+  const linkedMilestone =
+    goalMilestones?.find((m) => m.linked_task_id === task.id && !m.completed) ??
+    goalMilestones?.find((m) => m.linked_task_id === task.id);
   const linkedGoal = linkedMilestone ? goals?.find((g) => g.id === linkedMilestone.goal_id) : null;
 
   const section = taskSections.find((s) => s.id === task.section_id);
