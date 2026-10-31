@@ -2,7 +2,7 @@
  * Analytics AI Coach Intelligence Layer (Phase 3.10C)
  *
  * Provides dedicated, accessible, and reactive intelligence blocks that interpret
- * existing Analytics charts and metrics using the FocusForge AI Coach backend.
+ * existing Analytics charts and metrics using FocusForge AI Coach backend.
  *
  * Consumes data EXCLUSIVELY via `useCoach()` with zero duplicate calculations.
  *
@@ -354,8 +354,8 @@ export const AnalyticsRiskOverview: React.FC<AnalyticsRiskOverviewProps> = memo(
               const severityColor = isCritical
                 ? 'text-red-400 bg-red-500/10 border-red-500/25'
                 : isHigh
-                ? 'text-amber-400 bg-amber-500/10 border-amber-500/25'
-                : 'text-cyan-400 bg-cyan-500/10 border-cyan-500/25';
+                  ? 'text-amber-400 bg-amber-500/10 border-amber-500/25'
+                  : 'text-cyan-400 bg-cyan-500/10 border-cyan-500/25';
 
               return (
                 <div
