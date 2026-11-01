@@ -6,6 +6,7 @@
  *
  * Consumes data EXCLUSIVELY via `useCoach()` with zero duplicate calculations.
  *
+ * 
  * Components:
  * 1. AnalyticsIntelligentSummary — 4 top-level insight cards (Improvement, Decline, Best Habit, Opportunity)
  * 2. ChartInsightPanel — Compact one-line AI interpretation banner below charts
