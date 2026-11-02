@@ -23,7 +23,7 @@ export function useHallOfFame(arenaId: string | null, periodType: 'weekly' | 'mo
       setLoading(true);
       setError(null);
 
-      // Fetch Latest Champion
+      // Fetch Latest-Champion
       const latest = await championService.getLatestChampion(arenaId, periodType);
       setLatestChampion(latest);
 
@@ -46,12 +46,12 @@ export function useHallOfFame(arenaId: string | null, periodType: 'weekly' | 'mo
 
   const loadMore = async () => {
     if (!arenaId || !hasMore || loadingMore) return;
-    
+
     try {
       setLoadingMore(true);
       const nextPage = page + 1;
       const { data, hasMore: more } = await championService.getHallOfFame(arenaId, periodType, nextPage, 10);
-      
+
       setHistory(prev => [...prev, ...data]);
       setHasMore(more);
       setPage(nextPage);
