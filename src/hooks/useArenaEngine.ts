@@ -10,7 +10,7 @@ import { isSameWeek, isSameMonth, parseISO, startOfWeek, startOfMonth, format, i
 /**
  * Background engine that syncs the current user's productivity data
  * to their active arena's scores. Self-discovers the arena from
- * arena_members — no hardcoded arena ID needed.
+ * arena_members — no hardcoded arena ID needed
  */
 export function useArenaEngine() {
   const user = useStore(s => s.user);
@@ -188,7 +188,7 @@ export function useArenaEngine() {
 
         const monthlyTasksCompleted = tasks.filter(t => t.status === 'completed' && t.completed_at && isSameMonth(parseISO(t.completed_at), today)).length;
         const monthlyTotalTasks = tasks.filter(t => isSameMonth(parseISO(t.created_at || new Date().toISOString()), today)).length;
-        
+
         const monthlyChallenges = events.filter(e => e.type === 'challenge_completed' && isSameMonth(parseISO(e.timestamp), today)).length;
 
         const monthlyProdScore = calculateProductivityScore({
@@ -254,7 +254,7 @@ export function useArenaEngine() {
           const { error } = await supabase
             .from('arena_scores')
             .upsert(scoresToUpsert, { onConflict: 'arena_id,user_id,period_type,period_start' });
-            
+
           if (error) {
             console.error('Arena Engine Sync Error:', error);
           }
@@ -268,6 +268,6 @@ export function useArenaEngine() {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
   }, [profile.streak, profile.xp, tasks, focusSessions,
-      expenses, events, preferences.default_daily_focus_goal,
-      activeArenaId, user?.id]);
+    expenses, events, preferences.default_daily_focus_goal,
+    activeArenaId, user?.id]);
 }
