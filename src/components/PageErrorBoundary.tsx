@@ -7,7 +7,7 @@ import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 // Catches render errors within individual lazy-loaded pages.
 // Unlike the global ErrorBoundary (which catches app-level crashes),
 // this boundary isolates page failures so the shell (sidebar,
-// header, navigation) remains functional.
+// header, navigation) remains functional
 //
 // Features:
 // - "Retry" button resets error state and re-renders the page
