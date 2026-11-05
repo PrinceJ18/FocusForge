@@ -21,7 +21,7 @@ import { supabase } from '../lib/supabase';
  *
  * Daily Progress persistence is handled by Dashboard.tsx → dailySnapshotService.
  *
- * Reads existing store data reactively — no new event plumbing needed.
+ * Reads existing store data reactively - no new event plumbing needed.
  */
 export function useDailyGoalWatcher() {
   const prevProgressRef = useRef<Map<string, boolean>>(new Map());
@@ -73,7 +73,7 @@ export function useDailyGoalWatcher() {
       const enabled = goalsState.goalConfigs.filter((g) => g.enabled);
 
       if (enabled.length > 0) {
-      const progressParams = {
+        const progressParams = {
           focusSessions: useStore.getState().focusSessions,
           tasks: useStore.getState().tasks,
           expenses: useStore.getState().expenses,
@@ -155,11 +155,11 @@ export function useDailyGoalWatcher() {
             p_goal_id: p.id,
             p_amount: 10
           }).then(({ data, error }) => {
-             if (!error && data && data.xp_earned > 0) {
-                 useStore.setState((state) => ({
-                    profile: { ...state.profile, xp: data.total_xp }
-                 }));
-             }
+            if (!error && data && data.xp_earned > 0) {
+              useStore.setState((state) => ({
+                profile: { ...state.profile, xp: data.total_xp }
+              }));
+            }
           });
         } else {
           useStore.getState().addXP(10);
@@ -192,11 +192,11 @@ export function useDailyGoalWatcher() {
             p_goal_id: 'all',
             p_amount: bonusXP
           }).then(({ data, error }) => {
-             if (!error && data && data.xp_earned > 0) {
-                 useStore.setState((state) => ({
-                    profile: { ...state.profile, xp: data.total_xp }
-                 }));
-             }
+            if (!error && data && data.xp_earned > 0) {
+              useStore.setState((state) => ({
+                profile: { ...state.profile, xp: data.total_xp }
+              }));
+            }
           });
         } else {
           useStore.getState().addXP(bonusXP);
