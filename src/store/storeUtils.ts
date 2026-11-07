@@ -37,7 +37,7 @@ export const saveProfile = async (userId: string, data: Partial<Profile>) => {
  */
 export const loadUserProfileData = async (userId: string) => {
   try {
-    // Fetch profile and preferences — budget lives in profiles
+    // Fetch profile and preferences - budget lives in profiles
     const [profileData, prefsData] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),
       supabase.from('user_preferences').select('*').eq('user_id', userId).maybeSingle(),
@@ -78,7 +78,7 @@ export const createTask = async (task: Omit<Task, 'user_id' | 'created_at' | 'up
     updated_at: now,
   };
   useStore.getState().addTaskLocal(newTask);
-  
+
   const { data, error } = await supabase
     .from('tasks')
     .insert({
@@ -161,7 +161,7 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
   if (userId === 'local' || !store.user) {
     const xpEarned = task.priority === 'high' ? 20 : task.priority === 'medium' ? 10 : 5;
     const isRecurring = task.recurrence_type && task.recurrence_type !== 'none';
-    
+
     if (isRecurring) {
       store.addTaskCompletionLocal({
         id: crypto.randomUUID(),
@@ -186,7 +186,7 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
         store.addXP(xpEarned);
       }
     }
-    
+
     checkUnlocksAndMilestones();
     try {
       await syncTaskCompletionToMilestones(task.id);
@@ -215,7 +215,7 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
 
   if (task.recurrence_type && task.recurrence_type !== 'none') {
     store.addTaskCompletionLocal({
-      id: crypto.randomUUID(), 
+      id: crypto.randomUUID(),
       user_id: userId,
       task_id: task.id,
       occurrence_date: dateStr,
@@ -234,7 +234,7 @@ export const completeTask = async (task: Task, date: Date, userId: string) => {
   }
 
   store.setProfileXPAuthoritative(result.total_xp);
-  
+
   if (result.xp_earned > 0) {
     store.showNotification({
       type: 'xp',
@@ -301,7 +301,7 @@ export const uncompleteTask = async (task: Task, date: Date, userId: string) => 
       updated_at: now,
     });
   }
-  
+
   store.setProfileXPAuthoritative(result.total_xp);
 
   try {
@@ -441,7 +441,7 @@ export const updateTaskSection = async (id: string, updates: Partial<TaskSection
 export const deleteTaskSection = async (id: string) => {
   const store = useStore.getState();
   const original = store.taskSections.find(s => s.id === id);
-  
+
   const affectedTasks = store.tasks.filter(t => t.section_id === id);
 
   store.removeTaskSectionLocal(id);
