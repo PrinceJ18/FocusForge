@@ -179,15 +179,17 @@ ALTER FUNCTION public.claim_daily_challenge(text, date, int) OWNER TO postgres;
 -- PRESERVE EXECUTE GRANTS
 -- ████████████████████████████████████████████████████████████████████████████
 
-REVOKE ALL ON FUNCTION public.claim_daily_goal(date, text, int) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.claim_daily_goal(date, text, int) FROM anon;
-GRANT EXECUTE ON FUNCTION public.claim_daily_goal(date, text, int) TO authenticated;
+REVOKE ALL ON FUNCTION public.claim_daily_goal(date, text, integer)
+FROM PUBLIC, anon, service_role;
 
-REVOKE ALL ON FUNCTION public.claim_daily_challenge(text, date, int) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.claim_daily_challenge(text, date, int) FROM anon;
-GRANT EXECUTE ON FUNCTION public.claim_daily_challenge(text, date, int) TO authenticated;
+REVOKE ALL ON FUNCTION public.claim_daily_challenge(text, date, integer)
+FROM PUBLIC, anon, service_role;
 
+GRANT EXECUTE ON FUNCTION public.claim_daily_goal(date, text, integer)
+TO authenticated;
 
+GRANT EXECUTE ON FUNCTION public.claim_daily_challenge(text, date, integer)
+TO authenticated;
 -- ████████████████████████████████████████████████████████████████████████████
 -- RELOAD POSTGREST SCHEMA CACHE
 -- ████████████████████████████████████████████████████████████████████████████
