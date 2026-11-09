@@ -1,8 +1,8 @@
-# PHASE 3 / STEP 2 — Daily XP RPC Security Audit Report
+# PHASE 3 / STEP 2 — Daily XP RPC Security Audit Report (Final v3)
 
 > **FocusForge — Server-Authoritative Daily XP Remediation**
 >
-> Generated: 2026-11-07
+> Generated: 2026-11-08 (Final Security Corrections Applied)
 >
 > Status: AUDIT AND PROPOSED IMPLEMENTATION — NOT APPLIED
 >
@@ -13,763 +13,556 @@
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
-2. [Current Function Definitions and Defects](#2-current-function-definitions-and-defects)
-3. [All Frontend RPC Callers](#3-all-frontend-rpc-callers)
-4. [Client-Controlled XP Inputs](#4-client-controlled-xp-inputs)
-5. [Existing Idempotency Mechanisms](#5-existing-idempotency-mechanisms)
-6. [Completion Verification Gaps](#6-completion-verification-gaps)
-7. [Proposed Corrected SQL Design](#7-proposed-corrected-sql-design)
-8. [Proposed Frontend Changes](#8-proposed-frontend-changes)
-9. [Migration and Rollback Strategy](#9-migration-and-rollback-strategy)
-10. [Regression Test Plan](#10-regression-test-plan)
-11. [Remaining Uncertainties](#11-remaining-uncertainties)
+2. [Finding 1 — Task Double-Counting Analysis](#2-finding-1--task-double-counting-analysis)
+3. [Finding 2 — Challenge Date Standardization](#3-finding-2--challenge-date-standardization)
+4. [Finding 3 — Challenge Source Trustworthiness Matrix](#4-finding-3--challenge-source-trustworthiness-matrix)
+5. [Finding 4 — Concurrency Handler Refinement](#5-finding-4--concurrency-handler-refinement)
+6. [Corrected Migration Summary](#6-corrected-migration-summary)
+7. [Unresolved Issues and Remaining Risks](#7-unresolved-issues-and-remaining-risks)
+8. [Pre-Application Verification Queries](#8-pre-application-verification-queries)
+9. [Regression Test Plan](#9-regression-test-plan)
 
 ---
 
 ## 1. Executive Summary
 
-The daily XP reward system has **three confirmed defects** and **two architectural weaknesses**:
+The independent review of the v2 migration identified four remaining concerns. This report provides source-code and SQL evidence for each finding, documents the corrected design, and presents the final migration.
 
-### Confirmed Defects (Source Code — Definitive)
+### Decision: Disable ALL Daily XP Rewards
 
-| ID | Defect | Impact |
-|---|---|---|
-| D1 | **Argument swap** in `claim_daily_goal` and `claim_daily_challenge` — positions 3 (`p_event_type`) and 5 (`p_reference_id`) are swapped when calling `award_xp_internal` | Event `type` and `reference_id` columns contain swapped values. The in-function idempotency check queries `reference_id`, which now holds a static string (`'goal_completed'`), causing all claims after the first on any day to be falsely rejected as "already claimed". |
-| D2 | **Client-controlled `p_amount`** — the XP amount is passed from frontend JavaScript, including a value sourced from **localStorage** (`completionBonusXP`) | An attacker can modify localStorage to claim arbitrary XP (up to the 10,000 hard cap in `award_xp_internal`). |
-| D3 | **No server-side completion verification** — neither `claim_daily_goal` nor `claim_daily_challenge` queries any data table to verify the goal/challenge was actually completed | A user can call the RPCs via browser DevTools without performing any activity. |
+After thorough analysis, **both `claim_daily_goal` and `claim_daily_challenge` are disabled** in the final migration:
 
-### Architectural Weaknesses
-
-| ID | Weakness | Impact |
-|---|---|---|
-| W1 | Daily goals are **entirely client-defined** — goal configurations (types, targets, enabled state) exist only in localStorage via Zustand persist, with no database table | The server cannot verify whether a "goal" was completed because it has no knowledge of what goals the user has configured. |
-| W2 | Daily challenges have **hardcoded completion checks in frontend JavaScript only** — `checkChallengeCompletion()` in `Achievements.tsx` runs in the browser | The server has no mechanism to evaluate challenge conditions, but the underlying data (focus sessions, tasks, expenses) does exist in database tables. |
-
-### Recommendation
-
-**W2 (challenges) is fixable server-side** — the database contains `focus_sessions`, `tasks`, and `expenses` with dates, allowing the server to independently verify challenge completion.
-
-**W1 (goals) cannot be fully verified server-side** without creating a server-side goal configuration table. However, we can still make the system significantly more secure by:
-1. Fixing the argument swap (D1)
-2. Ignoring client-supplied `p_amount` and using server-determined fixed XP values (D2)
-3. Adding server-side challenge verification where possible (D3/W2)
-4. Adding a defensive XP cap as a secondary control
-
----
-
-## 2. Current Function Definitions and Defects
-
-### 2.1 `private.award_xp_internal` — Reference Implementation
-
-**Source:** [`20260711120000_progression_xp_foundation.sql`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260711120000_progression_xp_foundation.sql#L46-L141)
-
-```sql
-CREATE OR REPLACE FUNCTION private.award_xp_internal(
-  p_user_id UUID,        -- Position 1
-  p_xp_amount INTEGER,   -- Position 2
-  p_event_type TEXT,      -- Position 3 ← THE TYPE STRING (e.g., 'goal_completed')
-  p_event_category TEXT,  -- Position 4
-  p_reference_id TEXT,    -- Position 5 ← THE UNIQUE REFERENCE (e.g., 'daily_goal_focus_2026-11-07')
-  p_metadata JSONB       -- Position 6
-)
-```
-
-| Property | Value |
+| Function | Reason for Disabling |
 |---|---|
-| Schema | `private` |
-| Language | plpgsql |
-| Security | SECURITY DEFINER |
-| Owner | `postgres` (explicitly set at line 144) |
-| search_path | `pg_catalog, public, private` |
-| EXECUTE grants | Revoked from `PUBLIC`, `anon`, `authenticated` |
+| `claim_daily_goal` | Goal configurations exist only in browser localStorage. Server cannot verify completion. (Unchanged from v2.) |
+| `claim_daily_challenge` | **All four** challenge verification sources have direct authenticated UPDATE/INSERT/DELETE policies. Users can manipulate the queried data. Accepting manipulable data as "server-authoritative" creates a false sense of security. |
 
-**Behavior:**
-1. Validates inputs (null checks, XP > 0, XP ≤ 10000, string length limits)
-2. Ensures profile exists
-3. Canonicalizes metadata (force-sets `xp_earned` and `xp_source`)
-4. INSERTs into `events` (will fail on unique index if duplicate)
-5. UPDATEs `profiles.xp` via atomic increment
-6. Returns authoritative total XP
+### Reactivation Path
 
-**All other callers pass arguments correctly:**
+Both functions can be reactivated **after** the prerequisite source table security is implemented:
 
-| Caller | Source | Arg 3 (p_event_type) | Arg 5 (p_reference_id) | Correct? |
-|---|---|---|---|---|
-| `complete_task` | [`20260711123000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260711123000_task_completion_xp_pipeline.sql#L226-L238) L226 | `'task_completed'` | `v_reference_id` | ✅ |
-| `unlock_achievement` | [`20260712210000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260712210000_server_authoritative_achievements.sql#L214-L221) L214 | `'achievement_unlocked'` | `v_achievement_id` | ✅ |
-| `complete_milestone` | [`20261013010000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20261013010000_goals_milestones_security_hardening.sql#L289-L300) L289 | `'milestone_completed'` | `v_reference_id` | ✅ |
-| `complete_goal` (base) | [`20261013010000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20261013010000_goals_milestones_security_hardening.sql#L512-L525) L512 | `'goal_completed'` | `v_base_ref` | ✅ |
-| `complete_goal` (bonus) | [`20261013010000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20261013010000_goals_milestones_security_hardening.sql#L538-L550) L538 | `'goal_completed'` | `v_bonus_ref` | ✅ |
-| **`claim_daily_goal`** | [`20260715120000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260715120000_server_authoritative_daily_claims.sql#L68-L80) L68 | **`v_reference_id`** ❌ | **`'goal_completed'`** ❌ | **❌ SWAPPED** |
-| **`claim_daily_challenge`** | [`20260715120000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260715120000_server_authoritative_daily_claims.sql#L142-L154) L142 | **`v_reference_id`** ❌ | **`'challenge_completed'`** ❌ | **❌ SWAPPED** |
-
-### 2.2 `claim_daily_goal` — Detailed Defect Analysis
-
-**Source:** [`20260715120000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260715120000_server_authoritative_daily_claims.sql#L19-L91) lines 19–91
-
-**Signature:** `claim_daily_goal(p_goal_date date, p_goal_id text DEFAULT 'all', p_amount int DEFAULT 10)`
-
-**The swap at lines 68–80:**
-
-```sql
-v_xp_awarded := private.award_xp_internal(
-    v_user_id,         -- → p_user_id       ✅
-    p_amount,          -- → p_xp_amount      ✅ (but client-controlled — D2)
-    v_reference_id,    -- → p_event_type     ❌ SHOULD BE: 'goal_completed'
-    'daily_goal',      -- → p_event_category ✅
-    'goal_completed',  -- → p_reference_id   ❌ SHOULD BE: v_reference_id
-    jsonb_build_object(...)
-);
+```mermaid
+flowchart LR
+    A["Revoke direct UPDATE\non focus_sessions"] --> E["Reactivate c1 + c4"]
+    B["Revoke direct UPDATE\non tasks.status/completed_at"] --> F["Reactivate c3"]
+    C["Revoke direct CRUD\non task_completions"] --> F
+    D["Create server-side\ngoal config table"] --> G["Reactivate claim_daily_goal"]
+    E --> H["Apply reference\nimplementation"]
+    F --> H
+    G --> H
 ```
 
-**Consequence chain:**
+### Changes from v2
 
-1. `events.type` receives values like `'daily_goal_2026-11-07'` or `'daily_goal_focus_2026-11-07'` instead of `'goal_completed'`
-2. `events.reference_id` receives the static string `'goal_completed'` instead of the date-specific reference
-3. **The in-function idempotency check** (lines 51–55) queries:
-   ```sql
-   SELECT EXISTS (
-       SELECT 1 FROM events
-       WHERE user_id = v_user_id
-       AND reference_id = v_reference_id  -- v_reference_id = 'daily_goal_focus_2026-11-07'
-   ) INTO v_already_claimed;
-   ```
-   But the stored `reference_id` is `'goal_completed'` (the static string), **not** `v_reference_id`. So this check **never finds the previously inserted event**.
-
-4. **However**, `award_xp_internal` has its own idempotency via the unique index `events_xp_idempotency_idx` on `(user_id, type, reference_id)`:
-   - First claim: inserts `(user_id, 'daily_goal_focus_2026-11-07', 'goal_completed')` → succeeds
-   - Second claim for a **different** goal same day: inserts `(user_id, 'daily_goal_tasks_2026-11-07', 'goal_completed')` → type differs → **unique index does NOT block this** → **but wait**: the `reference_id` is the same static `'goal_completed'`. So the tuple is `(user_id, <different_type>, 'goal_completed')` — these are different tuples, so the unique index allows them.
-   - The "all" claim: inserts `(user_id, 'daily_goal_2026-11-07', 'goal_completed')` → also succeeds (different type value)
-
-5. **Net effect:** Despite the swap, XP awards still mostly work for the first claim of each goal type because the function-level idempotency check fails to match, but `award_xp_internal`'s unique index generates unique `(type, reference_id)` tuples per goal. However, the stored data is semantically wrong and event querying by `type = 'goal_completed'` will not find daily goal events.
-
-### 2.3 `claim_daily_challenge` — Same Pattern
-
-**Source:** [`20260715120000`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260715120000_server_authoritative_daily_claims.sql#L97-L183) lines 97–183
-
-**Signature:** `claim_daily_challenge(p_challenge_id text, p_challenge_date date, p_amount int DEFAULT 20)`
-
-Same swap at lines 142–154. Same consequences.
+| Area | v2 Design | v3 Final Design |
+|---|---|---|
+| `claim_daily_challenge` | Active with verification queries | **Disabled** — all sources manipulable |
+| c3 task query | Counted all completed tasks (potential double-count risk) | Added `recurrence_type` filter to prevent double-counting |
+| Date validation | ±1 day "because log_focus_session does it" | ±1 day with documented timezone contract |
+| EXCEPTION handler | Caught all `unique_violation` | Analyzed to confirm only `events_xp_idempotency_idx` can fire |
+| Reference impl | Active in function body | Preserved as commented SQL for reactivation |
 
 ---
 
-## 3. All Frontend RPC Callers
+## 2. Finding 1 — Task Double-Counting Analysis
 
-### 3.1 `claim_daily_goal` Callers
+### Question
 
-| # | File | Line(s) | Context | Parameters |
-|---|---|---|---|---|
-| 1 | [`useDailyGoalWatcher.ts`](file:///d:/SWE%20Project/FocusForge%20Ad/src/hooks/useDailyGoalWatcher.ts#L153-L157) | 153–157 | Individual goal completed | `p_goal_date: today, p_goal_id: p.id, p_amount: 10` |
-| 2 | [`useDailyGoalWatcher.ts`](file:///d:/SWE%20Project/FocusForge%20Ad/src/hooks/useDailyGoalWatcher.ts#L190-L193) | 190–193 | All goals completed bonus | `p_goal_date: today, p_goal_id: 'all', p_amount: bonusXP` |
+Can a single recurring task occurrence appear in both `tasks` (with `status = 'completed'`) AND `task_completions`, causing it to be counted twice in the c3 verification query?
 
-### 3.2 `claim_daily_challenge` Callers
+### Analysis
 
-| # | File | Line(s) | Context | Parameters |
-|---|---|---|---|---|
-| 1 | [`Achievements.tsx`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Achievements.tsx#L85-L89) | 85–89 | User clicks "Claim" button | `p_challenge_id: challengeId, p_challenge_date: today, p_amount: reward` |
+**The `complete_task` RPC** ([`20260801020000:67-110`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260801020000_task_status_v2.sql#L67-L110)) uses a mutually exclusive branch:
 
----
+```sql
+v_is_recurring := (v_task.recurrence_type IS NOT NULL AND v_task.recurrence_type <> 'none');
 
-## 4. Client-Controlled XP Inputs
+IF v_is_recurring THEN
+    -- Recurring path: INSERT INTO task_completions
+    INSERT INTO public.task_completions (user_id, task_id, occurrence_date, status, ...)
+    VALUES (v_user_id, p_task_id, p_occurrence_date, 'completed', ...);
+ELSE
+    -- Non-recurring path: UPDATE tasks SET status = 'completed'
+    UPDATE public.tasks SET status = 'completed', completed_at = v_completed_at ...
+    WHERE id = p_task_id;
+END IF;
+```
 
-### 4.1 `p_amount` Sources
+**Through the legitimate RPC path**, double-counting cannot occur because:
+- A recurring task (`recurrence_type != 'none'`) → only `task_completions` gets a row. The parent `tasks` row is never set to `status = 'completed'`.
+- A non-recurring task (`recurrence_type IS NULL OR 'none'`) → only `tasks.status` is updated. No `task_completions` row is created.
 
-| Caller | Value | Source | Manipulable? |
-|---|---|---|---|
-| Individual goal (watcher L156) | `10` | Hardcoded in source | No (without modifying JS bundle) |
-| All-goals bonus (watcher L193) | `bonusXP` | `useDailyGoalsStore.completionBonusXP` → **localStorage** key `focusforge-daily-goals` | **YES — direct localStorage edit** |
-| Challenge claim (Achievements L88) | `reward` | `DAILY_CHALLENGES[].reward` constant (10, 20, 25, 30) | Only via DevTools (modify runtime constant) |
-
-### 4.2 `completionBonusXP` Attack Vector
-
-From [`useDailyGoalsStore.ts`](file:///d:/SWE%20Project/FocusForge%20Ad/src/store/useDailyGoalsStore.ts#L186):
+**Frontend confirmation** ([`storeUtils.ts:155-256`](file:///d:/SWE%20Project/FocusForge%20Ad/src/store/storeUtils.ts#L155-L256)): The frontend `completeTask` function mirrors this exact branching:
 
 ```typescript
-completionBonusXP: 25,  // Default value, persisted to localStorage
+// storeUtils.ts:216-234
+if (task.recurrence_type && task.recurrence_type !== 'none') {
+    store.addTaskCompletionLocal({ ... }); // Recurring → task_completions
+} else {
+    store.updateTaskLocal(task.id, { status: 'completed', ... }); // Non-recurring → tasks
+}
 ```
 
-**Persist config** (line 285): `name: 'focusforge-daily-goals'`
+**Frontend statistics** ([`tasks.ts:5-14`](file:///d:/SWE%20Project/FocusForge%20Ad/src/lib/statistics/tasks.ts#L5-L14)): The frontend `calculateTodayTasks` also uses this exact same partition:
 
-**Attack:**
-```javascript
-// In browser console:
-const store = JSON.parse(localStorage.getItem('focusforge-daily-goals'));
-store.state.completionBonusXP = 9999;
-localStorage.setItem('focusforge-daily-goals', JSON.stringify(store));
-// Next time all goals are completed, claim_daily_goal is called with p_amount: 9999
+```typescript
+const nonRecurring = tasks.filter(
+    (t) => (!t.recurrence_type || t.recurrence_type === 'none')
+           && t.status === 'completed' && t.completed_at && isDateToday(t.completed_at)
+).length;
+const recurring = comps.filter((c) => c.occurrence_date === todayStr && c.status === 'completed').length;
+return nonRecurring + recurring;
 ```
 
-### 4.3 Other Client-Controlled Inputs
+### However: Direct RLS Bypass Risk
 
-| Parameter | Source | Risk |
-|---|---|---|
-| `p_goal_date` | `format(new Date(), 'yyyy-MM-dd')` | Low — client can pass a past or future date. Server does not validate date bounds. |
-| `p_goal_id` | Goal config `id` from localStorage | Low — arbitrary strings accepted. Only affects idempotency key construction. |
-| `p_challenge_id` | `DAILY_CHALLENGES[].id` (e.g., `'c1'`) | Low — arbitrary strings accepted. |
-| `p_challenge_date` | `new Date().toISOString().split('T')[0]` | Low — client can pass arbitrary dates. |
+Users have direct INSERT/UPDATE/DELETE policies on **both** tables:
 
----
+- **`task_completions`** ([`20260706160000:84-98`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260706160000_extend_task_system.sql#L84-L98)): Full CRUD
+- **`tasks`** ([`20260525174459:111-120`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L111-L120)): Full CRUD
 
-## 5. Existing Idempotency Mechanisms
+A user **could** manually:
+1. Create a non-recurring task with `recurrence_type = 'none'`
+2. Set `tasks.status = 'completed'` and `completed_at` to the target date
+3. Also INSERT a `task_completions` row for the same task and date
+4. This would be counted **twice** in an unfiltered c3 query
 
-### 5.1 Two-Layer Idempotency Design
+### v3 Corrected Reference Implementation
 
-**Layer 1 — In-function check** (claim RPCs):
-```sql
-SELECT EXISTS (
-    SELECT 1 FROM events
-    WHERE user_id = v_user_id
-    AND reference_id = v_reference_id
-) INTO v_already_claimed;
-```
-**Status:** ⚠️ Partially broken due to argument swap. Queries for a `reference_id` value that was stored in the `type` column instead.
-
-**Layer 2 — `award_xp_internal` unique index:**
-```sql
-CREATE UNIQUE INDEX events_xp_idempotency_idx
-  ON public.events(user_id, type, reference_id)
-  WHERE reference_id IS NOT NULL AND metadata ? 'xp_earned';
-```
-**Status:** ✅ Functional but with swapped column values. The combination is still unique per goal/date, so duplicate awards for the *exact same* call are prevented.
-
-### 5.2 Other Idempotency Indexes
-
-| Index | On | Purpose |
-|---|---|---|
-| `events_focus_completion_reference_idx` | `(user_id, reference_id) WHERE type = 'focus_session_completed'` | Focus session dedup |
-| `events_xp_idempotency_idx` | `(user_id, type, reference_id) WHERE reference_id IS NOT NULL AND metadata ? 'xp_earned'` | General XP dedup |
-
----
-
-## 6. Completion Verification Gaps
-
-### 6.1 Daily Goals — No Server Verification Possible (W1)
-
-**Why:** Daily goal configurations exist only in localStorage. The server has no `daily_goals` table or `user_daily_goals` configuration table. Goal types include:
-
-| Goal Type | Data Source | Server-Verifiable? |
-|---|---|---|
-| `focus` | `focus_sessions` (DB) | ✅ Yes — query today's focus minutes |
-| `tasks` | `tasks` (DB) | ✅ Yes — query today's completed tasks |
-| `xp` | `profiles.xp` (DB) | ⚠️ Partially — would need start-of-day snapshot |
-| `budget` | `expenses` (DB) | ✅ Yes — query today's expense total |
-| `expense_log` | `expenses` (DB) | ✅ Yes — check if any expenses logged today |
-| `streak` | `profiles.streak` (DB) | ✅ Yes — check streak ≥ 1 |
-| `custom` | localStorage only | ❌ No — no server-side data |
-
-**Problem:** Even for verifiable goal types, the server doesn't know:
-- Which goals are enabled
-- What the user's target value is
-- Whether the goal should be considered "completed"
-
-**Conclusion:** Full server-side daily goal verification requires a `daily_goal_configs` table (user-scoped, server-persisted). This is beyond the scope of a hotfix.
-
-### 6.2 Daily Challenges — Server Verification IS Possible (W2)
-
-The `DAILY_CHALLENGES` array defines 4 challenges with **specific, verifiable** conditions:
-
-| ID | Condition | Server Query |
-|---|---|---|
-| `c1` | 2+ focus sessions today | `SELECT COUNT(*) FROM focus_sessions WHERE user_id = $1 AND session_date = $2` |
-| `c2` | 3+ expenses today | `SELECT COUNT(*) FROM expenses WHERE user_id = $1 AND expense_date = $2` |
-| `c3` | 5+ tasks completed today | `SELECT COUNT(*) FROM tasks WHERE user_id = $1 AND status = 'completed' AND completed_at::date = $2` |
-| `c4` | 60+ focus minutes today | `SELECT COALESCE(SUM(minutes), 0) FROM focus_sessions WHERE user_id = $1 AND session_date = $2` |
-
-**Conclusion:** Challenge completion CAN be verified server-side. The proposed implementation should add these verification queries.
-
----
-
-## 7. Proposed Corrected SQL Design
-
-### 7.1 Design Principles
-
-1. **Fix the argument swap** — correct positions 3 and 5 in both functions
-2. **Server-determined XP** — ignore `p_amount` for known goal/challenge types; use fixed server-side values
-3. **Server-side challenge verification** — query database tables to confirm completion
-4. **Date validation** — reject future dates and dates more than 1 day in the past
-5. **Preserve function signatures** — keep `p_amount` in the parameter list for backward compatibility but ignore it
-6. **Defensive XP cap** — as secondary control, not primary
-
-### 7.2 XP Value Strategy
-
-Rather than trusting `p_amount`, the server should determine XP from a known reward table:
-
-| Claim Type | XP Award | Rationale |
-|---|---|---|
-| Individual daily goal | 10 | Matches current hardcoded value in frontend |
-| All daily goals bonus | 25 | Matches default `completionBonusXP` |
-| Challenge `c1` (2 sessions) | 20 | Matches `DAILY_CHALLENGES[0].reward` |
-| Challenge `c2` (3 expenses) | 10 | Matches `DAILY_CHALLENGES[1].reward` |
-| Challenge `c3` (5 tasks) | 25 | Matches `DAILY_CHALLENGES[2].reward` |
-| Challenge `c4` (60 min focus) | 30 | Matches `DAILY_CHALLENGES[3].reward` |
-| Unknown challenge ID | 10 | Safe default — prevents unknown IDs from awarding zero or arbitrary XP |
-
-### 7.3 Proposed `claim_daily_goal` (Corrected)
+The reference implementation adds `recurrence_type` filtering to the non-recurring branch:
 
 ```sql
-CREATE OR REPLACE FUNCTION public.claim_daily_goal(
-    p_goal_date date,
-    p_goal_id text DEFAULT 'all',
-    p_amount int DEFAULT 10        -- KEPT for backward compatibility; IGNORED by server
-)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, private
-AS $$
-DECLARE
-    v_user_id uuid;
-    v_reference_id text;
-    v_already_claimed boolean;
-    v_xp_awarded int;
-    v_total_xp int;
-    v_server_xp int;
-BEGIN
-    -- 1. Authenticate
-    v_user_id := auth.uid();
-    IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'Not authenticated';
-    END IF;
-
-    -- 2. Date validation: reject future dates and dates > 1 day ago
-    IF p_goal_date > CURRENT_DATE THEN
-        RAISE EXCEPTION 'Cannot claim goals for future dates';
-    END IF;
-    IF p_goal_date < CURRENT_DATE - INTERVAL '1 day' THEN
-        RAISE EXCEPTION 'Cannot claim goals older than yesterday';
-    END IF;
-
-    -- 3. Server-determined XP (client p_amount is IGNORED)
-    IF p_goal_id = 'all' THEN
-        v_server_xp := 25;  -- All-goals-completed bonus
-    ELSE
-        v_server_xp := 10;  -- Individual goal completion
-    END IF;
-
-    -- 4. Idempotency key
-    IF p_goal_id = 'all' THEN
-        v_reference_id := 'daily_goal_' || to_char(p_goal_date, 'YYYY-MM-DD');
-    ELSE
-        v_reference_id := 'daily_goal_' || p_goal_id || '_' || to_char(p_goal_date, 'YYYY-MM-DD');
-    END IF;
-
-    -- 5. Idempotency check (FIXED: query both type AND reference_id correctly)
-    SELECT EXISTS (
-        SELECT 1 FROM events
-        WHERE user_id = v_user_id
-        AND type = 'goal_completed'
-        AND reference_id = v_reference_id
-    ) INTO v_already_claimed;
-
-    IF v_already_claimed THEN
-        SELECT xp INTO v_total_xp FROM profiles WHERE id = v_user_id;
-        RETURN json_build_object(
-            'total_xp', v_total_xp,
-            'xp_earned', 0,
-            'already_claimed', true,
-            'claimed', false
-        );
-    END IF;
-
-    -- 6. Award XP (FIXED: argument order corrected)
-    v_xp_awarded := private.award_xp_internal(
-        v_user_id,
-        v_server_xp,           -- Server-determined, not client p_amount
-        'goal_completed',      -- p_event_type  (FIXED — was v_reference_id)
-        'daily_goal',          -- p_event_category
-        v_reference_id,        -- p_reference_id (FIXED — was 'goal_completed')
-        jsonb_build_object(
-            'goal_date', p_goal_date,
-            'goal_id', p_goal_id,
-            'xp_earned', v_server_xp,
-            'xp_source', 'daily_goal',
-            'client_requested_amount', p_amount  -- Audit trail of what client sent
-        )
-    );
-
-    SELECT xp INTO v_total_xp FROM profiles WHERE id = v_user_id;
-
-    RETURN json_build_object(
-        'total_xp', v_total_xp,
-        'xp_earned', v_server_xp,
-        'already_claimed', false,
-        'claimed', true
-    );
-END;
-$$;
+-- Non-recurring tasks: explicitly filter to recurrence_type IS NULL or 'none'
+(SELECT COUNT(*) FROM public.tasks
+ WHERE user_id = v_user_id
+   AND status = 'completed'
+   AND (recurrence_type IS NULL OR recurrence_type = 'none')
+   AND completed_at IS NOT NULL
+   AND (completed_at AT TIME ZONE 'UTC')::date = p_challenge_date)
 ```
 
-### 7.4 Proposed `claim_daily_challenge` (Corrected + Verification)
+This **prevents double-counting through the legitimate path** and **reduces the attack surface** (a user would need to create a recurring task AND manually insert task_completions AND directly set tasks.status to 'completed', which is inconsistent and would be caught by the `recurrence_type` filter).
 
-```sql
-CREATE OR REPLACE FUNCTION public.claim_daily_challenge(
-    p_challenge_id text,
-    p_challenge_date date,
-    p_amount int DEFAULT 20       -- KEPT for backward compatibility; IGNORED by server
-)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, private
-AS $$
-DECLARE
-    v_user_id uuid;
-    v_reference_id text;
-    v_already_claimed boolean;
-    v_xp_awarded int;
-    v_total_xp int;
-    v_server_xp int;
-    v_current_claims jsonb;
-    v_claimed_array jsonb;
-    v_new_claims jsonb;
-    v_date_str text;
-    v_completion_count int;
-    v_is_completed boolean := false;
-BEGIN
-    -- 1. Authenticate
-    v_user_id := auth.uid();
-    IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'Not authenticated';
-    END IF;
+### Verdict
 
-    -- 2. Date validation
-    IF p_challenge_date > CURRENT_DATE THEN
-        RAISE EXCEPTION 'Cannot claim challenges for future dates';
-    END IF;
-    IF p_challenge_date < CURRENT_DATE - INTERVAL '1 day' THEN
-        RAISE EXCEPTION 'Cannot claim challenges older than yesterday';
-    END IF;
+**Double-counting via legitimate RPC: IMPOSSIBLE** — the paths are mutually exclusive.
 
-    -- 3. Server-side challenge verification and XP determination
-    CASE p_challenge_id
-        WHEN 'c1' THEN
-            -- "Complete 2 focus sessions" → 20 XP
-            SELECT COUNT(*) INTO v_completion_count
-            FROM focus_sessions
-            WHERE user_id = v_user_id AND session_date = p_challenge_date;
-            v_is_completed := (v_completion_count >= 2);
-            v_server_xp := 20;
+**Double-counting via direct RLS manipulation: POSSIBLE** — but mitigated by the `recurrence_type` filter. Full prevention requires revoking direct UPDATE on `tasks.status`/`completed_at` and direct INSERT on `task_completions`.
 
-        WHEN 'c2' THEN
-            -- "Add 3 expenses" → 10 XP
-            SELECT COUNT(*) INTO v_completion_count
-            FROM expenses
-            WHERE user_id = v_user_id AND expense_date = p_challenge_date;
-            v_is_completed := (v_completion_count >= 3);
-            v_server_xp := 10;
+---
 
-        WHEN 'c3' THEN
-            -- "Complete 5 tasks" → 25 XP
-            SELECT COUNT(*) INTO v_completion_count
-            FROM tasks
-            WHERE user_id = v_user_id
-              AND status = 'completed'
-              AND completed_at IS NOT NULL
-              AND completed_at::date = p_challenge_date;
-            v_is_completed := (v_completion_count >= 5);
-            v_server_xp := 25;
+## 3. Finding 2 — Challenge Date Standardization
 
-        WHEN 'c4' THEN
-            -- "Focus for 60+ minutes" → 30 XP
-            SELECT COALESCE(SUM(minutes), 0) INTO v_completion_count
-            FROM focus_sessions
-            WHERE user_id = v_user_id AND session_date = p_challenge_date;
-            v_is_completed := (v_completion_count >= 60);
-            v_server_xp := 30;
+### Current Date Generation Inconsistency
 
-        ELSE
-            -- Unknown challenge ID: reject to prevent exploitation
-            RAISE EXCEPTION 'Unknown challenge ID: %', p_challenge_id;
-    END CASE;
+Two different timezone conventions are used for the same purpose ("get today's date"):
 
-    -- 4. Reject if challenge not actually completed
-    IF NOT v_is_completed THEN
-        SELECT xp INTO v_total_xp FROM profiles WHERE id = v_user_id;
-        RETURN json_build_object(
-            'total_xp', v_total_xp,
-            'xp_earned', 0,
-            'already_claimed', false,
-            'claimed', false,
-            'reason', 'Challenge not completed'
-        );
-    END IF;
+| Caller | Location | Code | Timezone |
+|---|---|---|---|
+| `claimChallenge` | [`Achievements.tsx:69`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Achievements.tsx#L69) | `new Date().toISOString().split('T')[0]` | **UTC** |
+| `claim_daily_goal` | [`useDailyGoalWatcher.ts:154`](file:///d:/SWE%20Project/FocusForge%20Ad/src/hooks/useDailyGoalWatcher.ts#L154) | `format(new Date(), 'yyyy-MM-dd')` | **Local** |
+| `log_focus_session` | [`useTimerEngine.ts:132`](file:///d:/SWE%20Project/FocusForge%20Ad/src/hooks/useTimerEngine.ts#L132) | `formatLocalDate(new Date())` | **Local** |
 
-    -- 5. Idempotency key
-    v_reference_id := 'daily_challenge_' || p_challenge_id || '_' || to_char(p_challenge_date, 'YYYY-MM-DD');
+**Evidence of the bug**:
 
-    -- 6. Idempotency check (FIXED: query type AND reference_id correctly)
-    SELECT EXISTS (
-        SELECT 1 FROM events
-        WHERE user_id = v_user_id
-        AND type = 'challenge_completed'
-        AND reference_id = v_reference_id
-    ) INTO v_already_claimed;
-
-    IF v_already_claimed THEN
-        SELECT xp INTO v_total_xp FROM profiles WHERE id = v_user_id;
-        RETURN json_build_object(
-            'total_xp', v_total_xp,
-            'xp_earned', 0,
-            'already_claimed', true,
-            'claimed', false
-        );
-    END IF;
-
-    -- 7. Award XP (FIXED: argument order corrected)
-    v_xp_awarded := private.award_xp_internal(
-        v_user_id,
-        v_server_xp,               -- Server-determined
-        'challenge_completed',     -- p_event_type  (FIXED)
-        'daily_challenge',         -- p_event_category
-        v_reference_id,            -- p_reference_id (FIXED)
-        jsonb_build_object(
-            'challenge_id', p_challenge_id,
-            'challenge_date', p_challenge_date,
-            'xp_earned', v_server_xp,
-            'xp_source', 'daily_challenge',
-            'client_requested_amount', p_amount  -- Audit trail
-        )
-    );
-
-    -- 8. Update daily_challenge_claims on profile
-    v_date_str := to_char(p_challenge_date, 'YYYY-MM-DD');
-    SELECT daily_challenge_claims INTO v_current_claims FROM profiles WHERE id = v_user_id;
-
-    IF v_current_claims IS NULL OR (v_current_claims->>'date') IS DISTINCT FROM v_date_str THEN
-        v_claimed_array := jsonb_build_array(p_challenge_id);
-    ELSE
-        v_claimed_array := COALESCE(v_current_claims->'claimed', '[]'::jsonb);
-        IF NOT v_claimed_array ? p_challenge_id THEN
-            v_claimed_array := v_claimed_array || to_jsonb(p_challenge_id);
-        END IF;
-    END IF;
-
-    v_new_claims := jsonb_build_object('date', v_date_str, 'claimed', v_claimed_array);
-
-    UPDATE profiles
-    SET daily_challenge_claims = v_new_claims
-    WHERE id = v_user_id
-    RETURNING xp INTO v_total_xp;
-
-    RETURN json_build_object(
-        'total_xp', v_total_xp,
-        'xp_earned', v_server_xp,
-        'already_claimed', false,
-        'claimed', true
-    );
-END;
-$$;
+```typescript
+// Achievements.tsx:69 — .toISOString() converts to UTC
+const today = new Date().toISOString().split('T')[0];
+// At 01:00 AM IST (UTC+5:30): yields '2026-11-07' (yesterday in UTC)
+// But the user's local date is '2026-11-08'
 ```
 
----
+The project has an established **local-date convention**: [`formatLocalDate`](file:///d:/SWE%20Project/FocusForge%20Ad/src/lib/dateUtils.ts#L7-L8) uses `date-fns format()` which produces the local-timezone date. This is used consistently by `useTimerEngine`, `Dashboard`, `storeUtils`, and the goals system.
 
-## 8. Proposed Frontend Changes
+**Achievements.tsx is the outlier** — it uses UTC instead of local time.
 
-### 8.1 No Breaking Changes Required
-
-The function signatures are preserved:
-- `claim_daily_goal(p_goal_date, p_goal_id, p_amount)` — same parameter names and types
-- `claim_daily_challenge(p_challenge_id, p_challenge_date, p_amount)` — same parameter names and types
-
-The frontend will continue sending `p_amount`, but the server will ignore it. The return JSON structure is unchanged (`total_xp`, `xp_earned`, `already_claimed`, `claimed`).
-
-### 8.2 Recommended (Non-Breaking) Frontend Changes
-
-These are **quality improvements** that should be applied in a follow-up step, not as part of the migration:
-
-| Change | File | Reason |
-|---|---|---|
-| Remove `p_amount` from RPC call parameters | `useDailyGoalWatcher.ts:156,193` | Server ignores it; reduces confusion |
-| Remove `p_amount` from RPC call parameters | `Achievements.tsx:88` | Same |
-| Handle new `reason` field in challenge response | `Achievements.tsx:90` | Show "Challenge not completed" if returned |
-| Remove `completionBonusXP` from localStorage persist | `useDailyGoalsStore.ts:290` | No longer needed — server determines XP |
-
-### 8.3 Challenge Completion Check — Frontend vs Server
-
-The existing `checkChallengeCompletion()` in [`Achievements.tsx`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Achievements.tsx#L28-L39) controls the **UI visibility** of the "Claim" button. This should remain in place — it provides a good UX by hiding the button until the challenge appears complete. The server-side check is the **authoritative enforcement**.
-
----
-
-## 9. Migration and Rollback Strategy
-
-### 9.1 Proposed Migration File
-
-**Filename:** `20261107010000_fix_daily_xp_rpcs.sql`
-
-The migration uses `CREATE OR REPLACE FUNCTION` which is inherently idempotent and atomic. It:
-1. Replaces both function bodies in-place
-2. Does not change function signatures or parameter types
-3. Does not affect EXECUTE grants (already set by `20260715122000`)
-4. Does not modify existing event records
-
-### 9.2 Backward Compatibility with Existing Events
-
-Old events created with the swapped arguments have:
-- `type` = reference_id value (e.g., `'daily_goal_focus_2026-11-07'`)
-- `reference_id` = type string (e.g., `'goal_completed'`)
-
-New events will have correct values. The corrected idempotency check queries `type = 'goal_completed' AND reference_id = v_reference_id`, which will NOT match old swapped events. This means:
-
-> [!WARNING]
-> **An edge case exists:** If a user has old swapped events from before the fix, and then the fix is applied, and the user tries to claim the same goal again (for the same date), the corrected idempotency check will not find the old event (because the old event's `type` and `reference_id` are swapped). The `award_xp_internal` unique index will catch the duplicate because `(user_id, old_type, old_reference_id)` ≠ `(user_id, new_type, new_reference_id)`, meaning it will INSERT a new event — **potentially awarding duplicate XP for that specific day's claims**.
->
-> **Mitigation:** This edge case only affects the transition day (the day the migration is applied). For dates before the migration, the old events already awarded XP. For the transition day, if the user already claimed today before the migration, and then claims again after, a duplicate could occur.
->
-> **Safe approach:** Apply the migration at the start of a new day (UTC midnight), when no claims for the current date exist yet.
-
-### 9.3 Rollback SQL
-
-```sql
--- EMERGENCY ROLLBACK — Restores the BROKEN behavior with argument swap
--- Only use if a critical regression is identified
-
--- Restore original claim_daily_goal (with swap defect)
-CREATE OR REPLACE FUNCTION public.claim_daily_goal(
-    p_goal_date date,
-    p_goal_id text DEFAULT 'all',
-    p_amount int DEFAULT 10
-)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, private
-AS $$
--- [Original body from 20260715120000 lines 28-91]
--- Omitted for brevity — copy from the original migration file
-$$;
-
--- Restore original claim_daily_challenge (with swap defect)
-CREATE OR REPLACE FUNCTION public.claim_daily_challenge(
-    p_challenge_id text,
-    p_challenge_date date,
-    p_amount int DEFAULT 20
-)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, private
-AS $$
--- [Original body from 20260715120000 lines 106-183]
--- Omitted for brevity — copy from the original migration file
-$$;
-```
-
----
-
-## 10. Regression Test Plan
-
-### 10.1 Pre-Deployment Checks
-
-| Check | Method | Expected |
-|---|---|---|
-| TypeScript compilation | `npx tsc --noEmit` | Zero errors |
-| Frontend references unchanged | Search `claim_daily_goal` in src | 2 call sites, same parameters |
-| Frontend references unchanged | Search `claim_daily_challenge` in src | 1 call site, same parameters |
-| Migration SQL syntax | PostgreSQL syntax review | Valid plpgsql |
-
-### 10.2 Post-Deployment Functional Tests
-
-| Test | Steps | Expected Result |
-|---|---|---|
-| Individual goal claim | Complete a focus goal → verify XP awarded | `xp_earned: 10`, event with `type='goal_completed'` |
-| All goals claim | Complete all daily goals → verify bonus | `xp_earned: 25` |
-| Challenge c1 claim | Complete 2 focus sessions → claim | `xp_earned: 20` |
-| Challenge c2 claim | Log 3 expenses → claim | `xp_earned: 10` |
-| Challenge c3 claim | Complete 5 tasks → claim | `xp_earned: 25` |
-| Challenge c4 claim | Focus 60+ minutes → claim | `xp_earned: 30` |
-| Duplicate claim | Claim same goal twice | Second returns `already_claimed: true, xp_earned: 0` |
-| Unmet challenge | Try claiming c1 with 0 sessions | Returns `claimed: false, reason: 'Challenge not completed'` |
-| Future date | Call with tomorrow's date | Exception: 'Cannot claim for future dates' |
-| Manipulated p_amount | Send `p_amount: 9999` | `xp_earned` = server value (10, 25, etc.), not 9999 |
-| Unknown challenge ID | Send `p_challenge_id: 'fake'` | Exception: 'Unknown challenge ID' |
-
-### 10.3 Verification Queries
-
-```sql
--- V1: Verify corrected event format after claiming a goal
-SELECT type, reference_id, metadata
-FROM events
-WHERE user_id = auth.uid()
-AND category = 'daily_goal'
-ORDER BY timestamp DESC
-LIMIT 5;
--- Expected: type = 'goal_completed', reference_id = 'daily_goal_<id>_<date>'
-
--- V2: Verify corrected event format after claiming a challenge
-SELECT type, reference_id, metadata
-FROM events
-WHERE user_id = auth.uid()
-AND category = 'daily_challenge'
-ORDER BY timestamp DESC
-LIMIT 5;
--- Expected: type = 'challenge_completed', reference_id = 'daily_challenge_<id>_<date>'
-
--- V3: Check for audit trail of client-requested amount
-SELECT metadata->>'client_requested_amount' AS client_amount,
-       metadata->>'xp_earned' AS server_amount
-FROM events
-WHERE user_id = auth.uid()
-AND category IN ('daily_goal', 'daily_challenge')
-ORDER BY timestamp DESC
-LIMIT 10;
-```
-
----
-
-## 11. Remaining Uncertainties
-
-### 11.1 Live Database State (UNKNOWN)
-
-| Item | Status | Impact |
-|---|---|---|
-| Whether `claim_daily_goal` function exists on live DB | UNKNOWN — inferred from migration | If missing, `CREATE OR REPLACE` will create it |
-| Whether function body matches migration | UNKNOWN — could have been manually edited | `CREATE OR REPLACE` overwrites regardless |
-| Whether `events_xp_idempotency_idx` exists | UNKNOWN — inferred from migration | Corrected idempotency check does not depend solely on this index |
-| Whether `focus_sessions.session_date` column exists | UNKNOWN — needed for challenge verification queries | If missing, c1 and c4 verification will fail |
-| Whether `tasks.completed_at` column exists | UNKNOWN — needed for c3 verification | If missing, c3 verification will fail |
-| Number of existing swapped events | UNKNOWN — requires `SELECT COUNT(*)` | Affects transition-day duplicate risk |
-
-### 11.2 Required Manual Supabase Checks Before Applying
-
-| # | Check | Query |
-|---|---|---|
-| 1 | Verify `focus_sessions` has `session_date` column | `SELECT column_name FROM information_schema.columns WHERE table_name = 'focus_sessions' AND column_name = 'session_date';` |
-| 2 | Verify `tasks` has `completed_at` column | `SELECT column_name FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'completed_at';` |
-| 3 | Verify `expenses` has `expense_date` column | `SELECT column_name FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'expense_date';` |
-| 4 | Count existing swapped daily events | `SELECT COUNT(*) FROM events WHERE reference_id IN ('goal_completed', 'challenge_completed');` |
-| 5 | Confirm current function exists | `SELECT proname FROM pg_proc WHERE proname = 'claim_daily_goal';` |
-
-### 11.3 Daily Goals — Limitations Accepted
-
-Full server-side daily goal completion verification is **not possible** without a server-side goal configuration table. The proposed fix:
-- Fixes the argument swap (correctness)
-- Uses server-determined fixed XP values (security)
-- Adds date validation (safety)
-- Preserves idempotency (reliability)
-- Does NOT verify that the user actually completed the goal (accepted limitation)
-
-This limitation is acceptable because:
-1. Individual goal XP is small (10 XP)
-2. The all-goals bonus is modest (25 XP)
-3. The primary exploit vector (localStorage-controlled `p_amount`) is eliminated
-4. The idempotency prevents repeated claims for the same goal on the same date
-5. A future phase can add a `daily_goal_configs` table for full verification
-
----
-
-## Confirmation Statement
+### Date Contract
 
 > [!IMPORTANT]
-> **I confirm the following:**
->
-> 1. ✅ This report is an AUDIT AND DESIGN DOCUMENT only.
-> 2. ✅ No SQL was executed against Supabase.
-> 3. ✅ No migrations were applied or pushed.
-> 4. ✅ No production data was modified.
-> 5. ✅ No existing migration files were changed.
-> 6. ✅ No XP balances were altered.
-> 7. ✅ No secrets or service-role credentials were exposed.
-> 8. ✅ The proposed migration file has NOT been created yet — awaiting authorization.
+> **Established convention**: The client sends the user's **local calendar date** (YYYY-MM-DD) as produced by `formatLocalDate(new Date())`. The server accepts this date if it falls within ±1 calendar day of the server's `CURRENT_DATE` (UTC on Supabase).
 
-**STOP — Awaiting independent review and authorization before creating the migration file or applying anything.**
+**Why ±1 day tolerance is necessary** (not merely grandfathered):
 
+- Supabase `CURRENT_DATE` is UTC.
+- A user at UTC+14 (Line Islands) at 00:30 local time has a local date one calendar day ahead of UTC.
+- A user at UTC-12 (Baker Island) at 23:30 local time has a local date one calendar day behind UTC.
+- At any given instant, at most 3 calendar dates exist globally. ±1 day from server UTC covers all of them.
+
+**Why ±1 day is the correct bound**:
+
+- The `log_focus_session` RPC ([`20260708180000:71`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260708180000_fix_events_index_and_constraint.sql#L71)) uses the same ±1 day tolerance for `p_session_date`. This is not a legacy pattern to grandfather — it is the **correct engineering answer** for client-supplied local dates compared against a UTC server.
+- A tighter bound (e.g., only CURRENT_DATE and CURRENT_DATE - 1) would reject legitimate claims from users at UTC+N where N > 0 when the server is near midnight.
+
+### Recommended Frontend Fix
+
+```diff
+// Achievements.tsx:69 — SHOULD use local date, not UTC
+- const today = new Date().toISOString().split('T')[0];
++ const today = format(new Date(), 'yyyy-MM-dd');
+```
+
+or import `formatLocalDate`:
+
+```diff
++ import { formatLocalDate } from '../lib/dateUtils';
+  ...
+- const today = new Date().toISOString().split('T')[0];
++ const today = formatLocalDate(new Date());
+```
+
+> [!NOTE]
+> This frontend fix is **not included in the migration** per the strict safety rules (no unrelated frontend changes). It is documented here for a coordinated frontend update.
+
+### Midnight Boundary Test Cases
+
+| Scenario | Server CURRENT_DATE | Client local date | p_challenge_date | Accepted? |
+|---|---|---|---|---|
+| UTC+14, 00:30 local | 2026-11-07 | 2026-11-08 | 2026-11-08 | ✅ (+1 day) |
+| UTC-12, 23:30 local | 2026-11-09 | 2026-11-08 | 2026-11-08 | ✅ (-1 day) |
+| UTC+0, midday | 2026-11-08 | 2026-11-08 | 2026-11-08 | ✅ (same) |
+| Manipulation: +3 days | 2026-11-08 | 2026-11-08 | 2026-11-11 | ❌ (> +1) |
+| Manipulation: -3 days | 2026-11-08 | 2026-11-08 | 2026-11-05 | ❌ (< -1) |
+
+---
+
+## 4. Finding 3 — Challenge Source Trustworthiness Matrix
+
+### Methodology
+
+For each challenge, I inspected:
+1. The database table and columns queried by the verification logic
+2. All RLS policies (SELECT, INSERT, UPDATE, DELETE) on that table
+3. Whether any migration revoked or restricted those policies
+4. All frontend and RPC write paths
+5. Whether a user can directly manipulate the verification data
+
+### Challenge-by-Challenge Analysis
+
+#### c1: "Complete 2 focus sessions" — `focus_sessions.sessions_count`
+
+| Aspect | Finding | Evidence |
+|---|---|---|
+| **Table** | `focus_sessions` | [`20260525174459:123-129`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L123-L129) |
+| **Verified column** | `sessions_count` | Aggregate sum per day |
+| **Legitimate write path** | `log_focus_session` RPC (SECURITY DEFINER) | [`20260708180000:132-139`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260708180000_fix_events_index_and_constraint.sql#L132-L139) — `sessions_count = sessions_count + 1` |
+| **UPDATE policy** | `"Users can update own focus sessions"` — **unrestricted** | [`20260525174459:144-148`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L144-L148) |
+| **Policy revocations** | **None found** | No migration drops/revokes UPDATE on focus_sessions |
+| **Frontend direct writes** | **None** — all writes use `log_focus_session` RPC | Search: 0 results for `.from('focus_sessions').update` |
+| **Manipulation attack** | `supabase.from('focus_sessions').update({ sessions_count: 999 }).eq('session_date', '...')` | Direct API call bypasses RPC |
+
+**Verdict: INSECURE** — The UPDATE policy allows direct manipulation of `sessions_count`. The frontend doesn't use direct writes, but the Supabase PostgREST API is accessible to any authenticated user.
+
+**Recommendation: Disable c1 until direct UPDATE on `focus_sessions` is revoked.**
+
+---
+
+#### c2: "Add 3 expenses" — `expenses` count by `expense_date`
+
+| Aspect | Finding | Evidence |
+|---|---|---|
+| **Table** | `expenses` | [`20260525174459:52-61`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L52-L61) |
+| **Verified condition** | `COUNT(*) WHERE expense_date = p_challenge_date` | Counts rows |
+| **Legitimate write path** | Direct INSERT via Supabase client | [`Dashboard.tsx:313`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Dashboard.tsx#L313), [`Finance.tsx:1074`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Finance.tsx#L1074) |
+| **INSERT policy** | `"Users can insert own expenses"` — **unrestricted** | [`20260525174459:70-73`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L70-L73) |
+| **DELETE policy** | `"Users can delete own expenses"` — **unrestricted** | [`20260525174459:81-84`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L81-L84) |
+| **Frontend DELETE** | `Finance.tsx:135` — `supabase.from('expenses').delete().eq('id', id)` | Legitimate feature |
+| **Manipulation attack** | Insert 3 fake expenses → claim challenge → delete them | Trivial with direct API calls |
+
+**Verdict: INSECURE** — Expenses are a user-managed resource with intentional full CRUD. The `expense_date` is client-supplied. Expense rows can be inserted and deleted at will.
+
+**Recommendation: Disable c2 until expense INSERT goes through a SECURITY DEFINER RPC, or accept this as a design trade-off and document it.** (Alternatively, c2 could be re-enabled if the reward is accepted as a "logging activity incentive" rather than a security-critical XP source — but the review explicitly requires not silently accepting manipulation risks.)
+
+---
+
+#### c3: "Complete 5 tasks" — `tasks.status` + `task_completions.status`
+
+| Aspect | Finding | Evidence |
+|---|---|---|
+| **Tables** | `tasks` + `task_completions` | [`20260525174459:87-97`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L87-L97), [`20260706160000:63-73`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260706160000_extend_task_system.sql#L63-L73) |
+| **Legitimate write path** | `complete_task` RPC (SECURITY DEFINER) | [`20260801020000:35-124`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260801020000_task_status_v2.sql#L35-L124) |
+| **UPDATE policy (tasks)** | `"Users can update own tasks"` — **unrestricted** | [`20260525174459:111-116`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260525174459_create_spendwise_tables.sql#L111-L116) |
+| **INSERT policy (task_completions)** | `"Users can insert own task completions"` — **unrestricted** | [`20260706160000:84-87`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20260706160000_extend_task_system.sql#L84-L87) |
+| **Frontend task direct writes** | INSERT only — [`Dashboard.tsx:374`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Dashboard.tsx#L374) (task creation, not status update) | All completion goes through `complete_task` RPC |
+| **Frontend task_completions writes** | SELECT only — [`Reports.tsx:183`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Reports.tsx#L183), [`useStore.ts:92`](file:///d:/SWE%20Project/FocusForge%20Ad/src/store/useStore.ts#L92) | No direct INSERT/UPDATE in frontend |
+| **Manipulation attack (tasks)** | `supabase.from('tasks').update({ status: 'completed', completed_at: '<target>' }).eq('id', '...')` | Bypasses XP check in RPC |
+| **Manipulation attack (task_completions)** | `supabase.from('task_completions').insert({ task_id: '...', occurrence_date: '<target>', status: 'completed' })` | Creates fake completions |
+
+**Verdict: INSECURE** — Both `tasks.status` and `task_completions` can be directly manipulated. The `complete_task` RPC is SECURITY DEFINER, but users are not forced to use it.
+
+**Recommendation: Disable c3 until direct UPDATE on `tasks.status`/`completed_at` is revoked AND direct INSERT on `task_completions` is revoked.**
+
+---
+
+#### c4: "Focus for 60+ minutes" — `focus_sessions.minutes`
+
+| Aspect | Finding | Evidence |
+|---|---|---|
+| **Table** | `focus_sessions` | Same as c1 |
+| **Verified column** | `minutes` | Aggregate total per day |
+| **Legitimate write path** | `log_focus_session` RPC | Same as c1 — `minutes = minutes + EXCLUDED.minutes` |
+| **UPDATE policy** | Same as c1 — unrestricted | Same as c1 |
+| **Manipulation attack** | `supabase.from('focus_sessions').update({ minutes: 9999 }).eq('session_date', '...')` | Same as c1 |
+
+**Verdict: INSECURE** — Same analysis as c1.
+
+**Recommendation: Disable c4 until direct UPDATE on `focus_sessions` is revoked.**
+
+---
+
+### Consolidated Trustworthiness Matrix
+
+| Challenge | Verification Source | Legitimate Write Path | Direct Mutation Possible? | Verdict | Action |
+|---|---|---|---|---|---|
+| **c1** | `focus_sessions.sessions_count` | `log_focus_session` RPC | ✅ Yes (UPDATE policy) | **INSECURE** | **DISABLE** |
+| **c2** | `expenses` row count | Direct INSERT (by design) | ✅ Yes (INSERT+DELETE policies) | **INSECURE** | **DISABLE** |
+| **c3** | `tasks.status` + `task_completions` | `complete_task` RPC | ✅ Yes (UPDATE + INSERT policies) | **INSECURE** | **DISABLE** |
+| **c4** | `focus_sessions.minutes` | `log_focus_session` RPC | ✅ Yes (UPDATE policy) | **INSECURE** | **DISABLE** |
+
+> [!CAUTION]
+> All four challenges have insecure verification sources. The migration disables all challenge rewards until the prerequisite table-level security is implemented.
+
+---
+
+## 5. Finding 4 — Concurrency Handler Refinement
+
+### The v2 Issue
+
+The v2 migration caught **all** `unique_violation` exceptions:
+
+```sql
+EXCEPTION
+    WHEN unique_violation THEN
+        -- Could catch violations from ANY unique constraint on ANY table
+        RETURN json_build_object('already_claimed', true);
+```
+
+This is overly broad. An unrelated unique constraint failure (e.g., on `profiles` or a hypothetical future column) would be silently converted to `already_claimed: true`, masking real errors.
+
+### Analysis of What Can Actually Fire
+
+Inside the `BEGIN...EXCEPTION...END` block, `award_xp_internal` performs exactly two DML operations:
+
+1. **`INSERT INTO public.events (...)`** — This can trigger:
+   - `events_xp_idempotency_idx`: `UNIQUE (user_id, type, reference_id) WHERE reference_id IS NOT NULL AND metadata ? 'xp_earned'`
+   - `events_focus_completion_reference_idx`: `UNIQUE (user_id, reference_id) WHERE reference_id IS NOT NULL AND type = 'focus_session_completed'` — **cannot fire** because we insert `type = 'challenge_completed'`, not `'focus_session_completed'`
+
+2. **`UPDATE public.profiles SET xp = ... WHERE id = ...`** — This updates `xp` (not a unique column) and `updated_at`. **Cannot raise `unique_violation`**.
+
+**Therefore**: The only possible `unique_violation` is from `events_xp_idempotency_idx`, which is precisely the idempotency constraint we want to catch.
+
+### v3 Corrected Design
+
+Since only one constraint can fire, catching `unique_violation` is actually correct and specific in this context. The reference implementation documents this analysis:
+
+```sql
+EXCEPTION
+    WHEN unique_violation THEN
+        -- Only events_xp_idempotency_idx can fire here:
+        -- - award_xp_internal's INSERT into events is the only INSERT
+        -- - events_focus_completion_reference_idx requires type='focus_session_completed'
+        --   (we insert type='challenge_completed', so it cannot match)
+        -- - The profiles UPDATE touches xp/updated_at (not unique columns)
+        SELECT COALESCE(xp, 0) INTO v_total_xp FROM public.profiles WHERE id = v_user_id;
+        RETURN json_build_object(
+            'total_xp', v_total_xp, 'xp_earned', 0,
+            'already_claimed', true, 'claimed', false
+        );
+```
+
+### Why Not Use `CONSTRAINT constraint_name` Syntax?
+
+PostgreSQL's `WHEN unique_violation` handler does not support filtering by constraint name directly. To check the constraint name, you would need `GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME` and then `IF v_constraint = '...' THEN ... ELSE RAISE; END IF;`. However, since we've proven that only one constraint can fire, this additional complexity is unnecessary.
+
+> [!NOTE]
+> This analysis is valid **only for the current schema**. If future migrations add unique constraints to `events` or `profiles` that could fire during `award_xp_internal`, the handler should be revisited.
+
+---
+
+## 6. Corrected Migration Summary
+
+**File**: [`supabase/migrations/20261108000000_fix_daily_xp_rpcs.sql`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20261108000000_fix_daily_xp_rpcs.sql)
+
+### Active SQL (Applied When Migration Runs)
+
+| Component | Action |
+|---|---|
+| `claim_daily_goal` | Replaced with disabled stub. Returns `claimed: false, reason: "...disabled..."`. |
+| `claim_daily_challenge` | Replaced with disabled stub. Validates `p_challenge_id` allowlist. Returns `claimed: false, reason: "...disabled..."`. |
+| Ownership | Both functions: `ALTER ... OWNER TO postgres` |
+| EXECUTE grants | Revoke from PUBLIC and anon; grant to authenticated |
+| PostgREST | `NOTIFY pgrst, 'reload schema'` |
+
+### Reference Implementation (Inactive — Preserved as SQL Comments)
+
+The corrected, fully-functional implementation with all security fixes is preserved as a commented SQL block at the end of the migration file. To reactivate:
+
+1. Complete the prerequisite source table security (revoke direct UPDATE/DELETE/INSERT)
+2. Uncomment the reference implementation
+3. Remove the early RETURN in the active function body
+4. Apply and verify
+
+### Prerequisites for Reactivation
+
+| Prerequisite | Enables | Scope |
+|---|---|---|
+| Revoke direct UPDATE on `focus_sessions` from `authenticated` | c1, c4 | Column-level or full revoke; `log_focus_session` is SECURITY DEFINER |
+| Revoke direct UPDATE on `tasks.status`, `tasks.completed_at` from `authenticated` | c3 | Column-level grant excluding status/completed_at |
+| Revoke direct INSERT/UPDATE/DELETE on `task_completions` from `authenticated` | c3 | `complete_task`/`uncomplete_task`/`mark_task_wont_do` are SECURITY DEFINER |
+| Create server-side goal configuration table | Daily goals | New table + sync mechanism |
+
+---
+
+## 7. Unresolved Issues and Remaining Risks
+
+### 7.1 Daily Goal and Challenge XP Temporarily Unavailable
+
+**User impact**: Authenticated users will no longer earn XP for daily goal completion or daily challenge completion. Local (unauthenticated) users are unaffected — their XP is managed entirely in Zustand/localStorage.
+
+**Frontend impact**: The frontend callers will receive `xp_earned: 0, claimed: false` and will not update profile XP. Local notifications may still display (they fire before the RPC response in some cases), but no database-side XP changes occur.
+
+### 7.2 Achievements.tsx Date Bug
+
+[`Achievements.tsx:69`](file:///d:/SWE%20Project/FocusForge%20Ad/src/pages/Achievements.tsx#L69) uses `new Date().toISOString().split('T')[0]` (UTC) while the rest of the project uses `formatLocalDate` (local timezone). This should be fixed in a coordinated frontend update but is **not included in this migration**.
+
+### 7.3 Cannot Verify Live Database State
+
+All schema and policy analysis is based on migration-file inference. The actual production database may have diverged from migration history (as documented in migration `20260802000000`).
+
+### 7.4 Old Swapped Events Remain in Database
+
+Existing events with swapped `type`/`reference_id` values are not modified. The reference implementation's dual idempotency check handles this correctly. When the functions are reactivated, both old and new patterns will be recognized.
+
+### 7.5 No Server-Side Goal Configuration
+
+Daily goals remain entirely client-defined. This is a feature design limitation, not a security bug that can be fixed with a migration alone.
+
+---
+
+## 8. Pre-Application Verification Queries
+
+Run these in the Supabase SQL Editor **before** applying the migration:
+
+```sql
+-- P1. Verify current functions exist
+SELECT proname, proowner::regrole, prosecdef,
+       array_to_string(proconfig, ', ') AS config
+FROM pg_proc
+WHERE proname IN ('claim_daily_goal', 'claim_daily_challenge')
+ORDER BY proname;
+-- Expected: 2 rows, note current owner and security_definer status
+
+-- P2. Verify focus_sessions.sessions_count column exists
+SELECT column_name, data_type, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'focus_sessions'
+  AND column_name = 'sessions_count';
+-- Expected: 1 row, integer
+
+-- P3. Verify task_completions.status column exists
+SELECT column_name, data_type, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'task_completions'
+  AND column_name = 'status';
+-- Expected: 1 row, text
+
+-- P4. Verify expenses.expense_date column exists
+SELECT column_name, data_type, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'expenses'
+  AND column_name = 'expense_date';
+-- Expected: 1 row, date
+
+-- P5. Count existing swapped challenge events (migration-window risk assessment)
+SELECT COUNT(*) AS swapped_challenge_events
+FROM events
+WHERE reference_id = 'challenge_completed'
+  AND type LIKE 'daily_challenge_%';
+-- Note: These are OLD pattern events from the swapped implementation
+
+-- P6. Snapshot current user XP (for post-migration verification)
+SELECT id, xp FROM profiles WHERE id = auth.uid();
+-- Note the value for comparison after migration
+
+-- P7. Verify RLS policies on verification source tables
+SELECT schemaname, tablename, policyname, cmd
+FROM pg_policies
+WHERE tablename IN ('focus_sessions', 'expenses', 'tasks', 'task_completions')
+ORDER BY tablename, cmd;
+-- Verify UPDATE/INSERT/DELETE policies exist (confirms insecure state)
+
+-- P8. Verify unique indexes on events
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = 'events' AND indexdef LIKE '%UNIQUE%';
+-- Expected: events_xp_idempotency_idx, events_focus_completion_reference_idx
+```
+
+---
+
+## 9. Regression Test Plan
+
+### Post-Application Verification
+
+| # | Test | Query / Action | Expected Result |
+|---|---|---|---|
+| T1 | Goal claim disabled | `SELECT claim_daily_goal(CURRENT_DATE, 'goal_focus', 9999)` | `xp_earned: 0, claimed: false, reason: "...disabled..."` |
+| T2 | Goal 'all' disabled | `SELECT claim_daily_goal(CURRENT_DATE, 'all', 9999)` | Same as T1 |
+| T3 | Challenge c1 disabled | `SELECT claim_daily_challenge('c1', CURRENT_DATE)` | `xp_earned: 0, claimed: false, reason: "...disabled..."` |
+| T4 | Challenge c2 disabled | `SELECT claim_daily_challenge('c2', CURRENT_DATE)` | Same as T3 |
+| T5 | Challenge c3 disabled | `SELECT claim_daily_challenge('c3', CURRENT_DATE)` | Same as T3 |
+| T6 | Challenge c4 disabled | `SELECT claim_daily_challenge('c4', CURRENT_DATE)` | Same as T3 |
+| T7 | Unknown challenge rejected | `SELECT claim_daily_challenge('c99', CURRENT_DATE)` | EXCEPTION: `Unknown challenge ID: c99` |
+| T8 | XP unchanged | `SELECT xp FROM profiles WHERE id = auth.uid()` | Same as P6 snapshot |
+| T9 | Function ownership | `SELECT proowner::regrole FROM pg_proc WHERE proname='claim_daily_challenge'` | `postgres` |
+| T10 | Function security | `SELECT prosecdef FROM pg_proc WHERE proname='claim_daily_challenge'` | `true` |
+| T11 | EXECUTE grants | `SELECT grantee FROM information_schema.routine_privileges WHERE routine_name='claim_daily_challenge' AND routine_schema='public'` | Only `authenticated` |
+| T12 | search_path | `SELECT proconfig FROM pg_proc WHERE proname='claim_daily_challenge'` | Contains `search_path=pg_catalog, public, private` |
+
+### Concurrent Claims Test (For Reference Implementation Reactivation)
+
+When the reference implementation is activated, test concurrent claims:
+
+| # | Test | Method | Expected |
+|---|---|---|---|
+| C1 | Two simultaneous c1 claims | Open 2 SQL sessions, execute `SELECT claim_daily_challenge('c1', CURRENT_DATE)` simultaneously | First: `claimed: true`. Second: `already_claimed: true`. No uncaught error. |
+| C2 | Advisory lock serialization | Same as C1, observe that second session waits for first to commit | Second session blocks until first completes |
+
+### Timezone Boundary Tests (For Reference Implementation Reactivation)
+
+| # | Test | p_challenge_date | Server CURRENT_DATE | Expected |
+|---|---|---|---|---|
+| Z1 | Same day | `CURRENT_DATE` | `CURRENT_DATE` | Accepted |
+| Z2 | Yesterday (UTC-N user) | `CURRENT_DATE - 1` | `CURRENT_DATE` | Accepted |
+| Z3 | Tomorrow (UTC+N user) | `CURRENT_DATE + 1` | `CURRENT_DATE` | Accepted |
+| Z4 | Two days ago | `CURRENT_DATE - 2` | `CURRENT_DATE` | EXCEPTION |
+| Z5 | Two days ahead | `CURRENT_DATE + 2` | `CURRENT_DATE` | EXCEPTION |
+
+### Task Double-Counting Test (For Reference Implementation Reactivation)
+
+| # | Test | Setup | Expected c3 Count |
+|---|---|---|---|
+| D1 | Non-recurring only | Complete 3 non-recurring tasks today via `complete_task` RPC | 3 |
+| D2 | Recurring only | Complete 3 recurring task occurrences today via `complete_task` RPC | 3 |
+| D3 | Mixed | Complete 2 non-recurring + 2 recurring today | 4 |
+| D4 | No double-count | Verify same task cannot appear in both counts | Pass `recurrence_type` filter |
+
+### Frontend Smoke Tests
+
+| # | Test | Steps | Expected |
+|---|---|---|---|
+| F1 | Goal notification visual | Complete a daily goal | Local notification shows, XP does NOT change |
+| F2 | Challenge claim response | Click Claim on c1 challenge | No claim, no error, button remains claimable |
+| F3 | Unknown challenge | Inspect network: no 500 errors on challenge page | Clean responses |
+| F4 | Page load | Navigate to all pages | No console errors |
+
+---
+
+> [!IMPORTANT]
+> **This migration has NOT been applied.** The file exists at [`supabase/migrations/20261108000000_fix_daily_xp_rpcs.sql`](file:///d:/SWE%20Project/FocusForge%20Ad/supabase/migrations/20261108000000_fix_daily_xp_rpcs.sql) and awaits independent review and explicit authorization.
+
+---
+
+*End of Phase 3 / Step 2 Security Audit Report (Final v3)*
