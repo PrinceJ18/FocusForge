@@ -216,22 +216,55 @@ WHERE table_schema = 'public'
 
 **Expected:** Zero rows — `anon` has no table-level privileges at all.
 
-### P4. Confirm no column-level write or SELECT grants survive for anon/PUBLIC
+### P4. Confirm no residual column-level grants for anon, authenticated, or PUBLIC
 
 ```sql
 SELECT grantee, column_name, privilege_type
 FROM information_schema.column_privileges
 WHERE table_schema = 'public'
   AND table_name = 'focus_sessions'
-  AND grantee IN ('anon', 'authenticated')
+  AND grantee IN ('anon', 'authenticated', 'PUBLIC')
 ORDER BY grantee, column_name, privilege_type;
 ```
 
 **Expected:**
-- `anon`: zero rows (no column-level grants of any type).
-- `authenticated`: only SELECT rows (if column-level SELECT grants exist), and no INSERT, UPDATE, or REFERENCES rows.
+- `anon`: zero rows — no column-level grants of any type.
+- `PUBLIC`: zero rows — no column-level grants of any type.
+- `authenticated`: only SELECT rows (if column-level SELECT grants exist); no INSERT, UPDATE, or REFERENCES rows.
 
-### P5. Confirm has_table_privilege checks
+> [!NOTE]
+> `information_schema.column_privileges` reports grants made directly to the named grantee. It does not surface privileges inherited through role membership (e.g., a role that is a member of `PUBLIC`). Use P5 to inspect direct ACL entries and P6 to check effective (inherited) privileges.
+
+### P5. Inspect direct table-level ACL grants to PUBLIC via pg_class
+
+This query decomposes the raw ACL array stored on `pg_class` to reveal direct grants made to `PUBLIC` (represented by `grantee = 0` in `aclexplode`). Unlike `has_table_privilege`, this shows only direct grants — not privileges inherited through role membership.
+
+```sql
+SELECT
+  c.relname AS table_name,
+  a.grantor::regrole AS grantor,
+  CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END AS grantee,
+  a.privilege_type,
+  a.is_grantable
+FROM pg_class c
+JOIN pg_namespace n ON c.relnamespace = n.oid
+CROSS JOIN LATERAL aclexplode(c.relacl) AS a
+WHERE n.nspname = 'public'
+  AND c.relname = 'focus_sessions'
+  AND a.grantee = 0
+ORDER BY a.privilege_type;
+```
+
+**Expected (post-application):** Zero rows — no direct grants to `PUBLIC` remain on `public.focus_sessions`.
+
+**Pre-application note:** Before applying the migration, this query will likely return rows for every privilege type granted to `PUBLIC` by default (SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER — originating from `ALTER DEFAULT PRIVILEGES FOR ROLE postgres`). After the migration, the `REVOKE ... FROM PUBLIC` statements should remove all of these entries.
+
+> [!IMPORTANT]
+> This query inspects direct ACL entries only. Even if zero rows are returned, a role could still have effective access through membership in another role that retains privileges. P6 (`has_table_privilege`) checks effective access, which includes inherited privileges.
+
+### P6. Confirm effective privileges via has_table_privilege
+
+`has_table_privilege` checks **effective** access for a role, including privileges inherited through role membership (e.g., if `anon` or `authenticated` is a member of a role that retains grants). This complements P4 (column-level direct grants) and P5 (table-level direct ACL entries).
 
 ```sql
 SELECT
@@ -258,7 +291,7 @@ SELECT
 | authenticated | true | false | false | false | false | false | false |
 | anon | false | false | false | false | false | false | false |
 
-### P6. Confirm hardened search_paths
+### P7. Confirm hardened search_paths
 
 ```sql
 SELECT
@@ -279,7 +312,7 @@ ORDER BY p.proname;
 - `security_definer`: `true`
 - `config`: `search_path=pg_catalog, public, private`
 
-### P7. Confirm EXECUTE grants post-application
+### P8. Confirm EXECUTE grants post-application
 
 ```sql
 SELECT
