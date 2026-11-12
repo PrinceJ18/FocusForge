@@ -285,6 +285,42 @@ SELECT
   has_table_privilege('anon', 'public.focus_sessions', 'TRUNCATE') AS anon_truncate,
   has_table_privilege('anon', 'public.focus_sessions', 'REFERENCES') AS anon_references,
   has_table_privilege('anon', 'public.focus_sessions', 'TRIGGER') AS anon_trigger;
+  SELECT
+  has_any_column_privilege(
+    'authenticated',
+    'public.focus_sessions',
+    'SELECT'
+  ) AS auth_any_column_select,
+
+  has_any_column_privilege(
+    'authenticated',
+    'public.focus_sessions',
+    'INSERT'
+  ) AS auth_any_column_insert,
+
+  has_any_column_privilege(
+    'authenticated',
+    'public.focus_sessions',
+    'UPDATE'
+  ) AS auth_any_column_update,
+
+  has_any_column_privilege(
+    'anon',
+    'public.focus_sessions',
+    'SELECT'
+  ) AS anon_any_column_select,
+
+  has_any_column_privilege(
+    'anon',
+    'public.focus_sessions',
+    'INSERT'
+  ) AS anon_any_column_insert,
+
+  has_any_column_privilege(
+    'anon',
+    'public.focus_sessions',
+    'UPDATE'
+  ) AS anon_any_column_update;
 ```
 
 **Expected:**
