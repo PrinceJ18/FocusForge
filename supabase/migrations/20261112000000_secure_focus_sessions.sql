@@ -16,6 +16,14 @@
 --   - Does NOT rewrite RPC business logic (bodies are byte-identical).
 --   - Preserves the SELECT policy and SELECT privilege for authenticated users.
 --   - Revokes ALL privileges (including SELECT) from anon and PUBLIC.
+--
+-- Live schema reconciliation (2026-11-12):
+--   - Policy names confirmed as "own sessions" (not "own focus sessions").
+--   - Live columns: id, user_id, session_date (text), minutes, sessions_count.
+--   - created_at column does NOT exist in live database — removed from all
+--     column-level REVOKE statements.
+--   - session_date is text in live DB, date in RPC signatures — PostgreSQL
+--     handles implicit casting. No type change in this security migration.
 -- =============================================================================
 
 BEGIN;
@@ -27,11 +35,11 @@ BEGIN;
 -- runs as SECURITY DEFINER (postgres). These client-facing write policies
 -- are unnecessary and expose the table to direct manipulation.
 
-DROP POLICY IF EXISTS "Users can insert own focus sessions" ON public.focus_sessions;
-DROP POLICY IF EXISTS "Users can update own focus sessions" ON public.focus_sessions;
-DROP POLICY IF EXISTS "Users can delete own focus sessions" ON public.focus_sessions;
+DROP POLICY IF EXISTS "Users can insert own sessions" ON public.focus_sessions;
+DROP POLICY IF EXISTS "Users can update own sessions" ON public.focus_sessions;
+DROP POLICY IF EXISTS "Users can delete own sessions" ON public.focus_sessions;
 
--- NOTE: "Users can view own focus sessions" is intentionally preserved.
+-- NOTE: "Users can view own sessions" is intentionally preserved.
 -- The frontend relies on SELECT queries against focus_sessions for
 -- Analytics, Reports, and store hydration (useStore.ts:82).
 
@@ -54,19 +62,21 @@ REVOKE SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
 -- B2. Column-level revocations
 -- Supabase default privileges may have granted column-level INSERT/UPDATE.
 -- Explicitly revoke to prevent any residual column-level write access.
-REVOKE INSERT (id, user_id, session_date, minutes, sessions_count, created_at)
+-- Live columns: id, user_id, session_date, minutes, sessions_count
+-- (created_at does NOT exist in the live database)
+REVOKE INSERT (id, user_id, session_date, minutes, sessions_count)
   ON public.focus_sessions FROM authenticated, anon, PUBLIC;
 
-REVOKE UPDATE (id, user_id, session_date, minutes, sessions_count, created_at)
+REVOKE UPDATE (id, user_id, session_date, minutes, sessions_count)
   ON public.focus_sessions FROM authenticated, anon, PUBLIC;
 
-REVOKE REFERENCES (id, user_id, session_date, minutes, sessions_count, created_at)
+REVOKE REFERENCES (id, user_id, session_date, minutes, sessions_count)
   ON public.focus_sessions FROM authenticated, anon, PUBLIC;
 
 -- B2b. Column-level SELECT revocations for anon and PUBLIC
 -- Prevent any residual column-level SELECT grants from surviving the
 -- table-level revocation. authenticated is excluded — they retain SELECT.
-REVOKE SELECT (id, user_id, session_date, minutes, sessions_count, created_at)
+REVOKE SELECT (id, user_id, session_date, minutes, sessions_count)
   ON public.focus_sessions FROM anon, PUBLIC;
 
 -- B3. Establish final privilege state
