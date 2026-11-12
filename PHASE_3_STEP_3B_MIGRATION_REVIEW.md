@@ -11,7 +11,10 @@
 
 This migration removes all direct client write access to `public.focus_sessions`, revokes all privileges from `anon` and `PUBLIC` (including SELECT), and hardens the `search_path` of the three focus-session RPCs. All focus-session writes are funneled through `log_focus_session()` (SECURITY DEFINER, owned by postgres). Only `authenticated` retains SELECT access.
 
-The frontend has been confirmed to use only RPC calls for writes and SELECT queries for reads. **Regression risk is assessed as very low** — no frontend code performs direct INSERT, UPDATE, or DELETE against `focus_sessions`, and all SELECT queries are issued by authenticated users. However, this assessment is based on static code analysis and migration-file inference. Live post-application verification (P1–P10) is required to fully confirm zero functional regression.
+The frontend has been confirmed to use only RPC calls for writes and SELECT queries for reads. **Regression risk is assessed as very low** — no frontend code performs direct INSERT, UPDATE, or DELETE against `focus_sessions`, and all SELECT queries are issued by authenticated users. However, this assessment is based on static code analysis and migration-file inference. Live post-application verification (P1–P11) is required to fully confirm zero functional regression.
+
+> [!CAUTION]
+> This report verifies the **migration SQL** against its stated requirements. It does not prove the live database is secure. The live database state can only be confirmed by running pre-application queries (V1–V6) before applying the migration and post-application queries (P1–P11) after. Until the migration is applied and verified, the live database retains its current privilege configuration.
 
 ---
 
@@ -338,7 +341,7 @@ ORDER BY p.proname, r.rolname;
 | `calculate_streak` | false | false | true |
 | `get_current_streak` | false | true | true |
 
-### P8. Confirm service_role unchanged
+### P9. Confirm service_role unchanged
 
 ```sql
 SELECT
@@ -350,7 +353,7 @@ SELECT
 
 **Expected:** All `true` — `service_role` not affected.
 
-### P9. Smoke-test: authenticated direct INSERT should fail
+### P10. Smoke-test: authenticated direct INSERT should fail
 
 ```sql
 -- Run as authenticated user (via Supabase client):
@@ -358,7 +361,7 @@ SELECT
 -- Expected: Permission denied (privilege revoked) or RLS violation
 ```
 
-### P10. Smoke-test: RPC still works
+### P11. Smoke-test: RPC still works
 
 ```sql
 -- Run as authenticated user (via Supabase client):
@@ -367,7 +370,7 @@ SELECT
 ```
 
 > [!WARNING]
-> P9 and P10 involve writes and must be tested in a staging environment or with a disposable test account — never against production data without authorization.
+> P10 and P11 involve writes and must be tested in a staging environment or with a disposable test account — never against production data without authorization.
 
 ---
 
@@ -380,7 +383,7 @@ SELECT
 | `calculate_streak` breaks | **Very Low** | Same reasoning — body identical, references schema-qualified. |
 | `get_current_streak` breaks | **Very Low** | Same reasoning. |
 | `service_role` admin access breaks | **None** | No REVOKE targets `service_role`. |
-| SELECT queries break in Analytics/Reports | **Very Low** | `GRANT SELECT TO authenticated` explicitly preserved. Frontend SELECT queries are issued by authenticated users. Confirm with P5. |
+| SELECT queries break in Analytics/Reports | **Very Low** | `GRANT SELECT TO authenticated` explicitly preserved. Frontend SELECT queries are issued by authenticated users. Confirm with P6. |
 | `anon` SELECT loss causes regression | **Very Low** | No frontend code accesses `focus_sessions` as an unauthenticated user. All Supabase client calls are gated by auth state (checked in `useStore.ts`, `useTimerEngine.ts`). |
 | Column-level grants survive table-level revoke | **Low** | Explicit column-level revocations (INSERT, UPDATE, REFERENCES, SELECT) act as defense-in-depth. Verify with P4. |
 
@@ -414,9 +417,9 @@ flowchart TD
 
 ## Conclusion
 
-**All 43 verification criteria: PASS**
+**All 43 verification criteria: PASS** (migration SQL review only — not a claim about live database state)
 
 The migration is ready for independent review and authorized application.
 
 > [!IMPORTANT]
-> This migration has been **PREPARED but NOT APPLIED**. Do not apply without explicit authorization. Run pre-application queries (V1–V6) to confirm live state matches assumptions, then post-application queries (P1–P10) to validate changes.
+> This migration has been **PREPARED but NOT APPLIED**. Do not apply without explicit authorization. Run pre-application queries (V1–V6) to confirm live state matches assumptions, then post-application queries (P1–P11) to validate changes. The live database is not secured until this migration is successfully applied and post-application verification passes.
