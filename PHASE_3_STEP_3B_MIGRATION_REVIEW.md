@@ -265,9 +265,16 @@ ORDER BY a.privilege_type;
 > [!IMPORTANT]
 > This query inspects direct ACL entries only. Even if zero rows are returned, a role could still have effective access through membership in another role that retains privileges. P6 (`has_table_privilege`) checks effective access, which includes inherited privileges.
 
-### P6. Confirm effective privileges via has_table_privilege
+### P6. Confirm effective privileges via has_table_privilege and has_any_column_privilege
 
-`has_table_privilege` checks **effective** access for a role, including privileges inherited through role membership (e.g., if `anon` or `authenticated` is a member of a role that retains grants). This complements P4 (column-level direct grants) and P5 (table-level direct ACL entries).
+This query checks **effective** access for a role, including privileges inherited through role membership (e.g., if `anon` or `authenticated` is a member of a role that retains grants). This complements P4 (column-level direct grants) and P5 (table-level direct ACL entries).
+
+- `has_table_privilege()` checks effective **table-level** access — whether the role can perform the operation based on table-level grants (direct or inherited).
+- `has_any_column_privilege()` checks effective **column-level** access — whether the role holds the privilege on at least one column, even if no table-level grant exists. A column-level grant that survives a table-level revocation would be detected here.
+
+Both must be checked because PostgreSQL evaluates table-level and column-level grants independently. A table-level `REVOKE` does not remove column-level grants, and vice versa.
+
+**P6a. Table-level effective privileges:**
 
 ```sql
 SELECT
@@ -285,50 +292,36 @@ SELECT
   has_table_privilege('anon', 'public.focus_sessions', 'TRUNCATE') AS anon_truncate,
   has_table_privilege('anon', 'public.focus_sessions', 'REFERENCES') AS anon_references,
   has_table_privilege('anon', 'public.focus_sessions', 'TRIGGER') AS anon_trigger;
-  SELECT
-  has_any_column_privilege(
-    'authenticated',
-    'public.focus_sessions',
-    'SELECT'
-  ) AS auth_any_column_select,
-
-  has_any_column_privilege(
-    'authenticated',
-    'public.focus_sessions',
-    'INSERT'
-  ) AS auth_any_column_insert,
-
-  has_any_column_privilege(
-    'authenticated',
-    'public.focus_sessions',
-    'UPDATE'
-  ) AS auth_any_column_update,
-
-  has_any_column_privilege(
-    'anon',
-    'public.focus_sessions',
-    'SELECT'
-  ) AS anon_any_column_select,
-
-  has_any_column_privilege(
-    'anon',
-    'public.focus_sessions',
-    'INSERT'
-  ) AS anon_any_column_insert,
-
-  has_any_column_privilege(
-    'anon',
-    'public.focus_sessions',
-    'UPDATE'
-  ) AS anon_any_column_update;
 ```
 
-**Expected:**
+**Expected (table-level):**
 
 | Role | SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER |
 |------|--------|--------|--------|--------|----------|------------|---------|
 | authenticated | true | false | false | false | false | false | false |
 | anon | false | false | false | false | false | false | false |
+
+**P6b. Column-level effective privileges:**
+
+```sql
+SELECT
+  has_any_column_privilege('authenticated', 'public.focus_sessions', 'SELECT') AS auth_col_select,
+  has_any_column_privilege('authenticated', 'public.focus_sessions', 'INSERT') AS auth_col_insert,
+  has_any_column_privilege('authenticated', 'public.focus_sessions', 'UPDATE') AS auth_col_update,
+  has_any_column_privilege('anon', 'public.focus_sessions', 'SELECT') AS anon_col_select,
+  has_any_column_privilege('anon', 'public.focus_sessions', 'INSERT') AS anon_col_insert,
+  has_any_column_privilege('anon', 'public.focus_sessions', 'UPDATE') AS anon_col_update;
+```
+
+**Expected (column-level):**
+
+| Role | SELECT | INSERT | UPDATE |
+|------|--------|--------|--------|
+| authenticated | true | false | false |
+| anon | false | false | false |
+
+> [!NOTE]
+> `authenticated` showing `true` for column-level SELECT is expected — the migration explicitly grants table-level SELECT to `authenticated`, which implies column-level SELECT access. If `anon` shows `true` for any privilege, a residual column-level grant or inherited role membership is leaking access and must be investigated.
 
 ### P7. Confirm hardened search_paths
 
