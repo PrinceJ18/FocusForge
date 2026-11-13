@@ -13,7 +13,7 @@
 --   - Does NOT enable FORCE ROW LEVEL SECURITY.
 --   - Does NOT revoke service_role privileges.
 --   - Does NOT change unrelated tables, functions, policies, or grants.
---   - Does NOT rewrite RPC business logic (bodies are byte-identical).
+--   - Does NOT rewrite RPC business logic (logic and behavior are identical).
 --   - Preserves the SELECT policy and SELECT privilege for authenticated users.
 --   - Revokes ALL privileges (including SELECT) from anon and PUBLIC.
 --
@@ -22,8 +22,10 @@
 --   - Live columns: id, user_id, session_date (text), minutes, sessions_count.
 --   - created_at column does NOT exist in live database — removed from all
 --     column-level REVOKE statements.
---   - session_date is text in live DB, date in RPC signatures — PostgreSQL
---     handles implicit casting. No type change in this security migration.
+--   - session_date is text in live DB, date in RPC signatures — explicit
+--     casts added via to_char() and to_date() (2026-11-13 correction).
+--   - Function signatures, return contracts, and observable behavior are
+--     unchanged. Only cast explicitness and search_path differ from source.
 -- =============================================================================
 
 BEGIN;
@@ -92,13 +94,16 @@ GRANT SELECT ON public.focus_sessions TO authenticated;
 -- This is vulnerable to search_path injection. Update to the hardened
 -- search_path: pg_catalog, public, private.
 --
--- Function bodies are IDENTICAL to the authoritative source migrations.
--- Only the SET search_path clause changes.
+-- Function bodies preserve identical logic and behavior to the authoritative
+-- source migrations. Changes from source are limited to:
+--   1. SET search_path = pg_catalog, public, private (was: public)
+--   2. Explicit to_char()/to_date() casts for session_date text↔date
+--      compatibility (live column is TEXT, RPC parameters are DATE)
 
 -- -------------------------------------------------------------------------
 -- C1. log_focus_session(DATE, INTEGER, TEXT, DATE)
 -- Source: 20260708180000_fix_events_index_and_constraint.sql:27-164
--- Change: search_path = public  →  search_path = pg_catalog, public, private
+-- Changes: search_path hardened; explicit to_char() on INSERT into TEXT column
 -- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.log_focus_session(
   p_session_date DATE,
@@ -205,8 +210,10 @@ BEGIN
   SELECT xp INTO v_total_xp FROM public.profiles WHERE public.profiles.id = v_user_id;
 
   -- C. Upsert focus session daily aggregate using named constraint
+  -- Explicit to_char() ensures ISO 8601 format regardless of DateStyle setting,
+  -- since the live session_date column is TEXT (not DATE).
   INSERT INTO public.focus_sessions (user_id, session_date, minutes, sessions_count)
-  VALUES (v_user_id, p_session_date, p_minutes, 1)
+  VALUES (v_user_id, to_char(p_session_date, 'YYYY-MM-DD'), p_minutes, 1)
   ON CONFLICT ON CONSTRAINT focus_sessions_user_id_session_date_key
   DO UPDATE SET
     minutes = public.focus_sessions.minutes + EXCLUDED.minutes,
@@ -245,7 +252,7 @@ ALTER FUNCTION public.log_focus_session(DATE, INTEGER, TEXT, DATE) OWNER TO post
 -- -------------------------------------------------------------------------
 -- C2. calculate_streak(UUID, DATE)
 -- Source: 20260707120000_streak_calculation_repair.sql:4-60
--- Change: search_path = public  →  search_path = pg_catalog, public, private
+-- Changes: search_path hardened; explicit to_char()/to_date() for TEXT column
 -- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.calculate_streak(
   p_user_id UUID,
@@ -265,19 +272,23 @@ DECLARE
   v_max_date DATE;
 BEGIN
   -- Get the most recent focus session date for the user
-  SELECT MAX(session_date) INTO v_max_date
+  -- session_date is TEXT in live DB; explicit to_date() converts MAX result to DATE.
+  -- Lexicographic MAX on ISO 8601 text equals chronological MAX.
+  SELECT to_date(MAX(session_date), 'YYYY-MM-DD') INTO v_max_date
   FROM public.focus_sessions
   WHERE user_id = p_user_id;
 
   -- Determine starting point for checking consecutive calendar days
+  -- to_char() converts DATE parameters to TEXT for comparison against the TEXT column.
+  -- This preserves index usage on session_date and guarantees ISO format.
   IF EXISTS (
     SELECT 1 FROM public.focus_sessions 
-    WHERE user_id = p_user_id AND session_date = p_today
+    WHERE user_id = p_user_id AND session_date = to_char(p_today, 'YYYY-MM-DD')
   ) THEN
     v_check_date := p_today;
   ELSIF EXISTS (
     SELECT 1 FROM public.focus_sessions 
-    WHERE user_id = p_user_id AND session_date = p_today - 1
+    WHERE user_id = p_user_id AND session_date = to_char(p_today - 1, 'YYYY-MM-DD')
   ) THEN
     v_check_date := p_today - 1;
   ELSE
@@ -289,7 +300,7 @@ BEGIN
     LOOP
       IF EXISTS (
         SELECT 1 FROM public.focus_sessions 
-        WHERE user_id = p_user_id AND session_date = v_check_date
+        WHERE user_id = p_user_id AND session_date = to_char(v_check_date, 'YYYY-MM-DD')
       ) THEN
         v_streak := v_streak + 1;
         v_check_date := v_check_date - 1;
@@ -311,7 +322,7 @@ ALTER FUNCTION public.calculate_streak(UUID, DATE) OWNER TO postgres;
 -- -------------------------------------------------------------------------
 -- C3. get_current_streak(DATE)
 -- Source: 20260707120000_streak_calculation_repair.sql:219-275
--- Change: search_path = public  →  search_path = pg_catalog, public, private
+-- Changes: search_path hardened (no direct session_date references in body)
 -- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_current_streak(
   p_today DATE

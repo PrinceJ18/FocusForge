@@ -47,13 +47,30 @@ The policy names and column structure were changed outside of tracked migrations
 
 The CREATE TABLE migration defines `session_date date NOT NULL DEFAULT CURRENT_DATE`. The live column is `text`. This was changed outside of tracked migrations.
 
-**RPC compatibility analysis:**
-- `log_focus_session` accepts `p_session_date DATE` and inserts it into `session_date`. PostgreSQL implicitly casts `date → text` on insert. The `ON CONFLICT` constraint and `RETURNING` clause work correctly with text storage.
-- `calculate_streak` compares `session_date = p_today` where `p_today` is `DATE`. PostgreSQL implicitly casts for equality comparison between `text` and `date` when the text value is a valid ISO date string (which it always is, since all inserts go through the RPC).
-- `get_current_streak` delegates to `calculate_streak` — same implicit cast path.
+**RPC compatibility — explicit casts (corrected 2026-11-13):**
+
+All implicit `text ↔ date` casts have been replaced with explicit conversions:
+
+| RPC | Expression (before) | Expression (after) | Rationale |
+|-----|--------------------|--------------------|-----------|
+| `log_focus_session` | `VALUES (..., p_session_date, ...)` | `VALUES (..., to_char(p_session_date, 'YYYY-MM-DD'), ...)` | Guarantees ISO format in TEXT column regardless of `DateStyle` |
+| `calculate_streak` | `MAX(session_date) INTO v_max_date` | `to_date(MAX(session_date), 'YYYY-MM-DD') INTO v_max_date` | Explicit TEXT→DATE with format validation |
+| `calculate_streak` | `session_date = p_today` | `session_date = to_char(p_today, 'YYYY-MM-DD')` | DATE→TEXT with guaranteed format; preserves index |
+| `calculate_streak` | `session_date = p_today - 1` | `session_date = to_char(p_today - 1, 'YYYY-MM-DD')` | Same — date arithmetic then explicit cast |
+| `calculate_streak` | `session_date = v_check_date` (loop) | `session_date = to_char(v_check_date, 'YYYY-MM-DD')` | Same — loop variable cast |
+
+- `get_current_streak` has no direct `session_date` references — it delegates to `calculate_streak`.
 - All frontend code uses `parseISO(s.session_date)` or string operations (`.slice(0, 10)`, `.startsWith()`) — fully compatible with `text` storage.
 
-**Conclusion:** The type discrepancy does not affect the security migration or current functionality. A separate future migration could normalize the type, but that is out of scope and explicitly excluded from this security hardening step.
+**Why `to_char()` for comparisons (not `::date` on the column):**
+- `session_date::date = p_today` would prevent index usage on the `session_date` column.
+- `session_date = to_char(p_today, 'YYYY-MM-DD')` performs a TEXT = TEXT comparison, which can use the existing unique index on `(user_id, session_date)`.
+- `to_char(date, 'YYYY-MM-DD')` always produces ISO 8601 format, regardless of the server's `DateStyle` setting.
+
+**Prerequisite — data integrity:**
+The explicit `to_date(MAX(session_date), 'YYYY-MM-DD')` will raise an error if any stored `session_date` value is not a valid ISO date string. Run the diagnostic query V7 (below) before applying the migration to confirm all stored values are valid.
+
+**Conclusion:** The type discrepancy is now handled with explicit, deterministic casts. No implicit operator resolution or `DateStyle`-dependent behavior remains. A separate future migration could normalize the column type to `date`, but that is out of scope for this security hardening step.
 
 ### Live Column Set (Confirmed)
 
@@ -89,21 +106,22 @@ The CREATE TABLE migration defines `session_date date NOT NULL DEFAULT CURRENT_D
 | 15 | `service_role` privileges NOT modified | **PASS** | No REVOKE/GRANT targeting `service_role` |
 | 16 | `log_focus_session` signature preserved | **PASS** | `(DATE, INTEGER, TEXT, DATE)` — matches source |
 | 17 | `log_focus_session` return contract preserved | **PASS** | 9-column TABLE return — matches source |
-| 18 | `log_focus_session` body identical | **PASS** | Byte-for-byte copy from `20260708180000:47-164` |
+| 18 | `log_focus_session` body preserves logic | **PASS** | Identical to source except `to_char(p_session_date, 'YYYY-MM-DD')` on INSERT — explicit cast for TEXT column |
 | 19 | `log_focus_session` SECURITY DEFINER | **PASS** | Present in CREATE statement |
 | 20 | `log_focus_session` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
 | 21 | `log_focus_session` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
 | 22 | `log_focus_session` EXECUTE grant | **PASS** | REVOKE ALL FROM PUBLIC → GRANT TO authenticated |
-| 23 | `log_focus_session` compatible with live `session_date text` | **PASS** | Implicit `date → text` cast on INSERT; constraint and RETURNING work correctly |
+| 23 | `log_focus_session` INSERT uses explicit `to_char()` | **PASS** | `to_char(p_session_date, 'YYYY-MM-DD')` — guarantees ISO format in TEXT column regardless of DateStyle |
 | 24 | `calculate_streak` signature preserved | **PASS** | `(UUID, DATE)` — matches source |
-| 25 | `calculate_streak` body identical | **PASS** | Byte-for-byte copy from `20260707120000:15-60` |
+| 25 | `calculate_streak` body preserves logic | **PASS** | Identical streak logic; 5 expressions use explicit `to_char()`/`to_date()` instead of implicit casts |
 | 26 | `calculate_streak` SECURITY DEFINER | **PASS** | Present in CREATE statement |
 | 27 | `calculate_streak` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
 | 28 | `calculate_streak` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
 | 29 | `calculate_streak` EXECUTE fully revoked | **PASS** | `REVOKE ALL ... FROM PUBLIC, anon, authenticated` |
-| 30 | `calculate_streak` compatible with live `session_date text` | **PASS** | Implicit `text ↔ date` cast on equality comparison; all stored values are valid ISO dates |
-| 31 | `get_current_streak` signature preserved | **PASS** | `(DATE)` — matches source |
-| 32 | `get_current_streak` body identical | **PASS** | Byte-for-byte copy from `20260707120000:229-275` |
+| 30 | `calculate_streak` MAX uses explicit `to_date()` | **PASS** | `to_date(MAX(session_date), 'YYYY-MM-DD')` — explicit TEXT→DATE |
+| 31 | `calculate_streak` comparisons use explicit `to_char()` | **PASS** | All 4 WHERE clauses use `to_char(date_param, 'YYYY-MM-DD')` — preserves index, guarantees format |
+| 32 | `get_current_streak` signature preserved | **PASS** | `(DATE)` — matches source |
+| 33 | `get_current_streak` body identical | **PASS** | Byte-for-byte copy from source (no direct `session_date` references) |
 | 33 | `get_current_streak` SECURITY DEFINER | **PASS** | Present in CREATE statement |
 | 34 | `get_current_streak` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
 | 35 | `get_current_streak` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
@@ -114,7 +132,7 @@ The CREATE TABLE migration defines `session_date date NOT NULL DEFAULT CURRENT_D
 | 40 | No unrelated tables/functions changed | **PASS** | Only `focus_sessions` table and 3 RPCs |
 | 41 | Transaction boundaries correct | **PASS** | `BEGIN` / `COMMIT` wrapping all statements |
 | 42 | PostgREST reload included | **PASS** | `NOTIFY pgrst, 'reload schema'` before COMMIT |
-| 43 | RPC business logic unchanged | **PASS** | Only `SET search_path` clause differs |
+| 44 | RPC business logic unchanged | **PASS** | Streak logic, XP calculation, event insertion, and upsert behavior are identical. Only `search_path` and date cast explicitness differ. |
 | 44 | `award_xp_internal` not modified | **PASS** | Not referenced in migration |
 | 45 | No credentials/secrets exposed | **PASS** | No hardcoded secrets |
 | 46 | No `created_at` references remain | **PASS** | Removed from all 4 column-level REVOKE statements |
