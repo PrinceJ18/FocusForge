@@ -54,7 +54,7 @@ All implicit `text ↔ date` casts have been replaced with explicit conversions:
 | RPC | Expression (before) | Expression (after) | Rationale |
 |-----|--------------------|--------------------|-----------|
 | `log_focus_session` | `VALUES (..., p_session_date, ...)` | `VALUES (..., to_char(p_session_date, 'YYYY-MM-DD'), ...)` | Guarantees ISO format in TEXT column regardless of `DateStyle` |
-| `calculate_streak` | `MAX(session_date) INTO v_max_date` | `to_date(MAX(session_date), 'YYYY-MM-DD') INTO v_max_date` | Explicit TEXT→DATE with format validation |
+| `calculate_streak` | `MAX(session_date) INTO v_max_date` | `MAX(session_date)::date INTO v_max_date` | Strict `::date` cast — rejects invalid dates (unlike `to_date()` which silently wraps) |
 | `calculate_streak` | `session_date = p_today` | `session_date = to_char(p_today, 'YYYY-MM-DD')` | DATE→TEXT with guaranteed format; preserves index |
 | `calculate_streak` | `session_date = p_today - 1` | `session_date = to_char(p_today - 1, 'YYYY-MM-DD')` | Same — date arithmetic then explicit cast |
 | `calculate_streak` | `session_date = v_check_date` (loop) | `session_date = to_char(v_check_date, 'YYYY-MM-DD')` | Same — loop variable cast |
@@ -63,14 +63,27 @@ All implicit `text ↔ date` casts have been replaced with explicit conversions:
 - All frontend code uses `parseISO(s.session_date)` or string operations (`.slice(0, 10)`, `.startsWith()`) — fully compatible with `text` storage.
 
 **Why `to_char()` for comparisons (not `::date` on the column):**
-- `session_date::date = p_today` would prevent index usage on the `session_date` column.
+- `session_date::date = p_today` would cast every row's TEXT value, preventing index usage on `session_date`.
 - `session_date = to_char(p_today, 'YYYY-MM-DD')` performs a TEXT = TEXT comparison, which can use the existing unique index on `(user_id, session_date)`.
 - `to_char(date, 'YYYY-MM-DD')` always produces ISO 8601 format, regardless of the server's `DateStyle` setting.
 
-**Prerequisite — data integrity:**
-The explicit `to_date(MAX(session_date), 'YYYY-MM-DD')` will raise an error if any stored `session_date` value is not a valid ISO date string. Run the diagnostic query V7 (below) before applying the migration to confirm all stored values are valid.
+**Why `::date` for TEXT→DATE assignment (not `to_date()`):**
 
-**Conclusion:** The type discrepancy is now handled with explicit, deterministic casts. No implicit operator resolution or `DateStyle`-dependent behavior remains. A separate future migration could normalize the column type to `date`, but that is out of scope for this security hardening step.
+PostgreSQL's `to_date(text, format)` is **not** strict format validation:
+- `to_date('2026-02-30', 'YYYY-MM-DD')` → silently wraps to `2026-03-02` (no error)
+- `to_date('2026-1-5', 'YYYY-MM-DD')` → parses leniently, may produce unexpected results
+
+PostgreSQL's `::date` cast (the `date` type input parser) **is** strict:
+- `'2026-02-30'::date` → **ERROR: date/time field value out of range**
+- `'not-a-date'::date` → **ERROR: invalid input syntax for type date**
+- ISO 8601 format ('YYYY-MM-DD') is always accepted unambiguously regardless of `DateStyle`
+
+The `::date` cast is used for the `MAX()` assignment because it provides fail-fast behavior: if corrupted data exists, the query errors loudly rather than producing a silently incorrect streak calculation.
+
+**Prerequisite — data integrity:**
+The `MAX(session_date)::date` cast will raise a runtime error if any stored `session_date` value for the queried user is not a valid date string. **V7 MUST be run before applying the migration** to confirm all stored values are valid. If V7 reports any invalid values, this migration MUST NOT be applied until the data is corrected.
+
+**Conclusion:** The type discrepancy is now handled with explicit, deterministic casts. No implicit operator resolution or `DateStyle`-dependent behavior remains. The migration cannot be marked ready to apply until V7 confirms clean data. A separate future migration could normalize the column type to `date`, but that is out of scope for this security hardening step.
 
 ### Live Column Set (Confirmed)
 
@@ -118,7 +131,7 @@ The explicit `to_date(MAX(session_date), 'YYYY-MM-DD')` will raise an error if a
 | 27 | `calculate_streak` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
 | 28 | `calculate_streak` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
 | 29 | `calculate_streak` EXECUTE fully revoked | **PASS** | `REVOKE ALL ... FROM PUBLIC, anon, authenticated` |
-| 30 | `calculate_streak` MAX uses explicit `to_date()` | **PASS** | `to_date(MAX(session_date), 'YYYY-MM-DD')` — explicit TEXT→DATE |
+| 30 | `calculate_streak` MAX uses strict `::date` cast | **PASS** | `MAX(session_date)::date` — strict input parser rejects impossible dates; `to_date()` was avoided because it silently wraps invalid dates |
 | 31 | `calculate_streak` comparisons use explicit `to_char()` | **PASS** | All 4 WHERE clauses use `to_char(date_param, 'YYYY-MM-DD')` — preserves index, guarantees format |
 | 32 | `get_current_streak` signature preserved | **PASS** | `(DATE)` — matches source |
 | 33 | `get_current_streak` body identical | **PASS** | Byte-for-byte copy from source (no direct `session_date` references) |

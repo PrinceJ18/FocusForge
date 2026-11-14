@@ -22,10 +22,18 @@
 --   - Live columns: id, user_id, session_date (text), minutes, sessions_count.
 --   - created_at column does NOT exist in live database — removed from all
 --     column-level REVOKE statements.
---   - session_date is text in live DB, date in RPC signatures — explicit
---     casts added via to_char() and to_date() (2026-11-13 correction).
---   - Function signatures, return contracts, and observable behavior are
---     unchanged. Only cast explicitness and search_path differ from source.
+--   - session_date is TEXT in live DB, DATE in RPC signatures.
+--     Explicit casts added for data-type compatibility (2026-11-13):
+--       * to_char(date, 'YYYY-MM-DD') for DATE→TEXT comparisons (preserves index)
+--       * ::date cast for TEXT→DATE assignment (strict — rejects invalid dates)
+--     These are data-type compatibility changes, not business logic changes.
+--     The streak algorithm, XP calculation, event insertion, and upsert
+--     behavior are identical to the source migrations.
+--
+-- Prerequisite:
+--   V7 diagnostic (in review report) MUST be run before application to
+--   confirm all stored session_date values are valid ISO 8601 dates.
+--   If any invalid values exist, this migration MUST NOT be applied.
 -- =============================================================================
 
 BEGIN;
@@ -94,11 +102,13 @@ GRANT SELECT ON public.focus_sessions TO authenticated;
 -- This is vulnerable to search_path injection. Update to the hardened
 -- search_path: pg_catalog, public, private.
 --
--- Function bodies preserve identical logic and behavior to the authoritative
+-- Function bodies preserve identical business logic to the authoritative
 -- source migrations. Changes from source are limited to:
 --   1. SET search_path = pg_catalog, public, private (was: public)
---   2. Explicit to_char()/to_date() casts for session_date text↔date
---      compatibility (live column is TEXT, RPC parameters are DATE)
+--   2. Explicit date casts for session_date TEXT↔DATE compatibility:
+--      - to_char(date, 'YYYY-MM-DD') for DATE→TEXT (comparisons, INSERT)
+--      - ::date for TEXT→DATE (MAX result assignment)
+--   These do not alter streak calculation, XP awards, or upsert behavior.
 
 -- -------------------------------------------------------------------------
 -- C1. log_focus_session(DATE, INTEGER, TEXT, DATE)
@@ -252,7 +262,7 @@ ALTER FUNCTION public.log_focus_session(DATE, INTEGER, TEXT, DATE) OWNER TO post
 -- -------------------------------------------------------------------------
 -- C2. calculate_streak(UUID, DATE)
 -- Source: 20260707120000_streak_calculation_repair.sql:4-60
--- Changes: search_path hardened; explicit to_char()/to_date() for TEXT column
+-- Changes: search_path hardened; explicit ::date and to_char() for TEXT column
 -- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.calculate_streak(
   p_user_id UUID,
@@ -272,9 +282,12 @@ DECLARE
   v_max_date DATE;
 BEGIN
   -- Get the most recent focus session date for the user
-  -- session_date is TEXT in live DB; explicit to_date() converts MAX result to DATE.
+  -- session_date is TEXT in live DB. ::date cast is used (not to_date()) because
+  -- PostgreSQL's date input parser is strict: it rejects impossible dates like
+  -- '2026-02-30', whereas to_date() would silently wrap to '2026-03-02'.
   -- Lexicographic MAX on ISO 8601 text equals chronological MAX.
-  SELECT to_date(MAX(session_date), 'YYYY-MM-DD') INTO v_max_date
+  -- PREREQUISITE: V7 diagnostic must confirm all stored values are valid dates.
+  SELECT MAX(session_date)::date INTO v_max_date
   FROM public.focus_sessions
   WHERE user_id = p_user_id;
 
