@@ -685,7 +685,7 @@ SELECT
 | SELECT queries break in Analytics/Reports | **Very Low** | `GRANT SELECT TO authenticated` explicitly preserved. Frontend SELECT queries are issued by authenticated users. Confirm with P6. |
 | `anon` SELECT loss causes regression | **Very Low** | No frontend code accesses `focus_sessions` as an unauthenticated user. All Supabase client calls are gated by auth state (checked in `useStore.ts`, `useTimerEngine.ts`). |
 | Column-level grants survive table-level revoke | **Low** | Explicit column-level revocations (INSERT, UPDATE, REFERENCES, SELECT) on all 5 live columns act as defense-in-depth. Verify with P4 and P6b. |
-| Malformed `session_date` causes runtime error | **Unknown** | `::date` cast in `calculate_streak` will error if any stored value is not a valid date. V7 diagnostic MUST be run before application to confirm clean data. Risk cannot be assessed until V7 results are reviewed. |
+| Malformed `session_date` causes runtime error | **Unknown** | `::date` cast in `calculate_streak` (migration line 290) will error if any stored value is not a valid date. V7 diagnostic (V7d/V7e on PG 16+, or V7f/V7g on older PG) MUST be run before application to confirm clean data. Risk cannot be assessed until V7 results are reviewed. |
 
 > [!NOTE]
 > Risk assessments of "Very Low" (rather than "None") reflect that static code analysis cannot guarantee the absence of all edge cases. Live post-application verification is required to confirm zero functional regression.
