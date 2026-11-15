@@ -31,7 +31,7 @@ Pre-application checks against the live Supabase database revealed discrepancies
 | M3 | DELETE policy name | `"Users can delete own focus sessions"` | `"Users can delete own sessions"` | DROP statement updated to match live name |
 | M4 | SELECT policy name (comment) | `"Users can view own focus sessions"` | `"Users can view own sessions"` | Comment updated |
 | M5 | `created_at` column | Referenced in all 4 column-level REVOKEs | Column does **not exist** in live DB | Removed from all REVOKE statements |
-| M6 | `session_date` type | Assumed `date` (matches CREATE TABLE migration) | Actually `text` in live DB | No change needed — PostgreSQL implicitly casts `text ↔ date`. RPCs function correctly. Noted in migration header for future reference. |
+| M6 | `session_date` type | Assumed `date` (matches CREATE TABLE migration) | Actually `text` in live DB | Explicit casts added: `to_char()` for DATE→TEXT comparisons, `::date` for TEXT→DATE assignment. V7 diagnostic required before application. |
 
 > [!WARNING]
 > **M1–M3 were critical failures.** `DROP POLICY IF EXISTS` with incorrect names would silently succeed without actually removing the live policies. The write policies would have survived the migration, leaving direct INSERT, UPDATE, and DELETE access open despite the privilege revocations.
@@ -49,7 +49,7 @@ The CREATE TABLE migration defines `session_date date NOT NULL DEFAULT CURRENT_D
 
 **RPC compatibility — explicit casts (corrected 2026-11-13):**
 
-All implicit `text ↔ date` casts have been replaced with explicit conversions:
+All implicit `text ↔ date` operations in the source RPCs have been replaced with explicit, deterministic conversions. These are **data-type compatibility changes**, not business logic changes — the streak algorithm, XP calculation, event insertion, and upsert behavior are identical to the source migrations.
 
 | RPC | Expression (before) | Expression (after) | Rationale |
 |-----|--------------------|--------------------|-----------|
@@ -107,15 +107,15 @@ The `MAX(session_date)::date` cast will raise a runtime error if any stored `ses
 | 3 | DELETE policy dropped | **PASS** | `DROP POLICY IF EXISTS "Users can delete own sessions"` — matches live name |
 | 4 | SELECT policy preserved | **PASS** | No DROP for `"Users can view own sessions"` |
 | 5 | Policy names match live DB | **PASS** | Reconciled against pre-application query results |
-| 6 | Table-level INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER revoked from `authenticated` | **PASS** | Explicit REVOKE statement (line 53) |
-| 7 | Table-level ALL privileges revoked from `anon` (including SELECT) | **PASS** | `REVOKE SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` (line 56) |
-| 8 | Table-level ALL privileges revoked from `PUBLIC` (including SELECT) | **PASS** | `REVOKE SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` (line 59) |
+| 6 | Table-level INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER revoked from `authenticated` | **PASS** | Explicit REVOKE statement (line 63) |
+| 7 | Table-level ALL privileges revoked from `anon` (including SELECT) | **PASS** | `REVOKE SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` (line 66) |
+| 8 | Table-level ALL privileges revoked from `PUBLIC` (including SELECT) | **PASS** | `REVOKE SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` (line 69) |
 | 9 | Column-level INSERT revoked (5 live columns) | **PASS** | `REVOKE INSERT (id, user_id, session_date, minutes, sessions_count)` — no `created_at` |
 | 10 | Column-level UPDATE revoked (5 live columns) | **PASS** | `REVOKE UPDATE (...)` — no `created_at` |
 | 11 | Column-level REFERENCES revoked (5 live columns) | **PASS** | `REVOKE REFERENCES (...)` — no `created_at` |
 | 12 | Column-level SELECT revoked from `anon` and `PUBLIC` (5 live columns) | **PASS** | `REVOKE SELECT (...) FROM anon, PUBLIC` — no `created_at` |
 | 13 | Column-level SELECT NOT revoked from `authenticated` | **PASS** | `authenticated` excluded from column-level SELECT revocation |
-| 14 | Table-level SELECT preserved for `authenticated` | **PASS** | `GRANT SELECT ON public.focus_sessions TO authenticated` (line 85) |
+| 14 | Table-level SELECT preserved for `authenticated` | **PASS** | `GRANT SELECT ON public.focus_sessions TO authenticated` (line 95) |
 | 15 | `service_role` privileges NOT modified | **PASS** | No REVOKE/GRANT targeting `service_role` |
 | 16 | `log_focus_session` signature preserved | **PASS** | `(DATE, INTEGER, TEXT, DATE)` — matches source |
 | 17 | `log_focus_session` return contract preserved | **PASS** | 9-column TABLE return — matches source |
@@ -126,7 +126,7 @@ The `MAX(session_date)::date` cast will raise a runtime error if any stored `ses
 | 22 | `log_focus_session` EXECUTE grant | **PASS** | REVOKE ALL FROM PUBLIC → GRANT TO authenticated |
 | 23 | `log_focus_session` INSERT uses explicit `to_char()` | **PASS** | `to_char(p_session_date, 'YYYY-MM-DD')` — guarantees ISO format in TEXT column regardless of DateStyle |
 | 24 | `calculate_streak` signature preserved | **PASS** | `(UUID, DATE)` — matches source |
-| 25 | `calculate_streak` body preserves logic | **PASS** | Identical streak logic; 5 expressions use explicit `to_char()`/`to_date()` instead of implicit casts |
+| 25 | `calculate_streak` body preserves logic | **PASS** | Identical streak logic; explicit `::date` cast for MAX assignment, `to_char()` for 4 comparisons — replaces all implicit casts |
 | 26 | `calculate_streak` SECURITY DEFINER | **PASS** | Present in CREATE statement |
 | 27 | `calculate_streak` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
 | 28 | `calculate_streak` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
@@ -135,20 +135,20 @@ The `MAX(session_date)::date` cast will raise a runtime error if any stored `ses
 | 31 | `calculate_streak` comparisons use explicit `to_char()` | **PASS** | All 4 WHERE clauses use `to_char(date_param, 'YYYY-MM-DD')` — preserves index, guarantees format |
 | 32 | `get_current_streak` signature preserved | **PASS** | `(DATE)` — matches source |
 | 33 | `get_current_streak` body identical | **PASS** | Byte-for-byte copy from source (no direct `session_date` references) |
-| 33 | `get_current_streak` SECURITY DEFINER | **PASS** | Present in CREATE statement |
-| 34 | `get_current_streak` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
-| 35 | `get_current_streak` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
-| 36 | `get_current_streak` EXECUTE grant | **PASS** | REVOKE ALL FROM PUBLIC → GRANT TO authenticated |
-| 37 | No existing data modified | **PASS** | No UPDATE/DELETE/TRUNCATE on data rows |
-| 38 | No XP balances modified | **PASS** | No writes to `profiles.xp` or `events` |
-| 39 | FORCE ROW LEVEL SECURITY not enabled | **PASS** | No `ALTER TABLE ... FORCE` |
-| 40 | No unrelated tables/functions changed | **PASS** | Only `focus_sessions` table and 3 RPCs |
-| 41 | Transaction boundaries correct | **PASS** | `BEGIN` / `COMMIT` wrapping all statements |
-| 42 | PostgREST reload included | **PASS** | `NOTIFY pgrst, 'reload schema'` before COMMIT |
+| 34 | `get_current_streak` SECURITY DEFINER | **PASS** | Present in CREATE statement |
+| 35 | `get_current_streak` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
+| 36 | `get_current_streak` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
+| 37 | `get_current_streak` EXECUTE grant | **PASS** | REVOKE ALL FROM PUBLIC → GRANT TO authenticated |
+| 38 | No existing data modified | **PASS** | No UPDATE/DELETE/TRUNCATE on data rows |
+| 39 | No XP balances modified | **PASS** | No writes to `profiles.xp` or `events` |
+| 40 | FORCE ROW LEVEL SECURITY not enabled | **PASS** | No `ALTER TABLE ... FORCE` |
+| 41 | No unrelated tables/functions changed | **PASS** | Only `focus_sessions` table and 3 RPCs |
+| 42 | Transaction boundaries correct | **PASS** | `BEGIN` / `COMMIT` wrapping all statements |
+| 43 | PostgREST reload included | **PASS** | `NOTIFY pgrst, 'reload schema'` before COMMIT |
 | 44 | RPC business logic unchanged | **PASS** | Streak logic, XP calculation, event insertion, and upsert behavior are identical. Only `search_path` and date cast explicitness differ. |
-| 44 | `award_xp_internal` not modified | **PASS** | Not referenced in migration |
-| 45 | No credentials/secrets exposed | **PASS** | No hardcoded secrets |
-| 46 | No `created_at` references remain | **PASS** | Removed from all 4 column-level REVOKE statements |
+| 45 | `award_xp_internal` not modified | **PASS** | Not referenced in migration |
+| 46 | No credentials/secrets exposed | **PASS** | No hardcoded secrets |
+| 47 | No `created_at` references remain | **PASS** | Removed from all 4 column-level REVOKE statements |
 
 ---
 
@@ -268,6 +268,87 @@ ORDER BY p.proname, r.rolname;
 | `log_focus_session` | false | true | true |
 | `calculate_streak` | false | false | true |
 | `get_current_streak` | false | true | true |
+
+### V7. Diagnostic — validate all session_date values (MANDATORY)
+
+> [!CAUTION]
+> This diagnostic **MUST** be run and its results reviewed before applying the migration. The `MAX(session_date)::date` cast in `calculate_streak` will raise a runtime error if any stored value is not a valid ISO 8601 date. Do not apply the migration until V7 confirms zero invalid values.
+
+**V7a. PostgreSQL version check:**
+
+```sql
+SELECT version();
+```
+
+Note the major version. `pg_input_is_valid()` is available in PostgreSQL 16+. If PG 16+, also run V7d below.
+
+**V7b. Summary — format and validity check (all PG versions):**
+
+```sql
+SELECT
+  COUNT(*) AS total_rows,
+  COUNT(CASE WHEN session_date IS NULL THEN 1 END) AS null_count,
+  COUNT(CASE WHEN session_date = '' THEN 1 END) AS empty_count,
+  COUNT(CASE WHEN session_date IS NOT NULL AND session_date <> ''
+             AND session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 1 END) AS non_iso_format_count,
+  COUNT(CASE WHEN session_date ~ '^\d{4}-\d{2}-\d{2}$' THEN 1 END) AS iso_format_count
+FROM public.focus_sessions;
+```
+
+**Expected:** `null_count = 0`, `empty_count = 0`, `non_iso_format_count = 0`, `iso_format_count = total_rows`.
+
+**V7c. Round-trip check — detect impossible dates (all PG versions):**
+
+This catches values like `'2026-02-30'` that match the ISO regex but represent impossible calendar dates. The `::date` cast will error on truly invalid values, so run this only after V7b confirms all values match `^\d{4}-\d{2}-\d{2}$`.
+
+```sql
+SELECT id, user_id, session_date,
+  session_date::date AS parsed_date,
+  to_char(session_date::date, 'YYYY-MM-DD') AS round_tripped
+FROM public.focus_sessions
+WHERE session_date ~ '^\d{4}-\d{2}-\d{2}$'
+  AND session_date <> to_char(session_date::date, 'YYYY-MM-DD')
+ORDER BY session_date;
+```
+
+**Expected:** Zero rows. Any row returned has a `session_date` that does not survive a text→date→text round-trip (e.g., leading zeros differ, date wrapping occurred).
+
+If this query raises an ERROR (e.g., "date/time field value out of range"), one or more values are impossible dates. In that case, run V7e to identify them.
+
+**V7d. Safe validity check (PostgreSQL 16+ only):**
+
+```sql
+SELECT id, user_id, session_date
+FROM public.focus_sessions
+WHERE NOT pg_input_is_valid(session_date, 'date')
+ORDER BY session_date;
+```
+
+**Expected:** Zero rows. This checks cast validity without raising errors.
+
+**V7e. List all offending rows (all PG versions):**
+
+```sql
+SELECT id, user_id, session_date,
+  CASE
+    WHEN session_date IS NULL THEN 'NULL'
+    WHEN session_date = '' THEN 'EMPTY'
+    WHEN session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 'NOT_ISO_FORMAT'
+    ELSE 'ISO_FORMAT_BUT_MAY_BE_INVALID_DATE'
+  END AS status
+FROM public.focus_sessions
+WHERE session_date IS NULL
+   OR session_date = ''
+   OR session_date !~ '^\d{4}-\d{2}-\d{2}$'
+ORDER BY session_date;
+```
+
+**Expected:** Zero rows.
+
+**Interpretation:**
+- If V7b shows all zeros except `iso_format_count`, AND V7c returns zero rows → data is clean. Migration may proceed.
+- If V7b shows any non-zero `null_count`, `empty_count`, or `non_iso_format_count` → **STOP. Do not apply the migration.** Report the V7e results for manual remediation.
+- If V7c errors or returns rows → **STOP. Do not apply the migration.** Impossible calendar dates exist in the data.
 
 ---
 
@@ -501,13 +582,14 @@ SELECT
 | Risk | Likelihood | Mitigation |
 |------|-----------|------------|
 | Frontend direct INSERT/UPDATE breaks | **Very Low** | Static analysis confirms no frontend code does direct writes to `focus_sessions`. Based on codebase inspection — not live testing. |
-| `log_focus_session` RPC breaks | **Very Low** | Body is byte-identical; only `search_path` changes. All table references are schema-qualified (`public.`). Implicit `date → text` cast confirmed working. |
-| `calculate_streak` breaks | **Very Low** | Same reasoning — body identical, references schema-qualified. Implicit `text ↔ date` cast confirmed for `session_date` comparisons. |
-| `get_current_streak` breaks | **Very Low** | Same reasoning. |
+| `log_focus_session` RPC breaks | **Very Low** | Business logic identical to source. `to_char()` on INSERT guarantees ISO format in TEXT column. `search_path` hardened; all table references are schema-qualified (`public.`). Requires V7 clean data. |
+| `calculate_streak` breaks | **Very Low** | Business logic identical to source. `to_char()` comparisons preserve index usage. `::date` cast on MAX is strict and will fail-fast on corrupted data. Requires V7 clean data. |
+| `get_current_streak` breaks | **Very Low** | Body identical to source. Delegates to `calculate_streak` — no direct `session_date` references. |
 | `service_role` admin access breaks | **None** | No REVOKE targets `service_role`. |
 | SELECT queries break in Analytics/Reports | **Very Low** | `GRANT SELECT TO authenticated` explicitly preserved. Frontend SELECT queries are issued by authenticated users. Confirm with P6. |
 | `anon` SELECT loss causes regression | **Very Low** | No frontend code accesses `focus_sessions` as an unauthenticated user. All Supabase client calls are gated by auth state (checked in `useStore.ts`, `useTimerEngine.ts`). |
 | Column-level grants survive table-level revoke | **Low** | Explicit column-level revocations (INSERT, UPDATE, REFERENCES, SELECT) on all 5 live columns act as defense-in-depth. Verify with P4 and P6b. |
+| Malformed `session_date` causes runtime error | **Unknown** | `::date` cast in `calculate_streak` will error if any stored value is not a valid date. V7 diagnostic MUST be run before application to confirm clean data. Risk cannot be assessed until V7 results are reviewed. |
 
 > [!NOTE]
 > Risk assessments of "Very Low" (rather than "None") reflect that static code analysis cannot guarantee the absence of all edge cases. Live post-application verification is required to confirm zero functional regression.
@@ -558,9 +640,15 @@ All confirmed SELECT-only or RPC-only access (no direct writes):
 
 ## Conclusion
 
-**All 46 verification criteria: PASS** (migration SQL review only — not a claim about live database state)
+**47 verification criteria: PASS** (migration SQL review only — not a claim about live database state or data integrity)
 
-The migration has been reconciled against the confirmed live schema and is ready for independent review and authorized application.
+**1 prerequisite: PENDING** — V7 diagnostic must be run against the live database and its results independently reviewed before this migration can be applied.
+
+The migration has been reconciled against the confirmed live schema. It is ready for independent review, but **not ready to apply** until:
+1. V7 confirms all `session_date` values are valid ISO 8601 dates.
+2. Pre-application queries V1–V6 confirm live state matches remaining assumptions.
 
 > [!IMPORTANT]
-> This migration has been **PREPARED but NOT APPLIED**. Do not apply without explicit authorization. Run pre-application queries (V1–V6) to confirm live state matches assumptions, then post-application queries (P1–P11) to validate changes. The live database is not secured until this migration is successfully applied and post-application verification passes.
+> This migration has been **PREPARED but NOT APPLIED**. Do not apply without explicit authorization. Run V7 first to validate `session_date` data integrity. Then run V1–V6 to confirm live state. After application, run P1–P11 to validate changes. The live database is not secured until this migration is successfully applied and all post-application verification passes.
+
+**No migration was applied. No database records were changed. No live schema was modified.**
