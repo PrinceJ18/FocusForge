@@ -272,7 +272,7 @@ ORDER BY p.proname, r.rolname;
 ### V7. Diagnostic — validate all session_date values (MANDATORY)
 
 > [!CAUTION]
-> This diagnostic **MUST** be run and its results reviewed before applying the migration. The `MAX(session_date)::date` cast in `calculate_streak` will raise a runtime error if any stored value is not a valid ISO 8601 date. Do not apply the migration until V7 confirms zero invalid values.
+> This diagnostic **MUST** be run and its results reviewed before applying the migration. The `MAX(session_date)::date` cast in `calculate_streak` (migration line 290) will raise a runtime error if any stored value is not a valid ISO 8601 date. Do not apply the migration until V7 confirms zero invalid values.
 
 **V7a. PostgreSQL version check:**
 
@@ -280,9 +280,11 @@ ORDER BY p.proname, r.rolname;
 SELECT version();
 ```
 
-Note the major version. `pg_input_is_valid()` is available in PostgreSQL 16+. If PG 16+, also run V7d below.
+Note the major version. `pg_input_is_valid()` is available in PostgreSQL 16+. This determines whether to use V7d/V7e (PG 16+, preferred) or V7f/V7g (older versions, safe fallback).
 
-**V7b. Summary — format and validity check (all PG versions):**
+**V7b. Summary — format check (all PG versions):**
+
+This counts rows by format category. It does **not** detect impossible calendar dates (e.g., `'2026-02-30'`) — those require V7d or V7f.
 
 ```sql
 SELECT
@@ -297,44 +299,16 @@ FROM public.focus_sessions;
 
 **Expected:** `null_count = 0`, `empty_count = 0`, `non_iso_format_count = 0`, `iso_format_count = total_rows`.
 
-**V7c. Round-trip check — detect impossible dates (all PG versions):**
+**V7c. Summary — non-format offenders (all PG versions):**
 
-This catches values like `'2026-02-30'` that match the ISO regex but represent impossible calendar dates. The `::date` cast will error on truly invalid values, so run this only after V7b confirms all values match `^\d{4}-\d{2}-\d{2}$`.
-
-```sql
-SELECT id, user_id, session_date,
-  session_date::date AS parsed_date,
-  to_char(session_date::date, 'YYYY-MM-DD') AS round_tripped
-FROM public.focus_sessions
-WHERE session_date ~ '^\d{4}-\d{2}-\d{2}$'
-  AND session_date <> to_char(session_date::date, 'YYYY-MM-DD')
-ORDER BY session_date;
-```
-
-**Expected:** Zero rows. Any row returned has a `session_date` that does not survive a text→date→text round-trip (e.g., leading zeros differ, date wrapping occurred).
-
-If this query raises an ERROR (e.g., "date/time field value out of range"), one or more values are impossible dates. In that case, run V7e to identify them.
-
-**V7d. Safe validity check (PostgreSQL 16+ only):**
-
-```sql
-SELECT id, user_id, session_date
-FROM public.focus_sessions
-WHERE NOT pg_input_is_valid(session_date, 'date')
-ORDER BY session_date;
-```
-
-**Expected:** Zero rows. This checks cast validity without raising errors.
-
-**V7e. List all offending rows (all PG versions):**
+Lists every row that is NULL, empty, or does not match `YYYY-MM-DD` regex format. Does **not** catch impossible dates.
 
 ```sql
 SELECT id, user_id, session_date,
   CASE
     WHEN session_date IS NULL THEN 'NULL'
     WHEN session_date = '' THEN 'EMPTY'
-    WHEN session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 'NOT_ISO_FORMAT'
-    ELSE 'ISO_FORMAT_BUT_MAY_BE_INVALID_DATE'
+    ELSE 'NOT_ISO_FORMAT'
   END AS status
 FROM public.focus_sessions
 WHERE session_date IS NULL
@@ -345,10 +319,132 @@ ORDER BY session_date;
 
 **Expected:** Zero rows.
 
+---
+
+**Choose one of the following paths based on V7a results:**
+
+#### Path A — PostgreSQL 16+ (preferred)
+
+**V7d. Complete validity check — all categories including impossible dates (PG 16+):**
+
+`pg_input_is_valid(text, type)` returns `false` for any value that would cause `::date` to error, without aborting the query. This catches NULL handling, empty strings, non-ISO formats, **and** impossible calendar dates like `'2026-02-30'` — all in one safe query.
+
+```sql
+SELECT
+  COUNT(*) AS total_rows,
+  COUNT(CASE WHEN session_date IS NULL THEN 1 END) AS null_count,
+  COUNT(CASE WHEN session_date = '' THEN 1 END) AS empty_count,
+  COUNT(CASE WHEN session_date IS NOT NULL AND session_date <> ''
+             AND NOT pg_input_is_valid(session_date, 'date') THEN 1 END) AS invalid_date_count,
+  COUNT(CASE WHEN session_date IS NOT NULL AND session_date <> ''
+             AND pg_input_is_valid(session_date, 'date')
+             AND session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 1 END) AS parseable_but_non_canonical_count,
+  COUNT(CASE WHEN session_date ~ '^\d{4}-\d{2}-\d{2}$'
+             AND pg_input_is_valid(session_date, 'date') THEN 1 END) AS valid_canonical_count
+FROM public.focus_sessions;
+```
+
+**Expected:** `null_count = 0`, `empty_count = 0`, `invalid_date_count = 0`, `parseable_but_non_canonical_count = 0`, `valid_canonical_count = total_rows`.
+
+**V7e. List every offending row with reason (PG 16+):**
+
+```sql
+SELECT id, user_id, session_date,
+  CASE
+    WHEN session_date IS NULL THEN 'NULL'
+    WHEN session_date = '' THEN 'EMPTY'
+    WHEN NOT pg_input_is_valid(session_date, 'date') THEN 'INVALID_DATE'
+    WHEN session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 'PARSEABLE_BUT_NON_CANONICAL'
+    ELSE 'UNKNOWN'
+  END AS status
+FROM public.focus_sessions
+WHERE session_date IS NULL
+   OR session_date = ''
+   OR NOT pg_input_is_valid(session_date, 'date')
+   OR session_date !~ '^\d{4}-\d{2}-\d{2}$'
+ORDER BY status, session_date;
+```
+
+**Expected:** Zero rows. If any rows are returned, the `status` column identifies the category:
+- `NULL` — session_date is NULL
+- `EMPTY` — session_date is an empty string
+- `INVALID_DATE` — cannot be cast to `date` (includes impossible dates like `'2026-02-30'`, garbage strings, etc.)
+- `PARSEABLE_BUT_NON_CANONICAL` — parses as a valid date but is not in exact `YYYY-MM-DD` format (e.g., `'2026-1-5'`)
+
+#### Path B — PostgreSQL < 16 (safe fallback)
+
+**V7f. Safe impossible-date detection without pg_input_is_valid (PG < 16):**
+
+This uses range checks on the extracted month and day components to identify dates that are syntactically ISO-shaped but represent impossible calendar dates. It does **not** use `::date` (which would abort on the first invalid value). It catches most impossible dates but cannot detect all edge cases (e.g., Feb 29 in non-leap years requires leap-year arithmetic).
+
+```sql
+SELECT id, user_id, session_date,
+  CASE
+    WHEN session_date IS NULL THEN 'NULL'
+    WHEN session_date = '' THEN 'EMPTY'
+    WHEN session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 'NOT_ISO_FORMAT'
+    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) NOT BETWEEN 1 AND 12 THEN 'INVALID_MONTH'
+    WHEN CAST(substring(session_date FROM 9 FOR 2) AS integer) NOT BETWEEN 1 AND 31 THEN 'INVALID_DAY'
+    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) IN (4,6,9,11)
+         AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 30 THEN 'INVALID_DAY_FOR_MONTH'
+    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
+         AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 29 THEN 'INVALID_DAY_FOR_FEB'
+    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
+         AND CAST(substring(session_date FROM 9 FOR 2) AS integer) = 29
+         AND NOT (
+           CAST(substring(session_date FROM 1 FOR 4) AS integer) % 4 = 0
+           AND (CAST(substring(session_date FROM 1 FOR 4) AS integer) % 100 <> 0
+                OR CAST(substring(session_date FROM 1 FOR 4) AS integer) % 400 = 0)
+         ) THEN 'FEB_29_NON_LEAP_YEAR'
+    ELSE NULL
+  END AS status
+FROM public.focus_sessions
+WHERE session_date IS NULL
+   OR session_date = ''
+   OR session_date !~ '^\d{4}-\d{2}-\d{2}$'
+   OR CAST(substring(session_date FROM 6 FOR 2) AS integer) NOT BETWEEN 1 AND 12
+   OR CAST(substring(session_date FROM 9 FOR 2) AS integer) NOT BETWEEN 1 AND 31
+   OR (CAST(substring(session_date FROM 6 FOR 2) AS integer) IN (4,6,9,11)
+       AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 30)
+   OR (CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
+       AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 29)
+   OR (CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
+       AND CAST(substring(session_date FROM 9 FOR 2) AS integer) = 29
+       AND NOT (
+         CAST(substring(session_date FROM 1 FOR 4) AS integer) % 4 = 0
+         AND (CAST(substring(session_date FROM 1 FOR 4) AS integer) % 100 <> 0
+              OR CAST(substring(session_date FROM 1 FOR 4) AS integer) % 400 = 0)
+       ))
+ORDER BY status, session_date;
+```
+
+**Expected:** Zero rows.
+
+**V7g. Guarded round-trip verification (PG < 16, run only if V7f returns zero rows):**
+
+After V7f confirms no structurally impossible dates, this round-trip test safely verifies that every value survives `text → date → text` exactly. Run this **only** after V7f returns zero rows (otherwise `::date` may abort).
+
+```sql
+SELECT id, user_id, session_date,
+  session_date::date AS parsed_date,
+  to_char(session_date::date, 'YYYY-MM-DD') AS round_tripped
+FROM public.focus_sessions
+WHERE session_date <> to_char(session_date::date, 'YYYY-MM-DD')
+ORDER BY session_date;
+```
+
+**Expected:** Zero rows. Any row returned has a `session_date` that does not round-trip to its original value.
+
+> [!WARNING]
+> V7g uses an unguarded `::date` cast. It will abort with an error if any value is not a valid date. Only run it after V7f confirms zero structurally invalid rows. If V7g aborts, there is a date value that V7f's range checks did not catch — report the error and STOP.
+
+---
+
 **Interpretation:**
-- If V7b shows all zeros except `iso_format_count`, AND V7c returns zero rows → data is clean. Migration may proceed.
-- If V7b shows any non-zero `null_count`, `empty_count`, or `non_iso_format_count` → **STOP. Do not apply the migration.** Report the V7e results for manual remediation.
-- If V7c errors or returns rows → **STOP. Do not apply the migration.** Impossible calendar dates exist in the data.
+- **PG 16+:** If V7b shows all zeros except `iso_format_count`, AND V7d shows `invalid_date_count = 0` and `parseable_but_non_canonical_count = 0` → data is clean. Migration may proceed.
+- **PG < 16:** If V7b shows all zeros except `iso_format_count`, AND V7f returns zero rows, AND V7g returns zero rows → data is clean. Migration may proceed.
+- If **any** diagnostic shows non-zero invalid counts or returns rows → **STOP. Do not apply the migration.** Report the offending rows (from V7e or V7f) for manual remediation.
+- Do not claim V7 is clean until actual live results have been reviewed.
 
 ---
 
