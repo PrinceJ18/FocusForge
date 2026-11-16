@@ -380,7 +380,7 @@ This query uses a `CASE`-based approach that guarantees substring-to-integer cas
 The query validates: NULL, empty, non-ISO format, year `0000` (PostgreSQL rejects `'0000-01-01'::date`), month range, day range per month, and leap-year rules (including century and 400-year exceptions).
 
 > [!NOTE]
-> This query cannot detect every edge case that `::date` would reject. For example, values with valid-looking components that `::date` rejects for other reasons (e.g., very large years outside PostgreSQL's supported range) would pass V7f but fail V7g. The PG 16+ path (V7d/V7e using `pg_input_is_valid`) is the only fully comprehensive safe check. If V7f returns zero rows but V7g still aborts, report the error and investigate manually.
+> This query is **not equivalent** to `pg_input_is_valid()`. It validates format, calendar arithmetic, and the year-zero case, but PostgreSQL's `::date` input parser may reject values for reasons this arithmetic does not cover. The PG 16+ path (V7d/V7e using `pg_input_is_valid`) is the only fully comprehensive safe check. If V7f returns zero rows but V7g still aborts, report the error and investigate manually.
 
 ```sql
 SELECT id, user_id, session_date, status
@@ -427,7 +427,7 @@ ORDER BY status, session_date;
 
 **Expected:** Zero rows.
 
-**Limitations:** This query handles the most common classes of invalid dates but is **not equivalent** to `pg_input_is_valid()`. Edge cases it cannot detect include years outside PostgreSQL's supported range (4713 BC – 5874897 AD) and other inputs that `::date` rejects for implementation-specific reasons. If this query returns zero rows, V7g (guarded round-trip) provides a secondary confirmation. If V7g aborts despite V7f passing, the data contains a value that V7f's arithmetic did not cover — report the error and investigate manually.
+**Limitations:** This query covers NULL, empty, non-ISO format, year zero, month/day range, and leap-year rules, but is **not equivalent** to `pg_input_is_valid()`. PostgreSQL's `::date` input parser may reject values for reasons this arithmetic does not cover. If this query returns zero rows, V7g (guarded round-trip) provides a secondary confirmation. If V7g aborts despite V7f passing, the data contains a value that V7f's checks did not catch — report the error and investigate manually.
 
 **V7g. Guarded round-trip verification (PG < 16, run only if V7f returns zero rows):**
 
