@@ -54,7 +54,7 @@ All implicit `text ↔ date` operations in the source RPCs have been replaced wi
 | RPC | Expression (before) | Expression (after) | Rationale |
 |-----|--------------------|--------------------|-----------|
 | `log_focus_session` | `VALUES (..., p_session_date, ...)` | `VALUES (..., to_char(p_session_date, 'YYYY-MM-DD'), ...)` | Guarantees ISO format in TEXT column regardless of `DateStyle` |
-| `calculate_streak` | `MAX(session_date) INTO v_max_date` | `MAX(session_date)::date INTO v_max_date` | Strict `::date` cast — rejects invalid dates (unlike `to_date()` which silently wraps) |
+| `calculate_streak` | `MAX(session_date) INTO v_max_date` | `MAX(session_date)::date INTO v_max_date` | Strict `::date` cast on the computed MAX value — rejects the result if it is not a valid date (unlike `to_date()` which silently wraps). Does not validate non-MAX rows; V7 is the all-row prerequisite. |
 | `calculate_streak` | `session_date = p_today` | `session_date = to_char(p_today, 'YYYY-MM-DD')` | DATE→TEXT with guaranteed format; preserves index |
 | `calculate_streak` | `session_date = p_today - 1` | `session_date = to_char(p_today - 1, 'YYYY-MM-DD')` | Same — date arithmetic then explicit cast |
 | `calculate_streak` | `session_date = v_check_date` (loop) | `session_date = to_char(v_check_date, 'YYYY-MM-DD')` | Same — loop variable cast |
@@ -78,10 +78,10 @@ PostgreSQL's `::date` cast (the `date` type input parser) **is** strict:
 - `'not-a-date'::date` → **ERROR: invalid input syntax for type date**
 - ISO 8601 format ('YYYY-MM-DD') is always accepted unambiguously regardless of `DateStyle`
 
-The `::date` cast is used for the `MAX()` assignment because it provides fail-fast behavior: if corrupted data exists, the query errors loudly rather than producing a silently incorrect streak calculation.
+The `::date` cast is used for the `MAX()` assignment because it provides fail-fast behavior on the selected maximum value: if the lexicographically largest `session_date` for a user is not a valid date, the query errors rather than producing a silently incorrect streak. However, `MAX()` only casts one value per query execution — it does not scan or validate every row. An invalid value that sorts below the maximum would not be cast and would not trigger an error. **V7 is the all-row prerequisite** that ensures every stored value is valid before the migration is applied.
 
 **Prerequisite — data integrity:**
-The `MAX(session_date)::date` cast will raise a runtime error if any stored `session_date` value for the queried user is not a valid date string. **V7 MUST be run before applying the migration** to confirm all stored values are valid. If V7 reports any invalid values, this migration MUST NOT be applied until the data is corrected.
+The `MAX(session_date)::date` cast validates only the lexicographic maximum for the queried user — not every row. An invalid value that sorts below the maximum would go undetected at runtime. **V7 MUST be run before applying the migration** to confirm that *all* stored values are valid ISO 8601 dates. If V7 reports any invalid values, this migration MUST NOT be applied until the data is corrected.
 
 **Conclusion:** The type discrepancy is now handled with explicit, deterministic casts. No implicit operator resolution or `DateStyle`-dependent behavior remains. The migration cannot be marked ready to apply until V7 confirms clean data. A separate future migration could normalize the column type to `date`, but that is out of scope for this security hardening step.
 
@@ -131,7 +131,7 @@ The `MAX(session_date)::date` cast will raise a runtime error if any stored `ses
 | 27 | `calculate_streak` search_path hardened | **PASS** | `pg_catalog, public, private` (was `public`) |
 | 28 | `calculate_streak` OWNER TO postgres | **PASS** | ALTER FUNCTION after CREATE |
 | 29 | `calculate_streak` EXECUTE fully revoked | **PASS** | `REVOKE ALL ... FROM PUBLIC, anon, authenticated` |
-| 30 | `calculate_streak` MAX uses strict `::date` cast | **PASS** | `MAX(session_date)::date` — strict input parser rejects impossible dates; `to_date()` was avoided because it silently wraps invalid dates |
+| 30 | `calculate_streak` MAX uses strict `::date` cast | **PASS** | `MAX(session_date)::date` — strict cast validates the computed maximum value; `to_date()` was avoided because it silently wraps invalid dates. V7 is the all-row prerequisite. |
 | 31 | `calculate_streak` comparisons use explicit `to_char()` | **PASS** | All 4 WHERE clauses use `to_char(date_param, 'YYYY-MM-DD')` — preserves index, guarantees format |
 | 32 | `get_current_streak` signature preserved | **PASS** | `(DATE)` — matches source |
 | 33 | `get_current_streak` body identical | **PASS** | Byte-for-byte copy from source (no direct `session_date` references) |
@@ -272,7 +272,7 @@ ORDER BY p.proname, r.rolname;
 ### V7. Diagnostic — validate all session_date values (MANDATORY)
 
 > [!CAUTION]
-> This diagnostic **MUST** be run and its results reviewed before applying the migration. The `MAX(session_date)::date` cast in `calculate_streak` (migration line 290) will raise a runtime error if any stored value is not a valid ISO 8601 date. Do not apply the migration until V7 confirms zero invalid values.
+> This diagnostic **MUST** be run and its results reviewed before applying the migration. The `MAX(session_date)::date` cast in `calculate_streak` (migration line 291) validates only the lexicographic maximum for the queried user — not every stored row. An invalid value that sorts below the maximum would go undetected at runtime. V7 is the all-row prerequisite that ensures every value is a valid ISO 8601 date before the migration is applied.
 
 **V7a. PostgreSQL version check:**
 
@@ -375,50 +375,59 @@ ORDER BY status, session_date;
 
 **V7f. Safe impossible-date detection without pg_input_is_valid (PG < 16):**
 
-This uses range checks on the extracted month and day components to identify dates that are syntactically ISO-shaped but represent impossible calendar dates. It does **not** use `::date` (which would abort on the first invalid value). It catches most impossible dates but cannot detect all edge cases (e.g., Feb 29 in non-leap years requires leap-year arithmetic).
+This query uses a `CASE`-based approach that guarantees substring-to-integer casts are only evaluated after the regex confirms the value is in `YYYY-MM-DD` format. This avoids the PostgreSQL behavior where `OR` conditions in a `WHERE` clause may be evaluated in any order, which could cause a `CAST` to abort on a non-numeric substring before the regex branch excludes the row.
+
+The query validates: NULL, empty, non-ISO format, year `0000` (PostgreSQL rejects `'0000-01-01'::date`), month range, day range per month, and leap-year rules (including century and 400-year exceptions).
+
+> [!NOTE]
+> This query cannot detect every edge case that `::date` would reject. For example, values with valid-looking components that `::date` rejects for other reasons (e.g., very large years outside PostgreSQL's supported range) would pass V7f but fail V7g. The PG 16+ path (V7d/V7e using `pg_input_is_valid`) is the only fully comprehensive safe check. If V7f returns zero rows but V7g still aborts, report the error and investigate manually.
 
 ```sql
-SELECT id, user_id, session_date,
-  CASE
-    WHEN session_date IS NULL THEN 'NULL'
-    WHEN session_date = '' THEN 'EMPTY'
-    WHEN session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 'NOT_ISO_FORMAT'
-    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) NOT BETWEEN 1 AND 12 THEN 'INVALID_MONTH'
-    WHEN CAST(substring(session_date FROM 9 FOR 2) AS integer) NOT BETWEEN 1 AND 31 THEN 'INVALID_DAY'
-    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) IN (4,6,9,11)
-         AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 30 THEN 'INVALID_DAY_FOR_MONTH'
-    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
-         AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 29 THEN 'INVALID_DAY_FOR_FEB'
-    WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
-         AND CAST(substring(session_date FROM 9 FOR 2) AS integer) = 29
-         AND NOT (
-           CAST(substring(session_date FROM 1 FOR 4) AS integer) % 4 = 0
-           AND (CAST(substring(session_date FROM 1 FOR 4) AS integer) % 100 <> 0
-                OR CAST(substring(session_date FROM 1 FOR 4) AS integer) % 400 = 0)
-         ) THEN 'FEB_29_NON_LEAP_YEAR'
-    ELSE NULL
-  END AS status
-FROM public.focus_sessions
-WHERE session_date IS NULL
-   OR session_date = ''
-   OR session_date !~ '^\d{4}-\d{2}-\d{2}$'
-   OR CAST(substring(session_date FROM 6 FOR 2) AS integer) NOT BETWEEN 1 AND 12
-   OR CAST(substring(session_date FROM 9 FOR 2) AS integer) NOT BETWEEN 1 AND 31
-   OR (CAST(substring(session_date FROM 6 FOR 2) AS integer) IN (4,6,9,11)
-       AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 30)
-   OR (CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
-       AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 29)
-   OR (CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
-       AND CAST(substring(session_date FROM 9 FOR 2) AS integer) = 29
-       AND NOT (
-         CAST(substring(session_date FROM 1 FOR 4) AS integer) % 4 = 0
-         AND (CAST(substring(session_date FROM 1 FOR 4) AS integer) % 100 <> 0
-              OR CAST(substring(session_date FROM 1 FOR 4) AS integer) % 400 = 0)
-       ))
+SELECT id, user_id, session_date, status
+FROM (
+  SELECT id, user_id, session_date,
+    CASE
+      WHEN session_date IS NULL THEN 'NULL'
+      WHEN session_date = '' THEN 'EMPTY'
+      WHEN session_date !~ '^\d{4}-\d{2}-\d{2}$' THEN 'NOT_ISO_FORMAT'
+      -- From here, regex guarantees YYYY-MM-DD shape, so substring casts are safe
+      WHEN CAST(substring(session_date FROM 1 FOR 4) AS integer) = 0
+        THEN 'INVALID_YEAR_ZERO'
+      WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) NOT BETWEEN 1 AND 12
+        THEN 'INVALID_MONTH'
+      WHEN CAST(substring(session_date FROM 9 FOR 2) AS integer) < 1
+        THEN 'INVALID_DAY_ZERO'
+      -- 31-day months: 1,3,5,7,8,10,12
+      WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) IN (1,3,5,7,8,10,12)
+           AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 31
+        THEN 'INVALID_DAY_FOR_MONTH'
+      -- 30-day months: 4,6,9,11
+      WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) IN (4,6,9,11)
+           AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 30
+        THEN 'INVALID_DAY_FOR_MONTH'
+      -- February: max 29 in leap year, max 28 otherwise
+      WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
+           AND CAST(substring(session_date FROM 9 FOR 2) AS integer) > 29
+        THEN 'INVALID_DAY_FOR_FEB'
+      WHEN CAST(substring(session_date FROM 6 FOR 2) AS integer) = 2
+           AND CAST(substring(session_date FROM 9 FOR 2) AS integer) = 29
+           AND NOT (
+             CAST(substring(session_date FROM 1 FOR 4) AS integer) % 4 = 0
+             AND (CAST(substring(session_date FROM 1 FOR 4) AS integer) % 100 <> 0
+                  OR CAST(substring(session_date FROM 1 FOR 4) AS integer) % 400 = 0)
+           )
+        THEN 'FEB_29_NON_LEAP_YEAR'
+      ELSE NULL  -- valid
+    END AS status
+  FROM public.focus_sessions
+) sub
+WHERE status IS NOT NULL
 ORDER BY status, session_date;
 ```
 
 **Expected:** Zero rows.
+
+**Limitations:** This query handles the most common classes of invalid dates but is **not equivalent** to `pg_input_is_valid()`. Edge cases it cannot detect include years outside PostgreSQL's supported range (4713 BC – 5874897 AD) and other inputs that `::date` rejects for implementation-specific reasons. If this query returns zero rows, V7g (guarded round-trip) provides a secondary confirmation. If V7g aborts despite V7f passing, the data contains a value that V7f's arithmetic did not cover — report the error and investigate manually.
 
 **V7g. Guarded round-trip verification (PG < 16, run only if V7f returns zero rows):**
 
@@ -679,13 +688,13 @@ SELECT
 |------|-----------|------------|
 | Frontend direct INSERT/UPDATE breaks | **Very Low** | Static analysis confirms no frontend code does direct writes to `focus_sessions`. Based on codebase inspection — not live testing. |
 | `log_focus_session` RPC breaks | **Very Low** | Business logic identical to source. `to_char()` on INSERT guarantees ISO format in TEXT column. `search_path` hardened; all table references are schema-qualified (`public.`). Requires V7 clean data. |
-| `calculate_streak` breaks | **Very Low** | Business logic identical to source. `to_char()` comparisons preserve index usage. `::date` cast on MAX is strict and will fail-fast on corrupted data. Requires V7 clean data. |
+| `calculate_streak` breaks | **Very Low** | Business logic identical to source. `to_char()` comparisons preserve index usage. `::date` cast on MAX validates only the computed maximum value, not every row — V7 is the all-row prerequisite. Requires V7 clean data. |
 | `get_current_streak` breaks | **Very Low** | Body identical to source. Delegates to `calculate_streak` — no direct `session_date` references. |
 | `service_role` admin access breaks | **None** | No REVOKE targets `service_role`. |
 | SELECT queries break in Analytics/Reports | **Very Low** | `GRANT SELECT TO authenticated` explicitly preserved. Frontend SELECT queries are issued by authenticated users. Confirm with P6. |
 | `anon` SELECT loss causes regression | **Very Low** | No frontend code accesses `focus_sessions` as an unauthenticated user. All Supabase client calls are gated by auth state (checked in `useStore.ts`, `useTimerEngine.ts`). |
 | Column-level grants survive table-level revoke | **Low** | Explicit column-level revocations (INSERT, UPDATE, REFERENCES, SELECT) on all 5 live columns act as defense-in-depth. Verify with P4 and P6b. |
-| Malformed `session_date` causes runtime error | **Unknown** | `::date` cast in `calculate_streak` (migration line 290) will error if any stored value is not a valid date. V7 diagnostic (V7d/V7e on PG 16+, or V7f/V7g on older PG) MUST be run before application to confirm clean data. Risk cannot be assessed until V7 results are reviewed. |
+| Malformed `session_date` causes runtime error | **Unknown** | `MAX(session_date)::date` in `calculate_streak` (migration line 291) validates only the lexicographic maximum for the queried user — not every row. An invalid value sorting below the maximum would go undetected at runtime. V7 diagnostic (V7d/V7e on PG 16+, or V7f/V7g on PG < 16) MUST be run before application to confirm all rows contain valid ISO 8601 dates. Risk cannot be assessed until V7 results are reviewed. |
 
 > [!NOTE]
 > Risk assessments of "Very Low" (rather than "None") reflect that static code analysis cannot guarantee the absence of all edge cases. Live post-application verification is required to confirm zero functional regression.

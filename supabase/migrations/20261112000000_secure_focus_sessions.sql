@@ -286,7 +286,8 @@ BEGIN
   -- PostgreSQL's date input parser is strict: it rejects impossible dates like
   -- '2026-02-30', whereas to_date() would silently wrap to '2026-03-02'.
   -- Lexicographic MAX on ISO 8601 text equals chronological MAX.
-  -- PREREQUISITE: V7 diagnostic must confirm all stored values are valid dates.
+  -- NOTE: The cast validates only the computed MAX value, not every row.
+  -- PREREQUISITE: V7 diagnostic must confirm ALL stored values are valid dates.
   SELECT MAX(session_date)::date INTO v_max_date
   FROM public.focus_sessions
   WHERE user_id = p_user_id;
