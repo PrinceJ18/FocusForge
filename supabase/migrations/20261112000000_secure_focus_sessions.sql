@@ -124,12 +124,12 @@ CREATE OR REPLACE FUNCTION public.log_focus_session(
 RETURNS TABLE (
   id UUID,
   user_id UUID,
-  session_date DATE,
+  session_date TEXT,
   minutes INTEGER,
   sessions_count INTEGER,
   xp_earned INTEGER,
   total_xp INTEGER,
-  current_streak INTEGER,
+  streak INTEGER,
   last_active_date TEXT
 )
 LANGUAGE plpgsql
@@ -246,7 +246,7 @@ BEGIN
   RETURN QUERY SELECT 
     v_session_id, 
     v_user_id, 
-    p_session_date, 
+    to_char(p_session_date, 'YYYY-MM-DD'), 
     v_session_minutes, 
     v_session_count, 
     v_xp_earned, 
@@ -342,7 +342,7 @@ CREATE OR REPLACE FUNCTION public.get_current_streak(
   p_today DATE
 )
 RETURNS TABLE (
-  current_streak INTEGER,
+  streak INTEGER,
   last_active_date TEXT
 )
 LANGUAGE plpgsql
