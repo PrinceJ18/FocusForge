@@ -65,10 +65,10 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Determine active page — fallback to dashboard for unknown routes
+  // Determine active page - fallback to dashboard for unknown routes
   const activePage = KNOWN_PAGES.has(currentPage) ? currentPage : 'dashboard';
 
-  // Desktop sidebar collapse — persisted in localStorage (UI-only preference)
+  // Desktop sidebar collapse - persisted in localStorage (UI-only preference)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
   });
@@ -182,7 +182,7 @@ export default function App() {
               daily_challenge_claims: { date: '', claimed: [] },
             },
           });
-          
+
           useDailyGoalsStore.setState({
             history: [],
             customGoalProgress: {},
@@ -194,7 +194,7 @@ export default function App() {
             dailyXPStart: 0,
             dailyXPDate: ''
           });
-          
+
           checkAndUpdateGuestStreak();
         }
       })();
