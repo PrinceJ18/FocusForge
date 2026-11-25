@@ -161,7 +161,7 @@ The `MAX(session_date)::date` cast validates only the lexicographic maximum for 
 | `get_current_streak` | `20260707120000_streak_calculation_repair.sql` | 219–279 |
 | Table + policies (original) | `20260525174459_create_spendwise_tables.sql` | 123–153 |
 
-> [!NOTE]
+
 > The original CREATE TABLE migration defines policies as `"own focus sessions"` and includes `created_at timestamptz`. The live database differs from these definitions — changes were made outside of tracked migrations.
 
 ---
