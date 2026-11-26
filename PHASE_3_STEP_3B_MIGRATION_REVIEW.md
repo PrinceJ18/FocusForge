@@ -152,7 +152,7 @@ The `MAX(session_date)::date` cast validates only the lexicographic maximum for 
 
 ---
 
-## Source Migration Cross-Reference
+## Source Migration Cross-Reference...
 
 | Function | Authoritative Source | Lines |
 |----------|---------------------|-------|
